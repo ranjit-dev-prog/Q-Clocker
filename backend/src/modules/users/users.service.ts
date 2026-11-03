@@ -18,7 +18,21 @@ export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
   // In-memory persistent demo store
-  private memoryUsers = [
+  private memoryUsers: Array<{
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    phone: string | null;
+    roleCode: UserRole;
+    departmentId: string | null;
+    departmentName: string;
+    teamId: string | null;
+    managerId: string | null;
+    jobTitle: string;
+    isActive: boolean;
+    createdAt: string;
+  }> = [
     {
       id: '00000000-0000-0000-0000-000000000001',
       email: 'superadmin@qclocker.io',

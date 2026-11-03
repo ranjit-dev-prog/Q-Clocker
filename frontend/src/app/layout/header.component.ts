@@ -32,12 +32,7 @@ import { UserRole } from '../core/models/user.model';
           <button
             *ngFor="let r of roles"
             (click)="switchRole(r.key)"
-            [class.bg-white]="authService.userRole() === r.key"
-            [class.dark:bg-slate-700]="authService.userRole() === r.key"
-            [class.shadow-sm]="authService.userRole() === r.key"
-            [class.text-primary-700]="authService.userRole() === r.key"
-            [class.dark:text-primary-300]="authService.userRole() === r.key"
-            [class.font-bold]="authService.userRole() === r.key"
+            [ngClass]="authService.userRole() === r.key ? 'bg-white dark:bg-slate-700 shadow-sm text-primary-700 dark:text-primary-300 font-bold' : ''"
             class="px-2.5 py-1 text-xs rounded-md text-slate-600 dark:text-slate-300 hover:text-slate-900 transition-all cursor-pointer"
           >
             {{ r.label }}

@@ -112,12 +112,7 @@ import { UserRole } from '../../core/models/user.model';
                 <td class="py-3.5 px-4">
                   <span
                     class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
-                    [class.bg-emerald-100]="emp.isActive"
-                    [class.text-emerald-700]="emp.isActive"
-                    [class.dark:bg-emerald-950/60]="emp.isActive"
-                    [class.dark:text-emerald-300]="emp.isActive"
-                    [class.bg-slate-100]="!emp.isActive"
-                    [class.text-slate-600]="!emp.isActive"
+                    [ngClass]="emp.isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'"
                   >
                     {{ emp.isActive ? 'Active' : 'Deactivated' }}
                   </span>

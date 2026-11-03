@@ -67,7 +67,15 @@ export class DepartmentsService {
     },
   ];
 
-  private memoryTeams = [
+  private memoryTeams: Array<{
+    id: string;
+    departmentId: string;
+    name: string;
+    description: string;
+    leadId: string | null;
+    leadName: string;
+    isActive: boolean;
+  }> = [
     {
       id: '20000000-0000-0000-0000-000000000001',
       departmentId: '10000000-0000-0000-0000-000000000002',

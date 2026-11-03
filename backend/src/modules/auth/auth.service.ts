@@ -20,7 +20,17 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   // In-memory fallback accounts for zero-dependency development/testing
-  private demoAccounts = [
+  private demoAccounts: Array<{
+    id: string;
+    email: string;
+    passwordHash: string;
+    firstName: string;
+    lastName: string;
+    roleCode: UserRole;
+    jobTitle: string;
+    departmentId: string | null;
+    isActive: boolean;
+  }> = [
     {
       id: '00000000-0000-0000-0000-000000000001',
       email: 'superadmin@qclocker.io',

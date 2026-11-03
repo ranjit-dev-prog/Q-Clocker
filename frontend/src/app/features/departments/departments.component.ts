@@ -46,10 +46,7 @@ import { AuthService } from '../../core/services/auth.service';
               </div>
               <span
                 class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
-                [class.bg-emerald-100]="dept.isActive"
-                [class.text-emerald-700]="dept.isActive"
-                [class.dark:bg-emerald-950/60]="dept.isActive"
-                [class.dark:text-emerald-300]="dept.isActive"
+                [ngClass]="dept.isActive ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300' : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'"
               >
                 {{ dept.isActive ? 'Active' : 'Archived' }}
               </span>
