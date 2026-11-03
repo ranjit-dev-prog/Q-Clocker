@@ -3,43 +3,66 @@ export enum UserRole {
   ADMIN = 'ADMIN', // IT Manager / Dept Admin
   TEAM_LEAD = 'TEAM_LEAD',
   EMPLOYEE = 'EMPLOYEE',
+  AUDITOR = 'AUDITOR',
 }
 
 export enum TaskStatus {
-  NOT_STARTED = 'NOT_STARTED',
+  DRAFT = 'DRAFT',
+  ASSIGNED = 'ASSIGNED',
+  ACCEPTED = 'ACCEPTED',
   IN_PROGRESS = 'IN_PROGRESS',
   ON_HOLD = 'ON_HOLD',
-  UNDER_REVIEW = 'UNDER_REVIEW',
+  PENDING_REVIEW = 'PENDING_REVIEW',
   COMPLETED = 'COMPLETED',
   REJECTED = 'REJECTED',
+  OVERDUE = 'OVERDUE',
+  CANCELLED = 'CANCELLED',
 }
 
 export enum Priority {
   LOW = 'LOW',
   MEDIUM = 'MEDIUM',
   HIGH = 'HIGH',
+  URGENT = 'URGENT',
   CRITICAL = 'CRITICAL',
 }
 
+export enum TaskCategory {
+  DEVELOPMENT = 'Development',
+  MAINTENANCE = 'Maintenance',
+  OPERATIONS = 'Operations',
+  SECURITY = 'Security',
+  SUPPORT = 'Support',
+  RESEARCH = 'Research',
+  INFRASTRUCTURE = 'Infrastructure',
+  GENERAL = 'General',
+}
+
 export enum TicketStatus {
-  OPEN = 'OPEN',
+  NEW = 'NEW',
   ASSIGNED = 'ASSIGNED',
   IN_PROGRESS = 'IN_PROGRESS',
-  PENDING = 'PENDING',
+  PENDING_USER = 'PENDING_USER',
+  PENDING_VENDOR = 'PENDING_VENDOR',
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
   RESOLVED = 'RESOLVED',
   CLOSED = 'CLOSED',
 }
 
 export enum TicketCategory {
-  HARDWARE = 'HARDWARE',
-  SOFTWARE = 'SOFTWARE',
-  NETWORK = 'NETWORK',
-  SERVER = 'SERVER',
-  ACTIVE_DIRECTORY = 'ACTIVE_DIRECTORY',
-  CYBERSECURITY = 'CYBERSECURITY',
-  ACCESS_MANAGEMENT = 'ACCESS_MANAGEMENT',
-  EMAIL = 'EMAIL',
-  OTHER = 'OTHER',
+  IT_SUPPORT = 'IT Support',
+  INFRASTRUCTURE = 'Infrastructure',
+  CYBERSECURITY = 'Cybersecurity',
+  VAPT = 'VAPT',
+  NETWORK = 'Network',
+  APPLICATION = 'Application',
+  SOFTWARE = 'Software',
+  HARDWARE = 'Hardware',
+  ACCESS_MANAGEMENT = 'Access Management',
+  CLOUD_SECURITY = 'Cloud Security',
+  COMPLIANCE = 'Compliance',
+  HR_SUPPORT = 'HR Support',
+  GENERAL = 'General Requests',
 }
 
 export enum NotificationType {
@@ -53,5 +76,14 @@ export enum NotificationType {
   DEADLINE_WARNING = 'DEADLINE_WARNING',
   DEADLINE_OVERDUE = 'DEADLINE_OVERDUE',
   FEEDBACK_RECEIVED = 'FEEDBACK_RECEIVED',
+  TIMESHEET_SUBMITTED = 'TIMESHEET_SUBMITTED',
+  TIMESHEET_APPROVED = 'TIMESHEET_APPROVED',
+  APPROVAL_REQUESTED = 'APPROVAL_REQUESTED',
 }
 
+export enum ApprovalStatus {
+  DRAFT = 'DRAFT',
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+}
