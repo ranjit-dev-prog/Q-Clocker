@@ -411,18 +411,22 @@ import { AuthService } from '../../core/services/auth.service';
 
             <div class="grid grid-cols-2 gap-3">
               <div>
-                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Start Date</label>
+                <label for="task-start-date" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Start Date</label>
                 <input
+                  id="task-start-date"
                   type="date"
+                  aria-label="Task Start Date"
                   [(ngModel)]="newTaskStartDate"
                   class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
                 />
               </div>
 
               <div>
-                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Due Date</label>
+                <label for="task-due-date" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Due Date</label>
                 <input
+                  id="task-due-date"
                   type="date"
+                  aria-label="Task Due Date"
                   [(ngModel)]="newTaskDueDate"
                   class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
                 />
@@ -430,9 +434,12 @@ import { AuthService } from '../../core/services/auth.service';
             </div>
 
             <div>
-              <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Estimated Hours</label>
+              <label for="task-est-hours" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Estimated Hours</label>
               <input
+                id="task-est-hours"
                 type="number"
+                aria-label="Estimated Hours"
+                placeholder="4"
                 [(ngModel)]="newTaskEstHours"
                 min="0.5"
                 step="0.5"

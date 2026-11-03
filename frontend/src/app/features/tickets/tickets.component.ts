@@ -368,8 +368,8 @@ import { AuthService } from '../../core/services/auth.service';
                 class="flex-1 px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-primary-500"
                 (keyup.enter)="submitTicketComment()"
               />
-              <label class="flex items-center gap-1 text-[11px] text-slate-500 cursor-pointer">
-                <input type="checkbox" [(ngModel)]="isInternalComment" class="rounded text-primary-600" />
+              <label for="ticket-internal-note" class="flex items-center gap-1 text-[11px] text-slate-500 cursor-pointer">
+                <input id="ticket-internal-note" type="checkbox" aria-label="Internal technician note only" [(ngModel)]="isInternalComment" class="rounded text-primary-600" />
                 Internal
               </label>
               <button

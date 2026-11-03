@@ -123,25 +123,31 @@ import { AuthService } from '../../core/services/auth.service';
           <div class="space-y-3 text-xs">
             <div class="grid grid-cols-3 gap-2">
               <div>
-                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date</label>
+                <label for="worklog-date" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Date</label>
                 <input
+                  id="worklog-date"
                   type="date"
+                  aria-label="Work Log Date"
                   [(ngModel)]="newLogDate"
                   class="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
                 />
               </div>
               <div>
-                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Start Time</label>
+                <label for="worklog-start-time" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Start Time</label>
                 <input
+                  id="worklog-start-time"
                   type="time"
+                  aria-label="Start Time"
                   [(ngModel)]="newStartTime"
                   class="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
                 />
               </div>
               <div>
-                <label class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">End Time</label>
+                <label for="worklog-end-time" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">End Time</label>
                 <input
+                  id="worklog-end-time"
                   type="time"
+                  aria-label="End Time"
                   [(ngModel)]="newEndTime"
                   class="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
                 />
