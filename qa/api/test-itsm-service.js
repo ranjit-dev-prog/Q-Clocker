@@ -27,19 +27,12 @@ async function runItsmDomainTests() {
   const stateMachine = new TicketStateMachineService();
   const slaService = new TicketSlaService();
 
-  // Mock DatabaseService for TicketsService in-memory demo operations
+  // Mock DatabaseService for TicketsService in-memory operations
   const mockDbService = {
     getDb: () => null,
+    getConnectionStatus: () => false,
   };
   const ticketsService = new TicketsService(mockDbService, stateMachine, slaService);
-
-  const adminUser = {
-    id: '00000000-0000-0000-0000-000000000001',
-    email: 'superadmin@qclocker.io',
-    firstName: 'System',
-    lastName: 'SuperAdmin',
-    role: UserRole.SUPER_ADMIN,
-  };
 
   const technicianUser = {
     id: '00000000-0000-0000-0000-000000000002',
@@ -137,9 +130,9 @@ async function runItsmDomainTests() {
     const p4Targets = slaService.getSlaTargets(TicketPriorityCode.P4);
     const pass =
       p1Targets.resolutionHours === 4 &&
-      p1Targets.firstResponseHours === 0.5 &&
+      p1Targets.responseHours === 0.5 &&
       p4Targets.resolutionHours === 72 &&
-      p4Targets.firstResponseHours === 8;
+      p4Targets.responseHours === 8;
 
     tracker.record({
       testId: 'TC-ITSM-SLA-001',
@@ -147,7 +140,7 @@ async function runItsmDomainTests() {
       scenario: 'SLA Targets: P1 (4h resolve, 30m response) vs P4 (72h resolve, 8h response)',
       type: 'POSITIVE',
       expected: 'P1: 4h/0.5h, P4: 72h/8h',
-      actual: `P1: ${p1Targets.resolutionHours}h/${p1Targets.firstResponseHours}h, P4: ${p4Targets.resolutionHours}h/${p4Targets.firstResponseHours}h`,
+      actual: `P1: ${p1Targets.resolutionHours}h/${p1Targets.responseHours}h, P4: ${p4Targets.resolutionHours}h/${p4Targets.responseHours}h`,
       status: pass ? 'PASS' : 'FAIL',
       durationMs: Math.round(performance.now() - start),
     });
@@ -158,94 +151,120 @@ async function runItsmDomainTests() {
   // -------------------------------------------------------------
   console.log('--- Group 2: State Machine Transition Matrix ---');
 
-  // TC 6: Legal Transition NEW -> IN_PROGRESS
+  // TC 6: Legal Transition NEW -> ASSIGNED
   {
     const start = performance.now();
-    const validation = stateMachine.validateTransition(
-      TicketStatus.NEW,
-      TicketStatus.IN_PROGRESS,
-      UserRole.IT_MANAGER,
-    );
-    const pass = validation.valid === true;
+    let threw = false;
+    try {
+      stateMachine.validateTransition({
+        fromStatus: TicketStatus.NEW,
+        toStatus: TicketStatus.ASSIGNED,
+        actorRole: UserRole.IT_MANAGER,
+        actorId: technicianUser.id,
+      });
+    } catch (e) {
+      threw = true;
+    }
+    const canTrans = stateMachine.canTransition(TicketStatus.NEW, TicketStatus.ASSIGNED);
+    const pass = !threw && canTrans === true;
     tracker.record({
       testId: 'TC-ITSM-STM-001',
       module: 'State Machine',
-      scenario: 'State Transition: Legal transition NEW -> IN_PROGRESS by IT_MANAGER',
+      scenario: 'State Transition: Legal transition NEW -> ASSIGNED by IT_MANAGER',
       type: 'POSITIVE',
-      expected: 'valid=true',
-      actual: `valid=${validation.valid}`,
+      expected: 'validateTransition succeeds without error, canTransition=true',
+      actual: `threw=${threw}, canTransition=${canTrans}`,
       status: pass ? 'PASS' : 'FAIL',
       durationMs: Math.round(performance.now() - start),
     });
   }
 
-  // TC 7: Illegal Transition NEW -> RESOLVED (must be rejected)
+  // TC 7: Illegal Transition NEW -> RESOLVED (must throw BadRequestException)
   {
     const start = performance.now();
-    const validation = stateMachine.validateTransition(
-      TicketStatus.NEW,
-      TicketStatus.RESOLVED,
-      UserRole.SUPER_ADMIN,
-    );
-    const pass = validation.valid === false && validation.error.includes('Illegal status leap');
+    let threw = false;
+    let errorMessage = '';
+    try {
+      stateMachine.validateTransition({
+        fromStatus: TicketStatus.NEW,
+        toStatus: TicketStatus.RESOLVED,
+        actorRole: UserRole.SUPER_ADMIN,
+        actorId: technicianUser.id,
+      });
+    } catch (e) {
+      threw = true;
+      errorMessage = e.message;
+    }
+    const pass = threw && errorMessage.includes('Invalid status transition');
     tracker.record({
       testId: 'TC-ITSM-STM-002',
       module: 'State Machine',
       scenario: 'State Transition: Reject illegal jump NEW -> RESOLVED without triage',
       type: 'NEGATIVE',
-      expected: 'valid=false with illegal jump error',
-      actual: `valid=${validation.valid}, error=${validation.error}`,
+      expected: 'Throws BadRequestException with invalid transition error',
+      actual: `threw=${threw}, message=${errorMessage}`,
       status: pass ? 'PASS' : 'FAIL',
       durationMs: Math.round(performance.now() - start),
     });
   }
 
-  // TC 8: Pause Transition IN_PROGRESS -> PENDING_USER
+  // TC 8: Mandatory Resolution Notes Enforcement
   {
     const start = performance.now();
-    const isPause = stateMachine.isPauseStatus(TicketStatus.PENDING_USER);
-    const isVendorPause = stateMachine.isPauseStatus(TicketStatus.PENDING_VENDOR);
-    const isOnHoldPause = stateMachine.isPauseStatus(TicketStatus.ON_HOLD);
-    const isInProgressPause = stateMachine.isPauseStatus(TicketStatus.IN_PROGRESS);
-    const pass = isPause && isVendorPause && isOnHoldPause && !isInProgressPause;
-
+    let threw = false;
+    let errorMessage = '';
+    try {
+      stateMachine.validateTransition({
+        fromStatus: TicketStatus.IN_PROGRESS,
+        toStatus: TicketStatus.RESOLVED,
+        actorRole: UserRole.IT_MANAGER,
+        actorId: technicianUser.id,
+        resolutionNotes: '   ', // empty
+      });
+    } catch (e) {
+      threw = true;
+      errorMessage = e.message;
+    }
+    const pass = threw && errorMessage.includes('Resolution notes explaining the root cause');
     tracker.record({
       testId: 'TC-ITSM-STM-003',
       module: 'State Machine',
-      scenario: 'SLA Pause States: PENDING_USER, PENDING_VENDOR, and ON_HOLD are pause states',
-      type: 'POSITIVE',
-      expected: 'PENDING_USER, PENDING_VENDOR, ON_HOLD return true; IN_PROGRESS returns false',
-      actual: `User: ${isPause}, Vendor: ${isVendorPause}, Hold: ${isOnHoldPause}, InProg: ${isInProgressPause}`,
+      scenario: 'Resolution Enforcement: Moving to RESOLVED without resolution notes is rejected',
+      type: 'NEGATIVE',
+      expected: 'Throws BadRequestException requiring resolution notes',
+      actual: `threw=${threw}, message=${errorMessage}`,
       status: pass ? 'PASS' : 'FAIL',
       durationMs: Math.round(performance.now() - start),
     });
   }
 
-  // TC 9: Terminal State CANCELLED cannot transition anywhere
+  // TC 9: Dynamic SLA Evaluation for Paused States
   {
     const start = performance.now();
-    const allowedFromCancelled = stateMachine.getAllowedNextStatuses(TicketStatus.CANCELLED);
-    const validation = stateMachine.validateTransition(
-      TicketStatus.CANCELLED,
-      TicketStatus.OPEN,
-      UserRole.SUPER_ADMIN,
-    );
-    const pass = allowedFromCancelled.length === 0 && validation.valid === false;
+    const pausedEval = slaService.evaluateLiveSla({
+      createdAt: new Date(Date.now() - 3600 * 1000),
+      resolutionDueAt: new Date(Date.now() + 7 * 3600 * 1000),
+      status: TicketStatus.PENDING_USER,
+      slaPausedAt: new Date(Date.now() - 600 * 1000),
+      slaPauseDurationSeconds: 600,
+      slaHours: 8,
+    });
+    const pass = pausedEval.slaStatus === SlaStatus.PAUSED && pausedEval.slaBreached === false;
 
     tracker.record({
       testId: 'TC-ITSM-STM-004',
       module: 'State Machine',
-      scenario: 'Terminal State: CANCELLED has zero next allowed transitions',
-      type: 'NEGATIVE',
-      expected: 'allowedNextStatuses=[], valid=false',
-      actual: `allowedNextStatuses count=${allowedFromCancelled.length}, valid=${validation.valid}`,
+      scenario: 'Dynamic SLA: Status PENDING_USER sets slaStatus=PAUSED',
+      type: 'POSITIVE',
+      expected: 'slaStatus=PAUSED, slaBreached=false',
+      actual: `slaStatus=${pausedEval.slaStatus}, slaBreached=${pausedEval.slaBreached}`,
       status: pass ? 'PASS' : 'FAIL',
       durationMs: Math.round(performance.now() - start),
     });
   }
 
   // -------------------------------------------------------------
-  // TEST GROUP 3: TICKETS SERVICE OPERATIONS
+  // TEST GROUP 3: TICKETS SERVICE WORKFLOWS
   // -------------------------------------------------------------
   console.log('--- Group 3: Tickets Service Workflows ---');
 
@@ -268,7 +287,7 @@ async function runItsmDomainTests() {
     });
   }
 
-  // TC 11: Create Ticket with Reference ID and Calculated Priority
+  // TC 11: Create Incident with Reference ID and Calculated Priority
   {
     const start = performance.now();
     testTicket = await ticketsService.create(
@@ -304,9 +323,20 @@ async function runItsmDomainTests() {
     });
   }
 
-  // TC 12: Transition to IN_PROGRESS
+  // TC 12: Transition to ASSIGNED then IN_PROGRESS
   {
     const start = performance.now();
+    // Move to ASSIGNED
+    await ticketsService.transitionStatus(
+      testTicket.id,
+      {
+        status: TicketStatus.ASSIGNED,
+        reason: 'Assigned to Marcus Chen for network triage',
+      },
+      technicianUser,
+    );
+
+    // Move to IN_PROGRESS
     const updated = await ticketsService.transitionStatus(
       testTicket.id,
       {
@@ -592,7 +622,7 @@ async function runItsmDomainTests() {
     });
   }
 
-  console.log('\nITSM Service & State Machine Tests Finished.');
+  console.log('ITSM Service & State Machine Tests Finished.');
 }
 
 module.exports = { runItsmDomainTests };

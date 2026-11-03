@@ -796,7 +796,10 @@ export class TicketsService {
       return this.findById(ticket.id, user);
     }
 
-    Object.assign(ticket, updateData);
+    const stored = this.demoTickets.find((t) => t.id === ticket.id || t.referenceId === ticket.referenceId);
+    if (stored) {
+      Object.assign(stored, updateData);
+    }
     this.demoHistory.unshift({
       id: crypto.randomUUID(),
       ticketId: ticket.id,
@@ -807,7 +810,7 @@ export class TicketsService {
       changedByName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Staff',
     });
 
-    return ticket;
+    return this.findById(ticket.id, user);
   }
 
   /**
@@ -847,7 +850,10 @@ export class TicketsService {
       return this.findById(ticket.id, user);
     }
 
-    Object.assign(ticket, updateData);
+    const stored = this.demoTickets.find((t) => t.id === ticket.id || t.referenceId === ticket.referenceId);
+    if (stored) {
+      Object.assign(stored, updateData);
+    }
     this.demoHistory.unshift({
       id: crypto.randomUUID(),
       ticketId: ticket.id,
@@ -858,7 +864,7 @@ export class TicketsService {
       changedByName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Staff',
     });
 
-    return ticket;
+    return this.findById(ticket.id, user);
   }
 
   /**
@@ -895,7 +901,10 @@ export class TicketsService {
       return this.findById(ticket.id, user);
     }
 
-    Object.assign(ticket, updateData);
+    const stored = this.demoTickets.find((t) => t.id === ticket.id || t.referenceId === ticket.referenceId);
+    if (stored) {
+      Object.assign(stored, updateData);
+    }
     this.demoHistory.unshift({
       id: crypto.randomUUID(),
       ticketId: ticket.id,
@@ -906,7 +915,7 @@ export class TicketsService {
       changedByName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Staff',
     });
 
-    return ticket;
+    return this.findById(ticket.id, user);
   }
 
   async update(id: string, updateTicketDto: UpdateTicketDto, user: any) {

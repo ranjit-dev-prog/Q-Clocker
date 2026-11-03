@@ -707,7 +707,10 @@ let TicketsService = TicketsService_1 = class TicketsService {
             });
             return this.findById(ticket.id, user);
         }
-        Object.assign(ticket, updateData);
+        const stored = this.demoTickets.find((t) => t.id === ticket.id || t.referenceId === ticket.referenceId);
+        if (stored) {
+            Object.assign(stored, updateData);
+        }
         this.demoHistory.unshift({
             id: crypto.randomUUID(),
             ticketId: ticket.id,
@@ -717,7 +720,7 @@ let TicketsService = TicketsService_1 = class TicketsService {
             changedAt: now,
             changedByName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Staff',
         });
-        return ticket;
+        return this.findById(ticket.id, user);
     }
     async assign(id, dto, user) {
         const ticket = await this.findById(id, user);
@@ -747,7 +750,10 @@ let TicketsService = TicketsService_1 = class TicketsService {
             });
             return this.findById(ticket.id, user);
         }
-        Object.assign(ticket, updateData);
+        const stored = this.demoTickets.find((t) => t.id === ticket.id || t.referenceId === ticket.referenceId);
+        if (stored) {
+            Object.assign(stored, updateData);
+        }
         this.demoHistory.unshift({
             id: crypto.randomUUID(),
             ticketId: ticket.id,
@@ -757,7 +763,7 @@ let TicketsService = TicketsService_1 = class TicketsService {
             changedAt: now,
             changedByName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Staff',
         });
-        return ticket;
+        return this.findById(ticket.id, user);
     }
     async escalate(id, dto, user) {
         const ticket = await this.findById(id, user);
@@ -785,7 +791,10 @@ let TicketsService = TicketsService_1 = class TicketsService {
             });
             return this.findById(ticket.id, user);
         }
-        Object.assign(ticket, updateData);
+        const stored = this.demoTickets.find((t) => t.id === ticket.id || t.referenceId === ticket.referenceId);
+        if (stored) {
+            Object.assign(stored, updateData);
+        }
         this.demoHistory.unshift({
             id: crypto.randomUUID(),
             ticketId: ticket.id,
@@ -795,7 +804,7 @@ let TicketsService = TicketsService_1 = class TicketsService {
             changedAt: now,
             changedByName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Staff',
         });
-        return ticket;
+        return this.findById(ticket.id, user);
     }
     async update(id, updateTicketDto, user) {
         const existing = await this.findById(id, user);
