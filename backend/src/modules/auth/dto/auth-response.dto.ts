@@ -1,8 +1,11 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class AuthUserDto {
   @ApiProperty()
   id: string;
+
+  @ApiPropertyOptional()
+  referenceId?: string;
 
   @ApiProperty()
   email: string;
@@ -16,13 +19,16 @@ export class AuthUserDto {
   @ApiProperty()
   role: string;
 
-  @ApiProperty({ nullable: true })
+  @ApiPropertyOptional({ nullable: true })
   departmentId?: string | null;
 
-  @ApiProperty({ nullable: true })
+  @ApiPropertyOptional({ nullable: true })
+  teamId?: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
   jobTitle?: string | null;
 
-  @ApiProperty({ nullable: true })
+  @ApiPropertyOptional({ nullable: true })
   avatarUrl?: string | null;
 }
 
@@ -30,10 +36,12 @@ export class AuthResponseDto {
   @ApiProperty({ description: 'JWT Access Token' })
   accessToken: string;
 
+  @ApiPropertyOptional({ description: 'JWT Refresh Token for session renewal' })
+  refreshToken?: string;
+
   @ApiProperty({ description: 'Token expiration timestamp in seconds' })
   expiresIn: number;
 
   @ApiProperty({ type: AuthUserDto })
   user: AuthUserDto;
 }
-
