@@ -9,6 +9,7 @@ import { DepartmentsModule } from './modules/departments/departments.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
+import { WorkLogsModule } from './modules/work-logs/work-logs.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
@@ -31,6 +32,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     RolesModule,
     TasksModule,
     TicketsModule,
+    WorkLogsModule,
   ],
   providers: [
     {
