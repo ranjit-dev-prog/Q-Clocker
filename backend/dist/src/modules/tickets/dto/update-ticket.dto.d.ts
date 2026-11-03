@@ -7,5 +7,6 @@ export declare class UpdateTicketDto extends UpdateTicketDto_base {
 }
 export declare class ResolveTicketDto {
     resolutionNotes: string;
+    rootCause?: string;
 }
 export {};

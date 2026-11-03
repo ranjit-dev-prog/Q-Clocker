@@ -301,15 +301,15 @@ EMP991,=cmd|' /C calc'!A0,Tester,qa.tester@qclocker.io,Software Engineering,QA E
   // Test 15: Org Chart Hierarchy
   {
     const res = await apiRequest('GET', '/departments/org-chart', { token: adminToken });
-    const rootNodes = res.data?.data?.rootNodes;
-    const pass = res.status === 200 && Array.isArray(rootNodes) && rootNodes.length > 0;
+    const depts = res.data?.data?.departments;
+    const pass = res.status === 200 && Array.isArray(depts) && depts.length > 0;
     tracker.record({
       testId: 'TC-API-DEP-002',
       module: 'Departments',
       scenario: 'Retrieve complete organizational hierarchy chart',
       type: 'POSITIVE',
-      expected: 'HTTP 200 with nested department/team hierarchy rootNodes',
-      actual: `HTTP ${res.status}, nodes: ${rootNodes?.length}`,
+      expected: 'HTTP 200 with nested department/team hierarchy departments',
+      actual: `HTTP ${res.status}, nodes: ${depts?.length}`,
       status: pass ? 'PASS' : 'FAIL',
       durationMs: res.durationMs,
     });

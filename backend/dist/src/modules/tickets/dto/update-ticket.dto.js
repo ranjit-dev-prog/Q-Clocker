@@ -33,6 +33,7 @@ __decorate([
 ], UpdateTicketDto.prototype, "resolutionNotes", void 0);
 class ResolveTicketDto {
     resolutionNotes;
+    rootCause;
 }
 exports.ResolveTicketDto = ResolveTicketDto;
 __decorate([
@@ -40,4 +41,10 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], ResolveTicketDto.prototype, "resolutionNotes", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Underlying root cause identified during triage' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], ResolveTicketDto.prototype, "rootCause", void 0);
 //# sourceMappingURL=update-ticket.dto.js.map
