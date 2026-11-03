@@ -451,6 +451,7 @@ let AuthService = AuthService_1 = class AuthService {
         if (this.dbService.getConnectionStatus()) {
             try {
                 await this.dbService.db.insert(schema.userSessions).values({
+                    referenceId: (0, reference_id_util_1.generateReferenceId)('SES'),
                     userId: user.id,
                     refreshTokenHash,
                     userAgent: userAgent || null,
