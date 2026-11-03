@@ -1,23 +1,55 @@
 import { TicketsService } from './tickets.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
-import { UpdateTicketDto, ResolveTicketDto } from './dto/update-ticket.dto';
+import { UpdateTicketDto, ResolveTicketDto, TransitionTicketStatusDto, AssignTicketDto, EscalateTicketDto, ReopenTicketDto } from './dto/update-ticket.dto';
 import { TicketQueryDto } from './dto/ticket-query.dto';
 import { CreateTicketCommentDto } from './dto/ticket-comment.dto';
+import { CreateTicketTimeEntryDto, StartTicketTimerDto } from './dto/ticket-time-entry.dto';
+import { CreateTaskFromTicketDto, LinkExistingTaskDto } from './dto/ticket-task-link.dto';
 export declare class TicketsController {
     private readonly ticketsService;
     constructor(ticketsService: TicketsService);
     create(createTicketDto: CreateTicketDto, user: any): Promise<any>;
     findAll(query: TicketQueryDto, user: any): Promise<any[]>;
+    getCategories(): Promise<{
+        code: string;
+        name: string;
+        description: string;
+        subcategories: {
+            code: string;
+            name: string;
+            defaultSlaHours: number;
+        }[];
+    }[]>;
     getMetrics(): Promise<{
         totalTickets: number;
         openTickets: number;
+        unassignedTickets: number;
+        inProgressTickets: number;
+        pendingTickets: number;
         resolvedTickets: number;
+        closedTickets: number;
+        criticalTickets: number;
+        slaApproachingBreach: number;
         slaBreachedCount: number;
         slaComplianceRate: string;
+        averageFirstResponseHours: string;
+        averageResolutionHours: string;
+        priorityBreakdown: {
+            P1: number;
+            P2: number;
+            P3: number;
+            P4: number;
+        };
+        categoryBreakdown: Record<string, number>;
+        statusBreakdown: Record<string, number>;
     }>;
-    findOne(id: string): Promise<any>;
+    findOne(id: string, user: any): Promise<any>;
     update(id: string, updateTicketDto: UpdateTicketDto, user: any): Promise<any>;
+    transition(id: string, dto: TransitionTicketStatusDto, user: any): Promise<any>;
+    assign(id: string, dto: AssignTicketDto, user: any): Promise<any>;
+    escalate(id: string, dto: EscalateTicketDto, user: any): Promise<any>;
     resolve(id: string, dto: ResolveTicketDto, user: any): Promise<any>;
+    reopen(id: string, dto: ReopenTicketDto, user: any): Promise<any>;
     addComment(id: string, dto: CreateTicketCommentDto, user: any): Promise<{
         id: string;
         createdAt: Date;
@@ -30,8 +62,96 @@ export declare class TicketsController {
         ticketId: any;
         userId: any;
         userName: string;
+        userRole: any;
         comment: string;
         isInternalNote: boolean;
         createdAt: Date;
+    }>;
+    startTimer(id: string, user: any, dto?: StartTicketTimerDto): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        employeeId: string;
+        ticketId: string;
+        notes: string | null;
+        startedAt: Date;
+        endedAt: Date | null;
+        durationSeconds: number;
+        isRunning: boolean;
+    } | {
+        id: `${string}-${string}-${string}-${string}-${string}`;
+        ticketId: any;
+        employeeId: any;
+        employeeName: string;
+        startedAt: Date;
+        endedAt: null;
+        durationSeconds: number;
+        durationMinutes: number;
+        isRunning: boolean;
+        notes: string;
+        createdAt: Date;
+    }>;
+    stopTimer(id: string, user: any): Promise<any>;
+    addManualTimeEntry(id: string, dto: CreateTicketTimeEntryDto, user: any): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        employeeId: string;
+        ticketId: string;
+        notes: string | null;
+        startedAt: Date;
+        endedAt: Date | null;
+        durationSeconds: number;
+        isRunning: boolean;
+    } | {
+        id: `${string}-${string}-${string}-${string}-${string}`;
+        ticketId: any;
+        employeeId: any;
+        employeeName: string;
+        startedAt: Date;
+        endedAt: Date;
+        durationSeconds: number;
+        durationMinutes: number;
+        isRunning: boolean;
+        notes: string;
+        createdAt: Date;
+    }>;
+    createTaskFromTicket(id: string, dto: CreateTaskFromTicketDto, user: any): Promise<{
+        id: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        referenceId: string;
+        departmentId: string | null;
+        teamId: string | null;
+        deletedAt: Date | null;
+        status: string;
+        startDate: Date;
+        category: string;
+        taskNumber: string;
+        title: string;
+        projectId: string | null;
+        priority: string;
+        dueDate: Date;
+        estimatedHours: string | null;
+        actualHours: string | null;
+        completionPercentage: number;
+        createdById: string;
+        reviewedById: string | null;
+        reviewFeedback: string | null;
+        reviewedAt: Date | null;
+        completedAt: Date | null;
+    } | {
+        id: `${string}-${string}-${string}-${string}-${string}`;
+        referenceId: string;
+        title: string;
+        description: string;
+        priority: any;
+        status: string;
+        createdAt: Date;
+    }>;
+    linkExistingTask(id: string, dto: LinkExistingTaskDto, user: any): Promise<{
+        success: boolean;
+        message: string;
     }>;
 }

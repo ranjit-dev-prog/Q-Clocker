@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.taskTimeEntriesRelations = exports.workSessionsRelations = exports.attendanceEventsRelations = exports.workLogsRelations = exports.ticketHistoryRelations = exports.ticketCommentsRelations = exports.ticketsRelations = exports.taskAttachmentsRelations = exports.taskCommentsRelations = exports.taskAssignmentsRelations = exports.tasksRelations = exports.userSessionsRelations = exports.usersRelations = exports.teamsRelations = exports.departmentsRelations = exports.rolePermissionsRelations = exports.permissionsRelations = exports.rolesRelations = exports.auditLogs = exports.performanceReviews = exports.notifications = exports.reminders = exports.followUps = exports.approvals = exports.timesheetEntries = exports.timesheets = exports.ticketTimeEntries = exports.taskTimeEntries = exports.workSessions = exports.attendanceEvents = exports.workLogs = exports.ticketHistory = exports.ticketComments = exports.tickets = exports.slaPolicies = exports.taskDependencies = exports.taskAttachments = exports.taskComments = exports.taskAssignments = exports.tasks = exports.assets = exports.projects = exports.userSessions = exports.users = exports.designations = exports.teams = exports.departments = exports.rolePermissions = exports.permissions = exports.roles = void 0;
-exports.auditLogsRelations = exports.performanceReviewsRelations = exports.notificationsRelations = exports.remindersRelations = exports.followUpsRelations = exports.approvalsRelations = exports.timesheetEntriesRelations = exports.timesheetsRelations = exports.ticketTimeEntriesRelations = void 0;
+exports.attendanceEventsRelations = exports.workLogsRelations = exports.ticketHistoryRelations = exports.ticketCommentsRelations = exports.ticketsRelations = exports.taskAttachmentsRelations = exports.taskCommentsRelations = exports.taskAssignmentsRelations = exports.tasksRelations = exports.userSessionsRelations = exports.usersRelations = exports.teamsRelations = exports.departmentsRelations = exports.rolePermissionsRelations = exports.permissionsRelations = exports.rolesRelations = exports.auditLogs = exports.performanceReviews = exports.notifications = exports.reminders = exports.followUps = exports.approvals = exports.timesheetEntries = exports.timesheets = exports.ticketTimeEntries = exports.taskTimeEntries = exports.workSessions = exports.attendanceEvents = exports.workLogs = exports.ticketHistory = exports.ticketComments = exports.tickets = exports.slaPolicies = exports.ticketSubcategories = exports.ticketCategories = exports.taskDependencies = exports.taskAttachments = exports.taskComments = exports.taskAssignments = exports.tasks = exports.assets = exports.projects = exports.userSessions = exports.users = exports.designations = exports.teams = exports.departments = exports.rolePermissions = exports.permissions = exports.roles = void 0;
+exports.auditLogsRelations = exports.performanceReviewsRelations = exports.notificationsRelations = exports.remindersRelations = exports.followUpsRelations = exports.approvalsRelations = exports.timesheetEntriesRelations = exports.timesheetsRelations = exports.ticketTimeEntriesRelations = exports.taskTimeEntriesRelations = exports.workSessionsRelations = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 exports.roles = (0, pg_core_1.pgTable)('roles', {
@@ -223,6 +223,30 @@ exports.taskDependencies = (0, pg_core_1.pgTable)('task_dependencies', {
     dependencyType: (0, pg_core_1.varchar)('dependency_type', { length: 30 }).default('BLOCKS').notNull(),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
+exports.ticketCategories = (0, pg_core_1.pgTable)('ticket_categories', {
+    id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
+    referenceId: (0, pg_core_1.varchar)('reference_id', { length: 20 }).notNull().unique(),
+    name: (0, pg_core_1.varchar)('name', { length: 100 }).notNull().unique(),
+    code: (0, pg_core_1.varchar)('code', { length: 50 }).notNull().unique(),
+    description: (0, pg_core_1.text)('description'),
+    defaultDepartmentId: (0, pg_core_1.uuid)('default_department_id').references(() => exports.departments.id, { onDelete: 'set null' }),
+    isActive: (0, pg_core_1.boolean)('is_active').default(true).notNull(),
+    createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: (0, pg_core_1.timestamp)('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+exports.ticketSubcategories = (0, pg_core_1.pgTable)('ticket_subcategories', {
+    id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
+    referenceId: (0, pg_core_1.varchar)('reference_id', { length: 20 }).notNull().unique(),
+    categoryId: (0, pg_core_1.uuid)('category_id')
+        .notNull()
+        .references(() => exports.ticketCategories.id, { onDelete: 'cascade' }),
+    name: (0, pg_core_1.varchar)('name', { length: 100 }).notNull(),
+    code: (0, pg_core_1.varchar)('code', { length: 50 }).notNull(),
+    description: (0, pg_core_1.text)('description'),
+    defaultSlaHours: (0, pg_core_1.integer)('default_sla_hours').default(24).notNull(),
+    isActive: (0, pg_core_1.boolean)('is_active').default(true).notNull(),
+    createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
 exports.slaPolicies = (0, pg_core_1.pgTable)('sla_policies', {
     id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
     referenceId: (0, pg_core_1.varchar)('reference_id', { length: 20 }).notNull().unique(),
@@ -231,6 +255,8 @@ exports.slaPolicies = (0, pg_core_1.pgTable)('sla_policies', {
     responseTimeHours: (0, pg_core_1.integer)('response_time_hours').notNull(),
     resolutionTimeHours: (0, pg_core_1.integer)('resolution_time_hours').notNull(),
     escalationRole: (0, pg_core_1.varchar)('escalation_role', { length: 50 }).default('ADMIN').notNull(),
+    businessHoursOnly: (0, pg_core_1.boolean)('business_hours_only').default(true).notNull(),
+    timezone: (0, pg_core_1.varchar)('timezone', { length: 50 }).default('UTC').notNull(),
     isActive: (0, pg_core_1.boolean)('is_active').default(true).notNull(),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: (0, pg_core_1.timestamp)('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -245,19 +271,38 @@ exports.tickets = (0, pg_core_1.pgTable)('tickets', {
         .notNull()
         .references(() => exports.users.id),
     assignedTechnicianId: (0, pg_core_1.uuid)('assigned_technician_id').references(() => exports.users.id),
+    assignedTeamId: (0, pg_core_1.uuid)('assigned_team_id').references(() => exports.teams.id, { onDelete: 'set null' }),
     departmentId: (0, pg_core_1.uuid)('department_id').references(() => exports.departments.id, { onDelete: 'set null' }),
+    ticketType: (0, pg_core_1.varchar)('ticket_type', { length: 50 }).notNull().default('Incident'),
+    impact: (0, pg_core_1.varchar)('impact', { length: 20 }).notNull().default('MEDIUM'),
+    urgency: (0, pg_core_1.varchar)('urgency', { length: 20 }).notNull().default('MEDIUM'),
     priority: (0, pg_core_1.varchar)('priority', { length: 20 }).notNull().default('MEDIUM'),
+    priorityCode: (0, pg_core_1.varchar)('priority_code', { length: 10 }).notNull().default('P3'),
     category: (0, pg_core_1.varchar)('category', { length: 50 }).notNull().default('OTHER'),
     subcategory: (0, pg_core_1.varchar)('subcategory', { length: 100 }),
     status: (0, pg_core_1.varchar)('status', { length: 30 }).notNull().default('NEW'),
+    source: (0, pg_core_1.varchar)('source', { length: 30 }).notNull().default('PORTAL'),
     slaPolicyId: (0, pg_core_1.uuid)('sla_policy_id').references(() => exports.slaPolicies.id, { onDelete: 'set null' }),
     dueDate: (0, pg_core_1.timestamp)('due_date', { withTimezone: true }),
+    firstResponseDueAt: (0, pg_core_1.timestamp)('first_response_due_at', { withTimezone: true }),
+    resolutionDueAt: (0, pg_core_1.timestamp)('resolution_due_at', { withTimezone: true }),
     slaHours: (0, pg_core_1.integer)('sla_hours').default(24).notNull(),
+    slaStatus: (0, pg_core_1.varchar)('sla_status', { length: 30 }).notNull().default('WITHIN_SLA'),
     slaBreached: (0, pg_core_1.boolean)('sla_breached').default(false).notNull(),
+    slaPausedAt: (0, pg_core_1.timestamp)('sla_paused_at', { withTimezone: true }),
+    slaPauseDurationSeconds: (0, pg_core_1.integer)('sla_pause_duration_seconds').default(0).notNull(),
     firstResponseAt: (0, pg_core_1.timestamp)('first_response_at', { withTimezone: true }),
+    resolutionSummary: (0, pg_core_1.text)('resolution_summary'),
+    rootCause: (0, pg_core_1.text)('root_cause'),
+    resolutionCategory: (0, pg_core_1.varchar)('resolution_category', { length: 100 }),
     resolutionNotes: (0, pg_core_1.text)('resolution_notes'),
     resolvedAt: (0, pg_core_1.timestamp)('resolved_at', { withTimezone: true }),
     closedAt: (0, pg_core_1.timestamp)('closed_at', { withTimezone: true }),
+    reopenedAt: (0, pg_core_1.timestamp)('reopened_at', { withTimezone: true }),
+    reopenCount: (0, pg_core_1.integer)('reopen_count').default(0).notNull(),
+    escalatedAt: (0, pg_core_1.timestamp)('escalated_at', { withTimezone: true }),
+    escalationReason: (0, pg_core_1.text)('escalation_reason'),
+    escalatedToRole: (0, pg_core_1.varchar)('escalated_to_role', { length: 50 }),
     relatedTaskId: (0, pg_core_1.uuid)('related_task_id').references(() => exports.tasks.id, { onDelete: 'set null' }),
     relatedAssetId: (0, pg_core_1.uuid)('related_asset_id').references(() => exports.assets.id, { onDelete: 'set null' }),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),

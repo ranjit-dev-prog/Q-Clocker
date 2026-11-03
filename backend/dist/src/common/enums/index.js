@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ApprovalStatus = exports.NotificationType = exports.TicketCategory = exports.TicketStatus = exports.TaskCategory = exports.Priority = exports.TaskStatus = exports.AccountStatus = exports.EmploymentType = exports.UserRole = void 0;
+exports.ApprovalStatus = exports.NotificationType = exports.TicketCategory = exports.SlaStatus = exports.TicketSource = exports.TicketPriorityCode = exports.TicketUrgency = exports.TicketImpact = exports.TicketType = exports.TicketStatus = exports.TaskCategory = exports.Priority = exports.TaskStatus = exports.AccountStatus = exports.EmploymentType = exports.UserRole = void 0;
 var UserRole;
 (function (UserRole) {
     UserRole["SUPER_ADMIN"] = "SUPER_ADMIN";
@@ -63,14 +63,67 @@ var TaskCategory;
 var TicketStatus;
 (function (TicketStatus) {
     TicketStatus["NEW"] = "NEW";
+    TicketStatus["OPEN"] = "OPEN";
     TicketStatus["ASSIGNED"] = "ASSIGNED";
     TicketStatus["IN_PROGRESS"] = "IN_PROGRESS";
     TicketStatus["PENDING_USER"] = "PENDING_USER";
     TicketStatus["PENDING_VENDOR"] = "PENDING_VENDOR";
-    TicketStatus["PENDING_APPROVAL"] = "PENDING_APPROVAL";
+    TicketStatus["ON_HOLD"] = "ON_HOLD";
     TicketStatus["RESOLVED"] = "RESOLVED";
     TicketStatus["CLOSED"] = "CLOSED";
+    TicketStatus["REOPENED"] = "REOPENED";
+    TicketStatus["CANCELLED"] = "CANCELLED";
 })(TicketStatus || (exports.TicketStatus = TicketStatus = {}));
+var TicketType;
+(function (TicketType) {
+    TicketType["INCIDENT"] = "Incident";
+    TicketType["SERVICE_REQUEST"] = "Service Request";
+    TicketType["PROBLEM"] = "Problem";
+    TicketType["CHANGE_REQUEST"] = "Change Request";
+    TicketType["ACCESS_REQUEST"] = "Access Request";
+    TicketType["SECURITY_INCIDENT"] = "Security Incident";
+    TicketType["HARDWARE_ISSUE"] = "Hardware Issue";
+    TicketType["SOFTWARE_ISSUE"] = "Software Issue";
+    TicketType["NETWORK_ISSUE"] = "Network Issue";
+})(TicketType || (exports.TicketType = TicketType = {}));
+var TicketImpact;
+(function (TicketImpact) {
+    TicketImpact["CRITICAL"] = "CRITICAL";
+    TicketImpact["HIGH"] = "HIGH";
+    TicketImpact["MEDIUM"] = "MEDIUM";
+    TicketImpact["LOW"] = "LOW";
+})(TicketImpact || (exports.TicketImpact = TicketImpact = {}));
+var TicketUrgency;
+(function (TicketUrgency) {
+    TicketUrgency["CRITICAL"] = "CRITICAL";
+    TicketUrgency["HIGH"] = "HIGH";
+    TicketUrgency["MEDIUM"] = "MEDIUM";
+    TicketUrgency["LOW"] = "LOW";
+})(TicketUrgency || (exports.TicketUrgency = TicketUrgency = {}));
+var TicketPriorityCode;
+(function (TicketPriorityCode) {
+    TicketPriorityCode["P1"] = "P1";
+    TicketPriorityCode["P2"] = "P2";
+    TicketPriorityCode["P3"] = "P3";
+    TicketPriorityCode["P4"] = "P4";
+})(TicketPriorityCode || (exports.TicketPriorityCode = TicketPriorityCode = {}));
+var TicketSource;
+(function (TicketSource) {
+    TicketSource["PORTAL"] = "PORTAL";
+    TicketSource["EMAIL"] = "EMAIL";
+    TicketSource["PHONE"] = "PHONE";
+    TicketSource["SLACK"] = "SLACK";
+    TicketSource["API"] = "API";
+    TicketSource["SYSTEM"] = "SYSTEM";
+})(TicketSource || (exports.TicketSource = TicketSource = {}));
+var SlaStatus;
+(function (SlaStatus) {
+    SlaStatus["WITHIN_SLA"] = "WITHIN_SLA";
+    SlaStatus["APPROACHING_BREACH"] = "APPROACHING_BREACH";
+    SlaStatus["BREACHED"] = "BREACHED";
+    SlaStatus["PAUSED"] = "PAUSED";
+    SlaStatus["COMPLETED"] = "COMPLETED";
+})(SlaStatus || (exports.SlaStatus = SlaStatus = {}));
 var TicketCategory;
 (function (TicketCategory) {
     TicketCategory["IT_SUPPORT"] = "IT Support";

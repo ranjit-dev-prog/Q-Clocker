@@ -1,12 +1,17 @@
-import { Priority, TicketCategory } from '../../../common/enums';
+import { Priority, TicketType, TicketImpact, TicketUrgency, TicketSource } from '../../../common/enums';
 export declare class CreateTicketDto {
     title: string;
     description: string;
-    departmentId?: string;
-    assignedTechnicianId?: string;
+    ticketType?: TicketType;
+    impact?: TicketImpact;
+    urgency?: TicketUrgency;
     priority?: Priority;
-    category?: TicketCategory;
+    category?: string;
     subcategory?: string;
+    departmentId?: string;
+    assignedTeamId?: string;
+    assignedTechnicianId?: string;
+    source?: TicketSource;
     slaPolicyId?: string;
     relatedTaskId?: string;
     relatedAssetId?: string;

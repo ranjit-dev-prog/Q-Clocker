@@ -16,11 +16,16 @@ const enums_1 = require("../../../common/enums");
 class CreateTicketDto {
     title;
     description;
-    departmentId;
-    assignedTechnicianId;
+    ticketType;
+    impact;
+    urgency;
     priority;
     category;
     subcategory;
+    departmentId;
+    assignedTeamId;
+    assignedTechnicianId;
+    source;
     slaPolicyId;
     relatedTaskId;
     relatedAssetId;
@@ -39,26 +44,31 @@ __decorate([
     __metadata("design:type", String)
 ], CreateTicketDto.prototype, "description", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ description: 'Department UUID handling this ticket' }),
-    (0, class_validator_1.IsUUID)(),
+    (0, swagger_1.ApiPropertyOptional)({ enum: enums_1.TicketType, default: enums_1.TicketType.INCIDENT }),
+    (0, class_validator_1.IsEnum)(enums_1.TicketType),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], CreateTicketDto.prototype, "departmentId", void 0);
+], CreateTicketDto.prototype, "ticketType", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ description: 'Assigned technician UUID' }),
-    (0, class_validator_1.IsUUID)(),
+    (0, swagger_1.ApiPropertyOptional)({ enum: enums_1.TicketImpact, default: enums_1.TicketImpact.MEDIUM }),
+    (0, class_validator_1.IsEnum)(enums_1.TicketImpact),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], CreateTicketDto.prototype, "assignedTechnicianId", void 0);
+], CreateTicketDto.prototype, "impact", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ enum: enums_1.Priority, default: enums_1.Priority.MEDIUM }),
+    (0, swagger_1.ApiPropertyOptional)({ enum: enums_1.TicketUrgency, default: enums_1.TicketUrgency.MEDIUM }),
+    (0, class_validator_1.IsEnum)(enums_1.TicketUrgency),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateTicketDto.prototype, "urgency", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ enum: enums_1.Priority, default: enums_1.Priority.MEDIUM }),
     (0, class_validator_1.IsEnum)(enums_1.Priority),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateTicketDto.prototype, "priority", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ enum: enums_1.TicketCategory, default: enums_1.TicketCategory.IT_SUPPORT }),
-    (0, class_validator_1.IsEnum)(enums_1.TicketCategory),
+    (0, swagger_1.ApiPropertyOptional)({ enum: enums_1.TicketCategory, default: enums_1.TicketCategory.IT_SUPPORT }),
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateTicketDto.prototype, "category", void 0);
@@ -68,6 +78,30 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateTicketDto.prototype, "subcategory", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Department UUID handling this ticket' }),
+    (0, class_validator_1.IsUUID)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateTicketDto.prototype, "departmentId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Assigned Support Team UUID' }),
+    (0, class_validator_1.IsUUID)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateTicketDto.prototype, "assignedTeamId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Assigned technician UUID' }),
+    (0, class_validator_1.IsUUID)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateTicketDto.prototype, "assignedTechnicianId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ enum: enums_1.TicketSource, default: enums_1.TicketSource.PORTAL }),
+    (0, class_validator_1.IsEnum)(enums_1.TicketSource),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateTicketDto.prototype, "source", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: 'SLA Policy UUID' }),
     (0, class_validator_1.IsUUID)(),
