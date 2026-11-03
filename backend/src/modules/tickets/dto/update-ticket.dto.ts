@@ -19,4 +19,9 @@ export class ResolveTicketDto {
   @ApiPropertyOptional({ description: 'Resolution explanation and fix applied' })
   @IsString()
   resolutionNotes: string;
+
+  @ApiPropertyOptional({ description: 'Underlying root cause identified during triage' })
+  @IsString()
+  @IsOptional()
+  rootCause?: string;
 }

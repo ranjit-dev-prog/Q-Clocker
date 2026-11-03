@@ -403,14 +403,15 @@ EMP991,=cmd|' /C calc'!A0,Tester,qa.tester@qclocker.io,Software Engineering,QA E
   // Test 20: Permission Matrix
   {
     const res = await apiRequest('GET', '/permissions/matrix', { token: adminToken });
-    const pass = res.status === 200 && typeof res.data?.data === 'object' && res.data?.data?.SUPER_ADMIN;
+    const matrix = res.data?.data?.matrix;
+    const pass = res.status === 200 && typeof matrix === 'object' && matrix.SUPER_ADMIN;
     tracker.record({
       testId: 'TC-API-PRM-002',
       module: 'Permissions',
       scenario: 'Retrieve complete RBAC permission matrix',
       type: 'POSITIVE',
       expected: 'HTTP 200 with matrix mapping each role to granted permissions',
-      actual: `HTTP ${res.status}, matrix keys: ${Object.keys(res.data?.data || {}).length}`,
+      actual: `HTTP ${res.status}, matrix roles: ${Object.keys(matrix || {}).length}`,
       status: pass ? 'PASS' : 'FAIL',
       durationMs: res.durationMs,
     });
@@ -423,6 +424,8 @@ EMP991,=cmd|' /C calc'!A0,Tester,qa.tester@qclocker.io,Software Engineering,QA E
 
   // Test 21: Create Task with TSK reference
   {
+    const now = new Date();
+    const future = new Date(now.getTime() + 86400000 * 3);
     const res = await apiRequest('POST', '/tasks', {
       token: adminToken,
       body: {
@@ -430,6 +433,8 @@ EMP991,=cmd|' /C calc'!A0,Tester,qa.tester@qclocker.io,Software Engineering,QA E
         description: 'Verify all 54 API operations and system state integrity',
         priority: 'HIGH',
         status: 'IN_PROGRESS',
+        startDate: now.toISOString(),
+        dueDate: future.toISOString(),
         estimatedHours: 8,
       },
     });
@@ -453,14 +458,14 @@ EMP991,=cmd|' /C calc'!A0,Tester,qa.tester@qclocker.io,Software Engineering,QA E
   {
     const res = await apiRequest('GET', '/tasks/kanban', { token: adminToken });
     const columns = res.data?.data;
-    const hasColumns = columns && columns.BACKLOG && columns.IN_PROGRESS && columns.COMPLETED;
+    const hasColumns = columns && columns.backlog && columns.inProgress && columns.completed;
     const pass = res.status === 200 && hasColumns;
     tracker.record({
       testId: 'TC-API-TSK-002',
       module: 'Tasks',
       scenario: 'Fetch Kanban board grouped by status columns',
       type: 'POSITIVE',
-      expected: 'HTTP 200 with BACKLOG, IN_PROGRESS, REVIEW, COMPLETED columns',
+      expected: 'HTTP 200 with backlog, inProgress, review, completed columns',
       actual: `HTTP ${res.status}, columns: ${Object.keys(columns || {}).join(', ')}`,
       status: pass ? 'PASS' : 'FAIL',
       durationMs: res.durationMs,
@@ -497,8 +502,8 @@ EMP991,=cmd|' /C calc'!A0,Tester,qa.tester@qclocker.io,Software Engineering,QA E
       token: adminToken,
       body: {
         title: 'Core Database Connection Pool Optimization Needed',
-        description: 'Verify connection timeout and pooling configuration',
-        category: 'DATABASE',
+        description: 'Verify connection timeout and pooling configuration in production',
+        category: 'Infrastructure',
         priority: 'CRITICAL',
       },
     });
@@ -567,10 +572,11 @@ EMP991,=cmd|' /C calc'!A0,Tester,qa.tester@qclocker.io,Software Engineering,QA E
     const res = await apiRequest('POST', '/work-logs', {
       token: adminToken,
       body: {
-        date: today,
-        hours: 4.5,
-        activityType: 'DEVELOPMENT',
-        description: 'Built enterprise automated QA test harness and API inventory',
+        logDate: today,
+        startTime: '09:00',
+        endTime: '13:00',
+        totalHours: 4.0,
+        workDescription: 'Built enterprise automated QA test harness and API inventory',
       },
     });
     const pass = res.status === 201 && res.data?.data?.referenceId?.startsWith('WLG-');
