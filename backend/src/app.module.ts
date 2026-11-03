@@ -6,6 +6,7 @@ import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 import { DepartmentsModule } from './modules/departments/departments.module';
+import { RolesModule } from './modules/roles/roles.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
@@ -25,6 +26,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     AuthModule,
     UsersModule,
     DepartmentsModule,
+    RolesModule,
   ],
   providers: [
     {
@@ -42,4 +44,3 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
   ],
 })
 export class AppModule {}
-

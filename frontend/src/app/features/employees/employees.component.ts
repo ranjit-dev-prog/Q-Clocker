@@ -1,74 +1,394 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { EmployeeService, Employee } from '../../core/services/employee.service';
+import { DepartmentService } from '../../core/services/department.service';
 import { AuthService } from '../../core/services/auth.service';
+import { UserRole } from '../../core/models/user.model';
 
 @Component({
   selector: 'app-employees',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ReactiveFormsModule],
   template: `
     <div class="space-y-6">
+      <!-- Header with Role Protection -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
         <div>
           <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Employee Management</h1>
-          <p class="text-xs text-slate-400 mt-1">Directory of organization personnel, roles and department affiliations</p>
+          <p class="text-xs text-slate-400 mt-1">Directory of organization personnel, hierarchy, and system access</p>
         </div>
-        <button class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center gap-1.5 self-start">
-          <span class="material-icons text-base">person_add</span>
-          Add Employee
-        </button>
+
+        <div class="flex items-center gap-3">
+          <button
+            *ngIf="authService.isAdmin()"
+            (click)="openAddModal()"
+            class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+          >
+            <span class="material-icons text-base">person_add</span>
+            Add Employee
+          </button>
+        </div>
       </div>
 
+      <!-- Filter & Search Bar -->
+      <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center gap-3">
+        <!-- Search -->
+        <div class="relative flex-1 w-full">
+          <span class="material-icons absolute left-3 top-2.5 text-slate-400 text-lg">search</span>
+          <input
+            type="text"
+            [value]="searchQuery()"
+            (input)="onSearchInput($event)"
+            placeholder="Search employees by name or email..."
+            class="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-primary-500"
+          />
+        </div>
+
+        <!-- Role Filter -->
+        <div class="w-full md:w-48">
+          <select
+            [value]="selectedRole()"
+            (change)="onRoleFilterChange($event)"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+          >
+            <option value="">All Roles</option>
+            <option value="SUPER_ADMIN">Super Administrator</option>
+            <option value="ADMIN">IT Manager / Admin</option>
+            <option value="TEAM_LEAD">Team Lead</option>
+            <option value="EMPLOYEE">Employee</option>
+          </select>
+        </div>
+
+        <!-- Department Filter -->
+        <div class="w-full md:w-56">
+          <select
+            [value]="selectedDept()"
+            (change)="onDeptFilterChange($event)"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
+          >
+            <option value="">All Departments</option>
+            <option *ngFor="let d of deptService.departments()" [value]="d.id">
+              {{ d.name }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Employee Table -->
       <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm overflow-hidden">
-        <table class="w-full text-left text-xs">
-          <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
-            <tr>
-              <th class="py-3 px-4">Employee</th>
-              <th class="py-3 px-4">Role</th>
-              <th class="py-3 px-4">Department</th>
-              <th class="py-3 px-4">Job Title</th>
-              <th class="py-3 px-4">Status</th>
-              <th class="py-3 px-4 text-right">Actions</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-            <tr *ngFor="let emp of employees" class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
-              <td class="py-3 px-4">
-                <div class="font-bold text-slate-900 dark:text-white">{{ emp.name }}</div>
-                <div class="text-[11px] text-slate-400">{{ emp.email }}</div>
-              </td>
-              <td class="py-3 px-4">
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
-                  {{ emp.role }}
-                </span>
-              </td>
-              <td class="py-3 px-4">{{ emp.dept }}</td>
-              <td class="py-3 px-4">{{ emp.title }}</td>
-              <td class="py-3 px-4">
-                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">
-                  Active
-                </span>
-              </td>
-              <td class="py-3 px-4 text-right">
-                <button class="px-2.5 py-1 text-[11px] font-semibold text-primary-600 hover:bg-primary-50 rounded-lg">
-                  Edit
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+              <tr>
+                <th class="py-3.5 px-4">Employee</th>
+                <th class="py-3.5 px-4">Role</th>
+                <th class="py-3.5 px-4">Department</th>
+                <th class="py-3.5 px-4">Job Title</th>
+                <th class="py-3.5 px-4">Status</th>
+                <th class="py-3.5 px-4 text-right" *ngIf="authService.isAdmin()">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+              <tr *ngFor="let emp of filteredEmployees()" class="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition">
+                <td class="py-3.5 px-4">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-950 text-primary-700 dark:text-primary-300 font-bold flex items-center justify-center text-xs">
+                      {{ emp.firstName[0] }}{{ emp.lastName[0] }}
+                    </div>
+                    <div>
+                      <div class="font-bold text-slate-900 dark:text-white">{{ emp.firstName }} {{ emp.lastName }}</div>
+                      <div class="text-[11px] text-slate-400 font-mono">{{ emp.email }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="py-3.5 px-4">
+                  <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider" [ngClass]="getRoleBadgeClass(emp.roleCode)">
+                    {{ emp.roleCode.replace('_', ' ') }}
+                  </span>
+                </td>
+                <td class="py-3.5 px-4 font-medium">{{ getDepartmentName(emp.departmentId) }}</td>
+                <td class="py-3.5 px-4 text-slate-500 dark:text-slate-400">{{ emp.jobTitle || 'Team Member' }}</td>
+                <td class="py-3.5 px-4">
+                  <span
+                    class="px-2 py-0.5 rounded text-[10px] font-bold uppercase"
+                    [class.bg-emerald-100]="emp.isActive"
+                    [class.text-emerald-700]="emp.isActive"
+                    [class.dark:bg-emerald-950/60]="emp.isActive"
+                    [class.dark:text-emerald-300]="emp.isActive"
+                    [class.bg-slate-100]="!emp.isActive"
+                    [class.text-slate-600]="!emp.isActive"
+                  >
+                    {{ emp.isActive ? 'Active' : 'Deactivated' }}
+                  </span>
+                </td>
+                <td class="py-3.5 px-4 text-right" *ngIf="authService.isAdmin()">
+                  <div class="flex items-center justify-end gap-1.5">
+                    <button
+                      (click)="openEditModal(emp)"
+                      class="px-2.5 py-1 text-[11px] font-semibold text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-950/50 rounded-lg transition"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      *ngIf="authService.isSuperAdmin() && emp.roleCode !== 'SUPER_ADMIN'"
+                      (click)="deactivateEmployee(emp)"
+                      class="px-2 py-1 text-[11px] font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
+                    >
+                      Deactivate
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Add Employee Modal -->
+      <div *ngIf="isAddModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg p-6 overflow-hidden">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Provision New Employee Account</h3>
+            <button (click)="isAddModalOpen.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+              <span class="material-icons text-xl">close</span>
+            </button>
+          </div>
+
+          <form [formGroup]="addEmployeeForm" (ngSubmit)="submitAddEmployee()" class="space-y-3.5 mt-4">
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">First Name</label>
+                <input type="text" formControlName="firstName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Last Name</label>
+                <input type="text" formControlName="lastName" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" />
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Corporate Email</label>
+              <input type="email" formControlName="email" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" />
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Role</label>
+                <select formControlName="roleCode" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+                  <option value="EMPLOYEE">Employee</option>
+                  <option value="TEAM_LEAD">Team Lead</option>
+                  <option value="ADMIN">IT Manager / Admin</option>
+                  <option *ngIf="authService.isSuperAdmin()" value="SUPER_ADMIN">Super Administrator</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Department</label>
+                <select formControlName="departmentId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+                  <option value="">Select Department</option>
+                  <option *ngFor="let d of deptService.departments()" [value]="d.id">{{ d.name }}</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Job Title</label>
+                <input type="text" formControlName="jobTitle" placeholder="e.g. Senior Backend Engineer" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" />
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Phone</label>
+                <input type="text" formControlName="phone" placeholder="+1-555-0199" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" />
+              </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5">
+              <button type="button" (click)="isAddModalOpen.set(false)" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">
+                Cancel
+              </button>
+              <button type="submit" [disabled]="addEmployeeForm.invalid" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white text-xs font-semibold rounded-xl shadow-sm transition">
+                Create Employee
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Edit Employee Modal -->
+      <div *ngIf="isEditModalOpen()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md p-6">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white">Edit Employee Account</h3>
+            <button (click)="isEditModalOpen.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+              <span class="material-icons text-xl">close</span>
+            </button>
+          </div>
+
+          <form [formGroup]="editEmployeeForm" (ngSubmit)="submitEditEmployee()" class="space-y-3.5 mt-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Role Assignment</label>
+              <select formControlName="roleCode" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+                <option value="EMPLOYEE">Employee</option>
+                <option value="TEAM_LEAD">Team Lead</option>
+                <option value="ADMIN">IT Manager / Admin</option>
+                <option *ngIf="authService.isSuperAdmin()" value="SUPER_ADMIN">Super Administrator</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Department</label>
+              <select formControlName="departmentId" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
+                <option value="">Unassigned</option>
+                <option *ngFor="let d of deptService.departments()" [value]="d.id">{{ d.name }}</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Job Title</label>
+              <input type="text" formControlName="jobTitle" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white" />
+            </div>
+
+            <div class="flex items-center gap-2 pt-2">
+              <input type="checkbox" id="isActiveCheck" formControlName="isActive" class="rounded border-slate-300 text-primary-600 focus:ring-primary-500" />
+              <label for="isActiveCheck" class="text-xs font-semibold text-slate-700 dark:text-slate-300">Account is Active and Enabled</label>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-2.5">
+              <button type="button" (click)="isEditModalOpen.set(false)" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition">
+                Cancel
+              </button>
+              <button type="submit" class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white text-xs font-semibold rounded-xl shadow-sm transition">
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   `,
 })
 export class EmployeesComponent {
+  private fb = inject(FormBuilder);
+  empService = inject(EmployeeService);
+  deptService = inject(DepartmentService);
   authService = inject(AuthService);
 
-  employees = [
-    { name: 'Alexander Vance', email: 'superadmin@qclocker.io', role: 'SUPER_ADMIN', dept: 'IT & Executive', title: 'Chief Information Officer' },
-    { name: 'Marcus Chen', email: 'itmanager@qclocker.io', role: 'ADMIN', dept: 'Information Technology', title: 'IT Infrastructure & Operations Manager' },
-    { name: 'Sarah Jenkins', email: 'teamlead@qclocker.io', role: 'TEAM_LEAD', dept: 'Software Engineering', title: 'Senior Engineering Lead' },
-    { name: 'David Ross', email: 'employee@qclocker.io', role: 'EMPLOYEE', dept: 'Software Engineering', title: 'Full-Stack Software Engineer' },
-  ];
-}
+  searchQuery = signal<string>('');
+  selectedRole = signal<string>('');
+  selectedDept = signal<string>('');
 
+  isAddModalOpen = signal(false);
+  isEditModalOpen = signal(false);
+  currentEditingId = signal<string | null>(null);
+
+  addEmployeeForm: FormGroup = this.fb.group({
+    firstName: ['', Validators.required],
+    lastName: ['', Validators.required],
+    email: ['', [Validators.required, Validators.email]],
+    roleCode: ['EMPLOYEE', Validators.required],
+    departmentId: [''],
+    jobTitle: [''],
+    phone: [''],
+  });
+
+  editEmployeeForm: FormGroup = this.fb.group({
+    roleCode: ['EMPLOYEE', Validators.required],
+    departmentId: [''],
+    jobTitle: [''],
+    isActive: [true],
+  });
+
+  filteredEmployees = computed(() => {
+    let list = this.empService.employees();
+    const q = this.searchQuery().toLowerCase().trim();
+    const r = this.selectedRole();
+    const d = this.selectedDept();
+
+    if (q) {
+      list = list.filter(
+        (e) =>
+          e.firstName.toLowerCase().includes(q) ||
+          e.lastName.toLowerCase().includes(q) ||
+          e.email.toLowerCase().includes(q),
+      );
+    }
+    if (r) {
+      list = list.filter((e) => e.roleCode === r);
+    }
+    if (d) {
+      list = list.filter((e) => e.departmentId === d);
+    }
+    return list;
+  });
+
+  onSearchInput(event: Event) {
+    this.searchQuery.set((event.target as HTMLInputElement).value);
+  }
+
+  onRoleFilterChange(event: Event) {
+    this.selectedRole.set((event.target as HTMLInputElement).value);
+  }
+
+  onDeptFilterChange(event: Event) {
+    this.selectedDept.set((event.target as HTMLInputElement).value);
+  }
+
+  getDepartmentName(deptId?: string | null): string {
+    if (!deptId) return 'General';
+    const dept = this.deptService.departments().find((d) => d.id === deptId);
+    return dept ? dept.name : 'Engineering & Ops';
+  }
+
+  getRoleBadgeClass(role: string): string {
+    switch (role) {
+      case 'SUPER_ADMIN':
+        return 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800';
+      case 'ADMIN':
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800';
+      case 'TEAM_LEAD':
+        return 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800';
+      default:
+        return 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+    }
+  }
+
+  openAddModal() {
+    this.addEmployeeForm.reset({ roleCode: 'EMPLOYEE' });
+    this.isAddModalOpen.set(true);
+  }
+
+  submitAddEmployee() {
+    if (this.addEmployeeForm.invalid) return;
+
+    this.empService.createEmployee(this.addEmployeeForm.value).subscribe(() => {
+      this.isAddModalOpen.set(false);
+    });
+  }
+
+  openEditModal(emp: Employee) {
+    this.currentEditingId.set(emp.id);
+    this.editEmployeeForm.patchValue({
+      roleCode: emp.roleCode,
+      departmentId: emp.departmentId || '',
+      jobTitle: emp.jobTitle || '',
+      isActive: emp.isActive,
+    });
+    this.isEditModalOpen.set(true);
+  }
+
+  submitEditEmployee() {
+    const id = this.currentEditingId();
+    if (!id || this.editEmployeeForm.invalid) return;
+
+    this.empService.updateEmployee(id, this.editEmployeeForm.value).subscribe(() => {
+      this.isEditModalOpen.set(false);
+    });
+  }
+
+  deactivateEmployee(emp: Employee) {
+    if (confirm(`Are you sure you want to deactivate ${emp.firstName} ${emp.lastName}?`)) {
+      this.empService.deleteEmployee(emp.id).subscribe();
+    }
+  }
+}
