@@ -18,6 +18,7 @@ const database_service_1 = require("../../database/database.service");
 const schema = require("../../database/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const enums_1 = require("../../common/enums");
+const reference_id_util_1 = require("../../common/utils/reference-id.util");
 let AuthService = AuthService_1 = class AuthService {
     dbService;
     jwtService;
@@ -167,6 +168,7 @@ let AuthService = AuthService_1 = class AuthService {
             const [newUser] = await this.dbService.db
                 .insert(schema.users)
                 .values({
+                referenceId: (0, reference_id_util_1.generateReferenceId)('EMP'),
                 email: normalizedEmail,
                 passwordHash,
                 firstName,

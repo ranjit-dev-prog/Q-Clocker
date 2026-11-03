@@ -27,6 +27,7 @@ export declare class UsersController {
         deletedAt: Date | null;
     } | {
         id: string;
+        referenceId: string;
         email: string;
         firstName: string;
         lastName: string;
@@ -42,6 +43,7 @@ export declare class UsersController {
     }>;
     findAll(query: UserQueryDto): Promise<{
         id: string;
+        referenceId?: string;
         email: string;
         firstName: string;
         lastName: string;
@@ -71,6 +73,7 @@ export declare class UsersController {
     }[]>;
     findOne(id: string): Promise<{
         id: string;
+        referenceId?: string;
         email: string;
         firstName: string;
         lastName: string;
@@ -105,6 +108,7 @@ export declare class UsersController {
     }>;
     update(id: string, updateUserDto: UpdateUserDto): Promise<{
         id: string;
+        referenceId?: string;
         email: string;
         firstName: string;
         lastName: string;

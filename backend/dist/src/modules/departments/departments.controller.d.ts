@@ -17,6 +17,7 @@ export declare class DepartmentsController {
         isActive: boolean;
     } | {
         id: string;
+        referenceId: string;
         name: string;
         code: string;
         description: string;
@@ -29,6 +30,18 @@ export declare class DepartmentsController {
     }>;
     findAll(): Promise<{
         id: string;
+        referenceId?: string;
+        name: string;
+        code: string;
+        description: string;
+        managerId: string | null;
+        managerName: string;
+        memberCount: number;
+        teamCount: number;
+        isActive: boolean;
+        createdAt: string;
+    }[] | {
+        id: string;
         name: string;
         code: string;
         description: string | null;
@@ -37,31 +50,21 @@ export declare class DepartmentsController {
         referenceId: string;
         managerId: string | null;
         isActive: boolean;
-    }[] | ({
-        id: string;
-        name: string;
-        code: string;
-        description: string;
-        managerId: string;
-        managerName: string;
-        memberCount: number;
-        teamCount: number;
-        isActive: boolean;
-        createdAt: string;
-    } | {
-        id: string;
-        name: string;
-        code: string;
-        description: string;
-        managerId: null;
-        managerName: string;
-        memberCount: number;
-        teamCount: number;
-        isActive: boolean;
-        createdAt: string;
-    })[]>;
+    }[]>;
     findOne(id: string): Promise<{
         id: string;
+        referenceId?: string;
+        name: string;
+        code: string;
+        description: string;
+        managerId: string | null;
+        managerName: string;
+        memberCount: number;
+        teamCount: number;
+        isActive: boolean;
+        createdAt: string;
+    } | {
+        id: string;
         name: string;
         code: string;
         description: string | null;
@@ -70,31 +73,21 @@ export declare class DepartmentsController {
         referenceId: string;
         managerId: string | null;
         isActive: boolean;
-    } | {
-        id: string;
-        name: string;
-        code: string;
-        description: string;
-        managerId: string;
-        managerName: string;
-        memberCount: number;
-        teamCount: number;
-        isActive: boolean;
-        createdAt: string;
-    } | {
-        id: string;
-        name: string;
-        code: string;
-        description: string;
-        managerId: null;
-        managerName: string;
-        memberCount: number;
-        teamCount: number;
-        isActive: boolean;
-        createdAt: string;
     }>;
     update(id: string, updateDepartmentDto: UpdateDepartmentDto): Promise<{
         id: string;
+        referenceId?: string;
+        name: string;
+        code: string;
+        description: string;
+        managerId: string | null;
+        managerName: string;
+        memberCount: number;
+        teamCount: number;
+        isActive: boolean;
+        createdAt: string;
+    } | {
+        id: string;
         referenceId: string;
         name: string;
         code: string;
@@ -103,28 +96,6 @@ export declare class DepartmentsController {
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
-    } | {
-        id: string;
-        name: string;
-        code: string;
-        description: string;
-        managerId: string;
-        managerName: string;
-        memberCount: number;
-        teamCount: number;
-        isActive: boolean;
-        createdAt: string;
-    } | {
-        id: string;
-        name: string;
-        code: string;
-        description: string;
-        managerId: null;
-        managerName: string;
-        memberCount: number;
-        teamCount: number;
-        isActive: boolean;
-        createdAt: string;
     }>;
     remove(id: string): Promise<{
         message: string;
@@ -141,6 +112,7 @@ export declare class DepartmentsController {
         leadId: string | null;
     } | {
         id: string;
+        referenceId: string;
         departmentId: string;
         name: string;
         description: string;

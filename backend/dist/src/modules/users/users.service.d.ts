@@ -29,6 +29,7 @@ export declare class UsersService {
         deletedAt: Date | null;
     } | {
         id: string;
+        referenceId: string;
         email: string;
         firstName: string;
         lastName: string;
@@ -44,6 +45,7 @@ export declare class UsersService {
     }>;
     findAll(query?: UserQueryDto): Promise<{
         id: string;
+        referenceId?: string;
         email: string;
         firstName: string;
         lastName: string;
@@ -73,6 +75,7 @@ export declare class UsersService {
     }[]>;
     findOne(id: string): Promise<{
         id: string;
+        referenceId?: string;
         email: string;
         firstName: string;
         lastName: string;
@@ -107,6 +110,7 @@ export declare class UsersService {
     }>;
     update(id: string, dto: UpdateUserDto): Promise<{
         id: string;
+        referenceId?: string;
         email: string;
         firstName: string;
         lastName: string;

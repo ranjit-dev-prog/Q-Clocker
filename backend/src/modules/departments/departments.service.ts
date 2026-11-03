@@ -10,13 +10,26 @@ import { eq, desc } from 'drizzle-orm';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { CreateTeamDto } from './dto/create-team.dto';
+import { generateReferenceId } from '../../common/utils/reference-id.util';
 
 @Injectable()
 export class DepartmentsService {
   private readonly logger = new Logger(DepartmentsService.name);
 
   // In-memory persistent demo store
-  private memoryDepts = [
+  private memoryDepts: Array<{
+    id: string;
+    referenceId?: string;
+    name: string;
+    code: string;
+    description: string;
+    managerId: string | null;
+    managerName: string;
+    memberCount: number;
+    teamCount: number;
+    isActive: boolean;
+    createdAt: string;
+  }> = [
     {
       id: '10000000-0000-0000-0000-000000000001',
       name: 'Information Technology',
@@ -115,6 +128,7 @@ export class DepartmentsService {
       const [newDept] = await this.dbService.db
         .insert(schema.departments)
         .values({
+          referenceId: generateReferenceId('DEP'),
           name: dto.name.trim(),
           code,
           description: dto.description,
@@ -133,6 +147,7 @@ export class DepartmentsService {
 
     const newDept = {
       id: `10000000-0000-0000-0000-${Date.now().toString().slice(-12)}`,
+      referenceId: generateReferenceId('DEP'),
       name: dto.name.trim(),
       code,
       description: dto.description || '',
@@ -237,6 +252,7 @@ export class DepartmentsService {
       const [newTeam] = await this.dbService.db
         .insert(schema.teams)
         .values({
+          referenceId: generateReferenceId('TEM'),
           departmentId,
           name: dto.name,
           leadId: dto.leadId || null,
@@ -250,6 +266,7 @@ export class DepartmentsService {
 
     const newTeam = {
       id: `20000000-0000-0000-0000-${Date.now().toString().slice(-12)}`,
+      referenceId: generateReferenceId('TEM'),
       departmentId,
       name: dto.name,
       description: dto.description || '',

@@ -17,6 +17,7 @@ const database_service_1 = require("../../database/database.service");
 const schema = require("../../database/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const enums_1 = require("../../common/enums");
+const reference_id_util_1 = require("../../common/utils/reference-id.util");
 let UsersService = UsersService_1 = class UsersService {
     dbService;
     logger = new common_1.Logger(UsersService_1.name);
@@ -116,6 +117,7 @@ let UsersService = UsersService_1 = class UsersService {
             const [newUser] = await this.dbService.db
                 .insert(schema.users)
                 .values({
+                referenceId: (0, reference_id_util_1.generateReferenceId)('EMP'),
                 email: normalizedEmail,
                 passwordHash,
                 firstName: dto.firstName,
@@ -139,6 +141,7 @@ let UsersService = UsersService_1 = class UsersService {
         }
         const newUser = {
             id: `00000000-0000-0000-0000-${Date.now().toString().slice(-12)}`,
+            referenceId: (0, reference_id_util_1.generateReferenceId)('EMP'),
             email: normalizedEmail,
             firstName: dto.firstName,
             lastName: dto.lastName,

@@ -15,6 +15,7 @@ const common_1 = require("@nestjs/common");
 const database_service_1 = require("../../database/database.service");
 const schema = require("../../database/schema");
 const drizzle_orm_1 = require("drizzle-orm");
+const reference_id_util_1 = require("../../common/utils/reference-id.util");
 let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
     dbService;
     logger = new common_1.Logger(DepartmentsService_1.name);
@@ -105,6 +106,7 @@ let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
             const [newDept] = await this.dbService.db
                 .insert(schema.departments)
                 .values({
+                referenceId: (0, reference_id_util_1.generateReferenceId)('DEP'),
                 name: dto.name.trim(),
                 code,
                 description: dto.description,
@@ -120,6 +122,7 @@ let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
         }
         const newDept = {
             id: `10000000-0000-0000-0000-${Date.now().toString().slice(-12)}`,
+            referenceId: (0, reference_id_util_1.generateReferenceId)('DEP'),
             name: dto.name.trim(),
             code,
             description: dto.description || '',
@@ -212,6 +215,7 @@ let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
             const [newTeam] = await this.dbService.db
                 .insert(schema.teams)
                 .values({
+                referenceId: (0, reference_id_util_1.generateReferenceId)('TEM'),
                 departmentId,
                 name: dto.name,
                 leadId: dto.leadId || null,
@@ -223,6 +227,7 @@ let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
         }
         const newTeam = {
             id: `20000000-0000-0000-0000-${Date.now().toString().slice(-12)}`,
+            referenceId: (0, reference_id_util_1.generateReferenceId)('TEM'),
             departmentId,
             name: dto.name,
             description: dto.description || '',

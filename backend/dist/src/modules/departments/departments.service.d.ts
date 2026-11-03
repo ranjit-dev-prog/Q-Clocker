@@ -20,6 +20,7 @@ export declare class DepartmentsService {
         isActive: boolean;
     } | {
         id: string;
+        referenceId: string;
         name: string;
         code: string;
         description: string;
@@ -30,29 +31,19 @@ export declare class DepartmentsService {
         isActive: boolean;
         createdAt: string;
     }>;
-    findAll(): Promise<({
+    findAll(): Promise<{
         id: string;
+        referenceId?: string;
         name: string;
         code: string;
         description: string;
-        managerId: string;
+        managerId: string | null;
         managerName: string;
         memberCount: number;
         teamCount: number;
         isActive: boolean;
         createdAt: string;
-    } | {
-        id: string;
-        name: string;
-        code: string;
-        description: string;
-        managerId: null;
-        managerName: string;
-        memberCount: number;
-        teamCount: number;
-        isActive: boolean;
-        createdAt: string;
-    })[] | {
+    }[] | {
         id: string;
         name: string;
         code: string;
@@ -65,21 +56,11 @@ export declare class DepartmentsService {
     }[]>;
     findOne(id: string): Promise<{
         id: string;
+        referenceId?: string;
         name: string;
         code: string;
         description: string;
-        managerId: string;
-        managerName: string;
-        memberCount: number;
-        teamCount: number;
-        isActive: boolean;
-        createdAt: string;
-    } | {
-        id: string;
-        name: string;
-        code: string;
-        description: string;
-        managerId: null;
+        managerId: string | null;
         managerName: string;
         memberCount: number;
         teamCount: number;
@@ -98,21 +79,11 @@ export declare class DepartmentsService {
     }>;
     update(id: string, dto: UpdateDepartmentDto): Promise<{
         id: string;
+        referenceId?: string;
         name: string;
         code: string;
         description: string;
-        managerId: string;
-        managerName: string;
-        memberCount: number;
-        teamCount: number;
-        isActive: boolean;
-        createdAt: string;
-    } | {
-        id: string;
-        name: string;
-        code: string;
-        description: string;
-        managerId: null;
+        managerId: string | null;
         managerName: string;
         memberCount: number;
         teamCount: number;
@@ -144,6 +115,7 @@ export declare class DepartmentsService {
         leadId: string | null;
     } | {
         id: string;
+        referenceId: string;
         departmentId: string;
         name: string;
         description: string;
