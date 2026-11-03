@@ -7,12 +7,14 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+import * as crypto from 'crypto';
 import { DatabaseService } from '../../database/database.service';
 import * as schema from '../../database/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and, gt, desc } from 'drizzle-orm';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { UserRole } from '../../common/enums';
 import { generateReferenceId } from '../../common/utils/reference-id.util';
 
@@ -23,6 +25,7 @@ export class AuthService {
   // In-memory fallback accounts for zero-dependency development/testing
   private demoAccounts: Array<{
     id: string;
+    referenceId: string;
     email: string;
     passwordHash: string;
     firstName: string;
@@ -34,6 +37,7 @@ export class AuthService {
   }> = [
     {
       id: '00000000-0000-0000-0000-000000000001',
+      referenceId: 'EMP-ADM001',
       email: 'superadmin@qclocker.io',
       passwordHash: '$2a$10$wEkgzW4pI4x12Q3nC8iKte2x7r4w7FjY6T9jJpB1aZ1mUq0O2hKGi', // SuperAdmin@2026!
       firstName: 'Alexander',
@@ -45,6 +49,7 @@ export class AuthService {
     },
     {
       id: '00000000-0000-0000-0000-000000000002',
+      referenceId: 'EMP-MGR001',
       email: 'itmanager@qclocker.io',
       passwordHash: '$2a$10$wEkgzW4pI4x12Q3nC8iKte2x7r4w7FjY6T9jJpB1aZ1mUq0O2hKGi', // Manager@2026!
       firstName: 'Marcus',
@@ -56,6 +61,7 @@ export class AuthService {
     },
     {
       id: '00000000-0000-0000-0000-000000000003',
+      referenceId: 'EMP-TL0001',
       email: 'teamlead@qclocker.io',
       passwordHash: '$2a$10$wEkgzW4pI4x12Q3nC8iKte2x7r4w7FjY6T9jJpB1aZ1mUq0O2hKGi', // TeamLead@2026!
       firstName: 'Sarah',
@@ -67,6 +73,7 @@ export class AuthService {
     },
     {
       id: '00000000-0000-0000-0000-000000000004',
+      referenceId: 'EMP-EMP001',
       email: 'employee@qclocker.io',
       passwordHash: '$2a$10$wEkgzW4pI4x12Q3nC8iKte2x7r4w7FjY6T9jJpB1aZ1mUq0O2hKGi', // Employee@2026!
       firstName: 'David',
@@ -78,12 +85,27 @@ export class AuthService {
     },
   ];
 
+  // In-memory fallback session store when DB is disconnected
+  private demoSessions: Array<{
+    id: string;
+    userId: string;
+    refreshTokenHash: string;
+    userAgent: string | null;
+    ipAddress: string | null;
+    isRevoked: boolean;
+    expiresAt: Date;
+    createdAt: Date;
+  }> = [];
+
   constructor(
     private dbService: DatabaseService,
     private jwtService: JwtService,
   ) {}
 
-  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+  async login(
+    loginDto: LoginDto,
+    meta?: { ipAddress?: string; userAgent?: string },
+  ): Promise<AuthResponseDto> {
     const { email, password } = loginDto;
 
     // Check database first if connected
@@ -111,29 +133,37 @@ export class AuthService {
             .set({ lastLoginAt: new Date() })
             .where(eq(schema.users.id, user.id));
 
-          return this.generateAuthResponse({
-            id: user.id,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            role: user.roleCode,
-            departmentId: user.departmentId,
-            jobTitle: user.jobTitle,
-            avatarUrl: user.avatarUrl,
-          });
+          return await this.generateAuthResponse(
+            {
+              id: user.id,
+              referenceId: user.referenceId,
+              email: user.email,
+              firstName: user.firstName,
+              lastName: user.lastName,
+              role: user.roleCode,
+              departmentId: user.departmentId,
+              teamId: user.teamId,
+              jobTitle: user.jobTitle,
+              avatarUrl: user.avatarUrl,
+            },
+            meta?.ipAddress,
+            meta?.userAgent,
+          );
         }
       } catch (err) {
+        if (err instanceof UnauthorizedException) {
+          throw err;
+        }
         this.logger.warn(`Database login check had issue: ${(err as Error).message}. Trying fallback.`);
       }
     }
 
-    // Fallback demo account authentication (useful for immediate evaluation)
+    // Fallback demo account authentication
     const demo = this.demoAccounts.find(
       (a) => a.email.toLowerCase() === email.toLowerCase().trim(),
     );
 
     if (demo) {
-      // Validate common demo passwords
       const validDemoPasswords = [
         'SuperAdmin@2026!',
         'Manager@2026!',
@@ -145,22 +175,31 @@ export class AuthService {
         throw new UnauthorizedException('Invalid email or password credentials');
       }
 
-      return this.generateAuthResponse({
-        id: demo.id,
-        email: demo.email,
-        firstName: demo.firstName,
-        lastName: demo.lastName,
-        role: demo.roleCode,
-        departmentId: demo.departmentId,
-        jobTitle: demo.jobTitle,
-        avatarUrl: null,
-      });
+      return await this.generateAuthResponse(
+        {
+          id: demo.id,
+          referenceId: demo.referenceId,
+          email: demo.email,
+          firstName: demo.firstName,
+          lastName: demo.lastName,
+          role: demo.roleCode,
+          departmentId: demo.departmentId,
+          teamId: null,
+          jobTitle: demo.jobTitle,
+          avatarUrl: null,
+        },
+        meta?.ipAddress,
+        meta?.userAgent,
+      );
     }
 
     throw new UnauthorizedException('Invalid email or password credentials');
   }
 
-  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
+  async register(
+    registerDto: RegisterDto,
+    meta?: { ipAddress?: string; userAgent?: string },
+  ): Promise<AuthResponseDto> {
     const { email, password, firstName, lastName, roleCode, departmentId, teamId, jobTitle, phone } =
       registerDto;
 
@@ -177,7 +216,6 @@ export class AuthService {
         throw new ConflictException('An employee account with this email already exists');
       }
 
-      // Find role by code
       const targetRoleCode = roleCode || UserRole.EMPLOYEE;
       let [role] = await this.dbService.db
         .select()
@@ -186,7 +224,6 @@ export class AuthService {
         .limit(1);
 
       if (!role) {
-        // Create role if not existing
         [role] = await this.dbService.db
           .insert(schema.roles)
           .values({
@@ -199,11 +236,12 @@ export class AuthService {
       }
 
       const passwordHash = await bcrypt.hash(password, 10);
+      const referenceId = generateReferenceId('EMP');
 
       const [newUser] = await this.dbService.db
         .insert(schema.users)
         .values({
-          referenceId: generateReferenceId('EMP'),
+          referenceId,
           email: normalizedEmail,
           passwordHash,
           firstName,
@@ -218,19 +256,25 @@ export class AuthService {
         })
         .returning();
 
-      return this.generateAuthResponse({
-        id: newUser.id,
-        email: newUser.email,
-        firstName: newUser.firstName,
-        lastName: newUser.lastName,
-        role: newUser.roleCode,
-        departmentId: newUser.departmentId,
-        jobTitle: newUser.jobTitle,
-        avatarUrl: null,
-      });
+      return await this.generateAuthResponse(
+        {
+          id: newUser.id,
+          referenceId: newUser.referenceId,
+          email: newUser.email,
+          firstName: newUser.firstName,
+          lastName: newUser.lastName,
+          role: newUser.roleCode,
+          departmentId: newUser.departmentId,
+          teamId: newUser.teamId,
+          jobTitle: newUser.jobTitle,
+          avatarUrl: null,
+        },
+        meta?.ipAddress,
+        meta?.userAgent,
+      );
     }
 
-    // If database is not active, create in demo memory store
+    // In-memory fallback
     const existingDemo = this.demoAccounts.find((a) => a.email === normalizedEmail);
     if (existingDemo) {
       throw new ConflictException('An employee account with this email already exists');
@@ -251,16 +295,224 @@ export class AuthService {
     };
     this.demoAccounts.push(newDemoUser);
 
-    return this.generateAuthResponse({
-      id: newDemoUser.id,
-      email: newDemoUser.email,
-      firstName: newDemoUser.firstName,
-      lastName: newDemoUser.lastName,
-      role: newDemoUser.roleCode,
-      departmentId: newDemoUser.departmentId,
-      jobTitle: newDemoUser.jobTitle,
-      avatarUrl: null,
-    });
+    return await this.generateAuthResponse(
+      {
+        id: newDemoUser.id,
+        referenceId: newDemoUser.referenceId,
+        email: newDemoUser.email,
+        firstName: newDemoUser.firstName,
+        lastName: newDemoUser.lastName,
+        role: newDemoUser.roleCode,
+        departmentId: newDemoUser.departmentId,
+        teamId: null,
+        jobTitle: newDemoUser.jobTitle,
+        avatarUrl: null,
+      },
+      meta?.ipAddress,
+      meta?.userAgent,
+    );
+  }
+
+  /**
+   * Refresh Token Rotation (RTR) with Token Reuse Detection
+   */
+  async refreshToken(
+    dto: RefreshTokenDto,
+    meta?: { ipAddress?: string; userAgent?: string },
+  ): Promise<AuthResponseDto> {
+    const rawToken = dto.refreshToken.trim();
+    if (!rawToken) {
+      throw new UnauthorizedException('Refresh token is required');
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+
+    if (this.dbService.getConnectionStatus()) {
+      const [session] = await this.dbService.db
+        .select()
+        .from(schema.userSessions)
+        .where(eq(schema.userSessions.refreshTokenHash, tokenHash))
+        .limit(1);
+
+      if (!session) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // Token reuse detection: if a revoked token is used, compromise is suspected
+      if (session.isRevoked) {
+        this.logger.error(
+          `Security Alert: Refresh token reuse detected for user ${session.userId}. Revoking all sessions.`,
+        );
+        // Revoke all sessions for this user immediately
+        await this.dbService.db
+          .update(schema.userSessions)
+          .set({ isRevoked: true, updatedAt: new Date() })
+          .where(eq(schema.userSessions.userId, session.userId));
+
+        throw new UnauthorizedException('Security alert: Token reuse detected. All sessions revoked.');
+      }
+
+      // Check expiration
+      if (new Date(session.expiresAt) < new Date()) {
+        await this.dbService.db
+          .update(schema.userSessions)
+          .set({ isRevoked: true, updatedAt: new Date() })
+          .where(eq(schema.userSessions.id, session.id));
+
+        throw new UnauthorizedException('Refresh token has expired. Please log in again.');
+      }
+
+      // Invalidate current session (Rotation)
+      await this.dbService.db
+        .update(schema.userSessions)
+        .set({ isRevoked: true, updatedAt: new Date() })
+        .where(eq(schema.userSessions.id, session.id));
+
+      // Fetch active user
+      const [user] = await this.dbService.db
+        .select()
+        .from(schema.users)
+        .where(eq(schema.users.id, session.userId))
+        .limit(1);
+
+      if (!user || !user.isActive) {
+        throw new UnauthorizedException('User account is inactive or deleted');
+      }
+
+      return await this.generateAuthResponse(
+        {
+          id: user.id,
+          referenceId: user.referenceId,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          role: user.roleCode,
+          departmentId: user.departmentId,
+          teamId: user.teamId,
+          jobTitle: user.jobTitle,
+          avatarUrl: user.avatarUrl,
+        },
+        meta?.ipAddress,
+        meta?.userAgent,
+      );
+    }
+
+    // In-memory fallback session handling
+    const session = this.demoSessions.find((s) => s.refreshTokenHash === tokenHash);
+    if (!session) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    if (session.isRevoked) {
+      this.demoSessions
+        .filter((s) => s.userId === session.userId)
+        .forEach((s) => (s.isRevoked = true));
+      throw new UnauthorizedException('Security alert: Token reuse detected. All sessions revoked.');
+    }
+
+    if (session.expiresAt < new Date()) {
+      session.isRevoked = true;
+      throw new UnauthorizedException('Refresh token has expired. Please log in again.');
+    }
+
+    session.isRevoked = true;
+
+    const demo = this.demoAccounts.find((a) => a.id === session.userId);
+    if (!demo || !demo.isActive) {
+      throw new UnauthorizedException('User account is inactive or not found');
+    }
+
+    return await this.generateAuthResponse(
+      {
+        id: demo.id,
+        referenceId: demo.referenceId,
+        email: demo.email,
+        firstName: demo.firstName,
+        lastName: demo.lastName,
+        role: demo.roleCode,
+        departmentId: demo.departmentId,
+        teamId: null,
+        jobTitle: demo.jobTitle,
+        avatarUrl: null,
+      },
+      meta?.ipAddress,
+      meta?.userAgent,
+    );
+  }
+
+  async logout(userId: string, refreshToken?: string) {
+    if (this.dbService.getConnectionStatus()) {
+      if (refreshToken) {
+        const tokenHash = crypto.createHash('sha256').update(refreshToken.trim()).digest('hex');
+        await this.dbService.db
+          .update(schema.userSessions)
+          .set({ isRevoked: true, updatedAt: new Date() })
+          .where(eq(schema.userSessions.refreshTokenHash, tokenHash));
+      } else {
+        await this.dbService.db
+          .update(schema.userSessions)
+          .set({ isRevoked: true, updatedAt: new Date() })
+          .where(eq(schema.userSessions.userId, userId));
+      }
+      return { success: true, message: 'Logged out successfully' };
+    }
+
+    if (refreshToken) {
+      const tokenHash = crypto.createHash('sha256').update(refreshToken.trim()).digest('hex');
+      const s = this.demoSessions.find((x) => x.refreshTokenHash === tokenHash);
+      if (s) s.isRevoked = true;
+    } else {
+      this.demoSessions.filter((x) => x.userId === userId).forEach((x) => (x.isRevoked = true));
+    }
+
+    return { success: true, message: 'Logged out successfully' };
+  }
+
+  async logoutAll(userId: string) {
+    if (this.dbService.getConnectionStatus()) {
+      await this.dbService.db
+        .update(schema.userSessions)
+        .set({ isRevoked: true, updatedAt: new Date() })
+        .where(eq(schema.userSessions.userId, userId));
+    } else {
+      this.demoSessions.filter((x) => x.userId === userId).forEach((x) => (x.isRevoked = true));
+    }
+
+    return { success: true, message: 'All active sessions revoked successfully' };
+  }
+
+  async getActiveSessions(userId: string) {
+    if (this.dbService.getConnectionStatus()) {
+      const sessions = await this.dbService.db
+        .select({
+          id: schema.userSessions.id,
+          userAgent: schema.userSessions.userAgent,
+          ipAddress: schema.userSessions.ipAddress,
+          expiresAt: schema.userSessions.expiresAt,
+          createdAt: schema.userSessions.createdAt,
+        })
+        .from(schema.userSessions)
+        .where(
+          and(
+            eq(schema.userSessions.userId, userId),
+            eq(schema.userSessions.isRevoked, false),
+            gt(schema.userSessions.expiresAt, new Date()),
+          ),
+        )
+        .orderBy(desc(schema.userSessions.createdAt));
+
+      return sessions;
+    }
+
+    return this.demoSessions
+      .filter((s) => s.userId === userId && !s.isRevoked && s.expiresAt > new Date())
+      .map((s) => ({
+        id: s.id,
+        userAgent: s.userAgent,
+        ipAddress: s.ipAddress,
+        expiresAt: s.expiresAt,
+        createdAt: s.createdAt,
+      }));
   }
 
   async getProfile(userId: string) {
@@ -268,6 +520,7 @@ export class AuthService {
       const [user] = await this.dbService.db
         .select({
           id: schema.users.id,
+          referenceId: schema.users.referenceId,
           email: schema.users.email,
           firstName: schema.users.firstName,
           lastName: schema.users.lastName,
@@ -293,6 +546,7 @@ export class AuthService {
     if (demo) {
       return {
         id: demo.id,
+        referenceId: demo.referenceId,
         email: demo.email,
         firstName: demo.firstName,
         lastName: demo.lastName,
@@ -310,16 +564,22 @@ export class AuthService {
     throw new NotFoundException('User profile not found');
   }
 
-  private generateAuthResponse(user: {
-    id: string;
-    email: string;
-    firstName: string;
-    lastName: string;
-    role: string;
-    departmentId?: string | null;
-    jobTitle?: string | null;
-    avatarUrl?: string | null;
-  }): AuthResponseDto {
+  private async generateAuthResponse(
+    user: {
+      id: string;
+      referenceId?: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+      departmentId?: string | null;
+      teamId?: string | null;
+      jobTitle?: string | null;
+      avatarUrl?: string | null;
+    },
+    ipAddress?: string,
+    userAgent?: string,
+  ): Promise<AuthResponseDto> {
     const payload = {
       sub: user.id,
       email: user.email,
@@ -329,11 +589,43 @@ export class AuthService {
     const expiresIn = 86400; // 24 hours
     const accessToken = this.jwtService.sign(payload, { expiresIn });
 
+    // Generate cryptographically secure refresh token
+    const rawRefreshToken = crypto.randomBytes(40).toString('hex');
+    const refreshTokenHash = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+    if (this.dbService.getConnectionStatus()) {
+      try {
+        await this.dbService.db.insert(schema.userSessions).values({
+          referenceId: generateReferenceId('SES'),
+          userId: user.id,
+          refreshTokenHash,
+          userAgent: userAgent || null,
+          ipAddress: ipAddress || null,
+          isRevoked: false,
+          expiresAt,
+        });
+      } catch (err) {
+        this.logger.warn(`Failed to persist user session: ${(err as Error).message}`);
+      }
+    } else {
+      this.demoSessions.push({
+        id: crypto.randomUUID(),
+        userId: user.id,
+        refreshTokenHash,
+        userAgent: userAgent || null,
+        ipAddress: ipAddress || null,
+        isRevoked: false,
+        expiresAt,
+        createdAt: new Date(),
+      });
+    }
+
     return {
       accessToken,
+      refreshToken: rawRefreshToken,
       expiresIn,
       user,
     };
   }
 }
-

@@ -13,11 +13,13 @@ exports.AuthResponseDto = exports.AuthUserDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 class AuthUserDto {
     id;
+    referenceId;
     email;
     firstName;
     lastName;
     role;
     departmentId;
+    teamId;
     jobTitle;
     avatarUrl;
 }
@@ -26,6 +28,10 @@ __decorate([
     (0, swagger_1.ApiProperty)(),
     __metadata("design:type", String)
 ], AuthUserDto.prototype, "id", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    __metadata("design:type", String)
+], AuthUserDto.prototype, "referenceId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)(),
     __metadata("design:type", String)
@@ -43,19 +49,24 @@ __decorate([
     __metadata("design:type", String)
 ], AuthUserDto.prototype, "role", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ nullable: true }),
+    (0, swagger_1.ApiPropertyOptional)({ nullable: true }),
     __metadata("design:type", Object)
 ], AuthUserDto.prototype, "departmentId", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ nullable: true }),
+    (0, swagger_1.ApiPropertyOptional)({ nullable: true }),
+    __metadata("design:type", Object)
+], AuthUserDto.prototype, "teamId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ nullable: true }),
     __metadata("design:type", Object)
 ], AuthUserDto.prototype, "jobTitle", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ nullable: true }),
+    (0, swagger_1.ApiPropertyOptional)({ nullable: true }),
     __metadata("design:type", Object)
 ], AuthUserDto.prototype, "avatarUrl", void 0);
 class AuthResponseDto {
     accessToken;
+    refreshToken;
     expiresIn;
     user;
 }
@@ -64,6 +75,10 @@ __decorate([
     (0, swagger_1.ApiProperty)({ description: 'JWT Access Token' }),
     __metadata("design:type", String)
 ], AuthResponseDto.prototype, "accessToken", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'JWT Refresh Token for session renewal' }),
+    __metadata("design:type", String)
+], AuthResponseDto.prototype, "refreshToken", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ description: 'Token expiration timestamp in seconds' }),
     __metadata("design:type", Number)
