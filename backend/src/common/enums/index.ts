@@ -59,13 +59,66 @@ export enum TaskCategory {
 
 export enum TicketStatus {
   NEW = 'NEW',
+  OPEN = 'OPEN',
   ASSIGNED = 'ASSIGNED',
   IN_PROGRESS = 'IN_PROGRESS',
   PENDING_USER = 'PENDING_USER',
   PENDING_VENDOR = 'PENDING_VENDOR',
-  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  ON_HOLD = 'ON_HOLD',
   RESOLVED = 'RESOLVED',
   CLOSED = 'CLOSED',
+  REOPENED = 'REOPENED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum TicketType {
+  INCIDENT = 'Incident',
+  SERVICE_REQUEST = 'Service Request',
+  PROBLEM = 'Problem',
+  CHANGE_REQUEST = 'Change Request',
+  ACCESS_REQUEST = 'Access Request',
+  SECURITY_INCIDENT = 'Security Incident',
+  HARDWARE_ISSUE = 'Hardware Issue',
+  SOFTWARE_ISSUE = 'Software Issue',
+  NETWORK_ISSUE = 'Network Issue',
+}
+
+export enum TicketImpact {
+  CRITICAL = 'CRITICAL',
+  HIGH = 'HIGH',
+  MEDIUM = 'MEDIUM',
+  LOW = 'LOW',
+}
+
+export enum TicketUrgency {
+  CRITICAL = 'CRITICAL',
+  HIGH = 'HIGH',
+  MEDIUM = 'MEDIUM',
+  LOW = 'LOW',
+}
+
+export enum TicketPriorityCode {
+  P1 = 'P1',
+  P2 = 'P2',
+  P3 = 'P3',
+  P4 = 'P4',
+}
+
+export enum TicketSource {
+  PORTAL = 'PORTAL',
+  EMAIL = 'EMAIL',
+  PHONE = 'PHONE',
+  SLACK = 'SLACK',
+  API = 'API',
+  SYSTEM = 'SYSTEM',
+}
+
+export enum SlaStatus {
+  WITHIN_SLA = 'WITHIN_SLA',
+  APPROACHING_BREACH = 'APPROACHING_BREACH',
+  BREACHED = 'BREACHED',
+  PAUSED = 'PAUSED',
+  COMPLETED = 'COMPLETED',
 }
 
 export enum TicketCategory {

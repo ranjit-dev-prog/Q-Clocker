@@ -36,6 +36,8 @@ export type EntityPrefix =
   | 'PRJ'
   | 'AST'
   | 'SLA'
+  | 'CAT'
+  | 'SBC'
   | 'SES';
 
 const UNAMBIGUOUS_CHARSET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';

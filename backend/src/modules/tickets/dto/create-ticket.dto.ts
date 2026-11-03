@@ -6,7 +6,14 @@ import {
   IsEnum,
   IsUUID,
 } from 'class-validator';
-import { Priority, TicketCategory, TicketStatus } from '../../../common/enums';
+import {
+  Priority,
+  TicketCategory,
+  TicketType,
+  TicketImpact,
+  TicketUrgency,
+  TicketSource,
+} from '../../../common/enums';
 
 export class CreateTicketDto {
   @ApiProperty({ description: 'Ticket subject line', example: 'VPN Gateway Cluster Auth Timeout' })
@@ -19,30 +26,54 @@ export class CreateTicketDto {
   @IsNotEmpty()
   description: string;
 
+  @ApiPropertyOptional({ enum: TicketType, default: TicketType.INCIDENT })
+  @IsEnum(TicketType)
+  @IsOptional()
+  ticketType?: TicketType;
+
+  @ApiPropertyOptional({ enum: TicketImpact, default: TicketImpact.MEDIUM })
+  @IsEnum(TicketImpact)
+  @IsOptional()
+  impact?: TicketImpact;
+
+  @ApiPropertyOptional({ enum: TicketUrgency, default: TicketUrgency.MEDIUM })
+  @IsEnum(TicketUrgency)
+  @IsOptional()
+  urgency?: TicketUrgency;
+
+  @ApiPropertyOptional({ enum: Priority, default: Priority.MEDIUM })
+  @IsEnum(Priority)
+  @IsOptional()
+  priority?: Priority;
+
+  @ApiPropertyOptional({ enum: TicketCategory, default: TicketCategory.IT_SUPPORT })
+  @IsOptional()
+  category?: string;
+
+  @ApiPropertyOptional({ description: 'Subcategory identifier', example: 'OpenVPN Client' })
+  @IsString()
+  @IsOptional()
+  subcategory?: string;
+
   @ApiPropertyOptional({ description: 'Department UUID handling this ticket' })
   @IsUUID()
   @IsOptional()
   departmentId?: string;
+
+  @ApiPropertyOptional({ description: 'Assigned Support Team UUID' })
+  @IsUUID()
+  @IsOptional()
+  assignedTeamId?: string;
 
   @ApiPropertyOptional({ description: 'Assigned technician UUID' })
   @IsUUID()
   @IsOptional()
   assignedTechnicianId?: string;
 
-  @ApiProperty({ enum: Priority, default: Priority.MEDIUM })
-  @IsEnum(Priority)
+  @ApiPropertyOptional({ enum: TicketSource, default: TicketSource.PORTAL })
+  @IsEnum(TicketSource)
   @IsOptional()
-  priority?: Priority;
-
-  @ApiProperty({ enum: TicketCategory, default: TicketCategory.IT_SUPPORT })
-  @IsEnum(TicketCategory)
-  @IsOptional()
-  category?: TicketCategory;
-
-  @ApiPropertyOptional({ description: 'Subcategory identifier', example: 'OpenVPN Client' })
-  @IsString()
-  @IsOptional()
-  subcategory?: string;
+  source?: TicketSource;
 
   @ApiPropertyOptional({ description: 'SLA Policy UUID' })
   @IsUUID()

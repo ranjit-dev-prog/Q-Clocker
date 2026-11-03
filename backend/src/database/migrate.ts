@@ -234,7 +234,32 @@ export async function runMigrations() {
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
-    -- 9. SLA Policies & Tickets
+    -- 9. Ticket Categories & Subcategories
+    CREATE TABLE IF NOT EXISTS ticket_categories (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      reference_id VARCHAR(20) NOT NULL UNIQUE,
+      name VARCHAR(100) NOT NULL UNIQUE,
+      code VARCHAR(50) NOT NULL UNIQUE,
+      description TEXT,
+      default_department_id UUID REFERENCES departments(id) ON DELETE SET NULL,
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS ticket_subcategories (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      reference_id VARCHAR(20) NOT NULL UNIQUE,
+      category_id UUID NOT NULL REFERENCES ticket_categories(id) ON DELETE CASCADE,
+      name VARCHAR(100) NOT NULL,
+      code VARCHAR(50) NOT NULL,
+      description TEXT,
+      default_sla_hours INTEGER NOT NULL DEFAULT 24,
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    -- 9b. SLA Policies & Tickets
     CREATE TABLE IF NOT EXISTS sla_policies (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       reference_id VARCHAR(20) NOT NULL UNIQUE,
@@ -243,6 +268,8 @@ export async function runMigrations() {
       response_time_hours INTEGER NOT NULL,
       resolution_time_hours INTEGER NOT NULL,
       escalation_role VARCHAR(50) NOT NULL DEFAULT 'ADMIN',
+      business_hours_only BOOLEAN NOT NULL DEFAULT true,
+      timezone VARCHAR(50) NOT NULL DEFAULT 'UTC',
       is_active BOOLEAN NOT NULL DEFAULT true,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -256,19 +283,38 @@ export async function runMigrations() {
       description TEXT NOT NULL,
       requester_id UUID NOT NULL REFERENCES users(id),
       assigned_technician_id UUID REFERENCES users(id),
+      assigned_team_id UUID REFERENCES teams(id) ON DELETE SET NULL,
       department_id UUID REFERENCES departments(id) ON DELETE SET NULL,
+      ticket_type VARCHAR(50) NOT NULL DEFAULT 'Incident',
+      impact VARCHAR(20) NOT NULL DEFAULT 'MEDIUM',
+      urgency VARCHAR(20) NOT NULL DEFAULT 'MEDIUM',
       priority VARCHAR(20) NOT NULL DEFAULT 'MEDIUM',
+      priority_code VARCHAR(10) NOT NULL DEFAULT 'P3',
       category VARCHAR(50) NOT NULL DEFAULT 'OTHER',
       subcategory VARCHAR(100),
       status VARCHAR(30) NOT NULL DEFAULT 'NEW',
+      source VARCHAR(30) NOT NULL DEFAULT 'PORTAL',
       sla_policy_id UUID REFERENCES sla_policies(id) ON DELETE SET NULL,
       due_date TIMESTAMPTZ,
+      first_response_due_at TIMESTAMPTZ,
+      resolution_due_at TIMESTAMPTZ,
       sla_hours INTEGER NOT NULL DEFAULT 24,
+      sla_status VARCHAR(30) NOT NULL DEFAULT 'WITHIN_SLA',
       sla_breached BOOLEAN NOT NULL DEFAULT false,
+      sla_paused_at TIMESTAMPTZ,
+      sla_pause_duration_seconds INTEGER NOT NULL DEFAULT 0,
       first_response_at TIMESTAMPTZ,
+      resolution_summary TEXT,
+      root_cause TEXT,
+      resolution_category VARCHAR(100),
       resolution_notes TEXT,
       resolved_at TIMESTAMPTZ,
       closed_at TIMESTAMPTZ,
+      reopened_at TIMESTAMPTZ,
+      reopen_count INTEGER NOT NULL DEFAULT 0,
+      escalated_at TIMESTAMPTZ,
+      escalation_reason TEXT,
+      escalated_to_role VARCHAR(50),
       related_task_id UUID REFERENCES tasks(id) ON DELETE SET NULL,
       related_asset_id UUID REFERENCES assets(id) ON DELETE SET NULL,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -492,6 +538,27 @@ export async function runMigrations() {
       user_agent TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+
+    -- Safe schema extensions for tickets
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS ticket_type VARCHAR(50) NOT NULL DEFAULT 'Incident';
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS impact VARCHAR(20) NOT NULL DEFAULT 'MEDIUM';
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS urgency VARCHAR(20) NOT NULL DEFAULT 'MEDIUM';
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS priority_code VARCHAR(10) NOT NULL DEFAULT 'P3';
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS assigned_team_id UUID REFERENCES teams(id) ON DELETE SET NULL;
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS source VARCHAR(30) NOT NULL DEFAULT 'PORTAL';
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS resolution_summary TEXT;
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS root_cause TEXT;
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS resolution_category VARCHAR(100);
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS sla_status VARCHAR(30) NOT NULL DEFAULT 'WITHIN_SLA';
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS sla_paused_at TIMESTAMPTZ;
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS sla_pause_duration_seconds INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS first_response_due_at TIMESTAMPTZ;
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS resolution_due_at TIMESTAMPTZ;
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS reopened_at TIMESTAMPTZ;
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS reopen_count INTEGER NOT NULL DEFAULT 0;
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS escalated_at TIMESTAMPTZ;
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS escalation_reason TEXT;
+    ALTER TABLE tickets ADD COLUMN IF NOT EXISTS escalated_to_role VARCHAR(50);
 
     -- Create Critical Indexes
     CREATE INDEX IF NOT EXISTS idx_tasks_reference ON tasks(reference_id);

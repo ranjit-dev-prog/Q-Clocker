@@ -314,6 +314,42 @@ export type NewTaskDependency = typeof taskDependencies.$inferInsert;
 // 6. ENTERPRISE ITSM TICKETING & SLA ENGINE
 // =============================================================
 
+// =============================================================
+// 6. ITSM TICKETS & SLA ENGINE
+// =============================================================
+
+export const ticketCategories = pgTable('ticket_categories', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  referenceId: varchar('reference_id', { length: 20 }).notNull().unique(),
+  name: varchar('name', { length: 100 }).notNull().unique(),
+  code: varchar('code', { length: 50 }).notNull().unique(),
+  description: text('description'),
+  defaultDepartmentId: uuid('default_department_id').references(() => departments.id, { onDelete: 'set null' }),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type TicketCategory = typeof ticketCategories.$inferSelect;
+export type NewTicketCategory = typeof ticketCategories.$inferInsert;
+
+export const ticketSubcategories = pgTable('ticket_subcategories', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  referenceId: varchar('reference_id', { length: 20 }).notNull().unique(),
+  categoryId: uuid('category_id')
+    .notNull()
+    .references(() => ticketCategories.id, { onDelete: 'cascade' }),
+  name: varchar('name', { length: 100 }).notNull(),
+  code: varchar('code', { length: 50 }).notNull(),
+  description: text('description'),
+  defaultSlaHours: integer('default_sla_hours').default(24).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type TicketSubcategory = typeof ticketSubcategories.$inferSelect;
+export type NewTicketSubcategory = typeof ticketSubcategories.$inferInsert;
+
 export const slaPolicies = pgTable('sla_policies', {
   id: uuid('id').defaultRandom().primaryKey(),
   referenceId: varchar('reference_id', { length: 20 }).notNull().unique(),
@@ -322,6 +358,8 @@ export const slaPolicies = pgTable('sla_policies', {
   responseTimeHours: integer('response_time_hours').notNull(),
   resolutionTimeHours: integer('resolution_time_hours').notNull(),
   escalationRole: varchar('escalation_role', { length: 50 }).default('ADMIN').notNull(),
+  businessHoursOnly: boolean('business_hours_only').default(true).notNull(),
+  timezone: varchar('timezone', { length: 50 }).default('UTC').notNull(),
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -340,19 +378,38 @@ export const tickets = pgTable('tickets', {
     .notNull()
     .references(() => users.id),
   assignedTechnicianId: uuid('assigned_technician_id').references(() => users.id),
+  assignedTeamId: uuid('assigned_team_id').references(() => teams.id, { onDelete: 'set null' }),
   departmentId: uuid('department_id').references(() => departments.id, { onDelete: 'set null' }),
+  ticketType: varchar('ticket_type', { length: 50 }).notNull().default('Incident'),
+  impact: varchar('impact', { length: 20 }).notNull().default('MEDIUM'),
+  urgency: varchar('urgency', { length: 20 }).notNull().default('MEDIUM'),
   priority: varchar('priority', { length: 20 }).notNull().default('MEDIUM'),
+  priorityCode: varchar('priority_code', { length: 10 }).notNull().default('P3'),
   category: varchar('category', { length: 50 }).notNull().default('OTHER'),
   subcategory: varchar('subcategory', { length: 100 }),
   status: varchar('status', { length: 30 }).notNull().default('NEW'),
+  source: varchar('source', { length: 30 }).notNull().default('PORTAL'),
   slaPolicyId: uuid('sla_policy_id').references(() => slaPolicies.id, { onDelete: 'set null' }),
   dueDate: timestamp('due_date', { withTimezone: true }),
+  firstResponseDueAt: timestamp('first_response_due_at', { withTimezone: true }),
+  resolutionDueAt: timestamp('resolution_due_at', { withTimezone: true }),
   slaHours: integer('sla_hours').default(24).notNull(),
+  slaStatus: varchar('sla_status', { length: 30 }).notNull().default('WITHIN_SLA'),
   slaBreached: boolean('sla_breached').default(false).notNull(),
+  slaPausedAt: timestamp('sla_paused_at', { withTimezone: true }),
+  slaPauseDurationSeconds: integer('sla_pause_duration_seconds').default(0).notNull(),
   firstResponseAt: timestamp('first_response_at', { withTimezone: true }),
+  resolutionSummary: text('resolution_summary'),
+  rootCause: text('root_cause'),
+  resolutionCategory: varchar('resolution_category', { length: 100 }),
   resolutionNotes: text('resolution_notes'),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }),
   closedAt: timestamp('closed_at', { withTimezone: true }),
+  reopenedAt: timestamp('reopened_at', { withTimezone: true }),
+  reopenCount: integer('reopen_count').default(0).notNull(),
+  escalatedAt: timestamp('escalated_at', { withTimezone: true }),
+  escalationReason: text('escalation_reason'),
+  escalatedToRole: varchar('escalated_to_role', { length: 50 }),
   relatedTaskId: uuid('related_task_id').references(() => tasks.id, { onDelete: 'set null' }),
   relatedAssetId: uuid('related_asset_id').references(() => assets.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
