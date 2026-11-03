@@ -166,3 +166,4 @@ export async function seedDatabase() {
 if (require.main === module) {
   seedDatabase();
 }
+

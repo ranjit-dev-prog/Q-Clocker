@@ -47,3 +47,4 @@ export class DepartmentsComponent {
     { name: 'Human Resources', code: 'HR', description: 'Talent acquisition, employee satisfaction, compensation and organizational policy', manager: 'Emma Watson', members: 4 },
   ];
 }
+

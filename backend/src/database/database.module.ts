@@ -15,3 +15,4 @@ import { DRIZZLE_PROVIDER } from './connection';
   exports: [DatabaseService, DRIZZLE_PROVIDER],
 })
 export class DatabaseModule {}
+

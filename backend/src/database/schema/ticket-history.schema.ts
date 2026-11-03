@@ -30,3 +30,4 @@ export const ticketHistoryRelations = relations(ticketHistory, ({ one }) => ({
 
 export type TicketHistory = typeof ticketHistory.$inferSelect;
 export type NewTicketHistory = typeof ticketHistory.$inferInsert;
+

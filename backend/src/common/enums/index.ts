@@ -54,3 +54,4 @@ export enum NotificationType {
   DEADLINE_OVERDUE = 'DEADLINE_OVERDUE',
   FEEDBACK_RECEIVED = 'FEEDBACK_RECEIVED',
 }
+

@@ -33,3 +33,4 @@ export const workLogsRelations = relations(workLogs, ({ one }) => ({
 
 export type WorkLog = typeof workLogs.$inferSelect;
 export type NewWorkLog = typeof workLogs.$inferInsert;
+

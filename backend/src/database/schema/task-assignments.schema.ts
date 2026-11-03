@@ -34,3 +34,4 @@ export const taskAssignmentsRelations = relations(taskAssignments, ({ one }) => 
 
 export type TaskAssignment = typeof taskAssignments.$inferSelect;
 export type NewTaskAssignment = typeof taskAssignments.$inferInsert;
+

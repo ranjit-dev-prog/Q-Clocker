@@ -30,3 +30,4 @@ export const departmentsRelations = relations(departments, ({ one, many }) => ({
 
 export type Department = typeof departments.$inferSelect;
 export type NewDepartment = typeof departments.$inferInsert;
+

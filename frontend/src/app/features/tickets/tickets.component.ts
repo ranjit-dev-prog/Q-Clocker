@@ -73,3 +73,4 @@ export class TicketsComponent {
     { id: 'TC-2026-003', title: 'Primary Database Replica Latency Alert in US-East', requester: 'Marcus Chen', tech: 'Alexander Vance', category: 'Server', status: 'OPEN', sla: 'Within SLA (22h left)' },
   ];
 }
+

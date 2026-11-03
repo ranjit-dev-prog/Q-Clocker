@@ -53,3 +53,4 @@ export class RegisterDto {
   @IsString()
   jobTitle?: string;
 }
+

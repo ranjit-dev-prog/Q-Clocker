@@ -30,3 +30,4 @@ export const taskCommentsRelations = relations(taskComments, ({ one }) => ({
 
 export type TaskComment = typeof taskComments.$inferSelect;
 export type NewTaskComment = typeof taskComments.$inferInsert;
+

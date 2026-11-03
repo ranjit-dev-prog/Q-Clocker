@@ -24,3 +24,4 @@ export class DepartmentsController {
     return this.departmentsService.findOne(id);
   }
 }
+

@@ -251,3 +251,4 @@ export class DashboardComponent {
     { user: 'Alexander Vance', action: 'configured department policy', target: 'Q4 Performance Evaluation Metric', time: '3 hours ago', icon: 'settings' },
   ];
 }
+

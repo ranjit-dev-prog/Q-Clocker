@@ -52,3 +52,4 @@ export const ticketsRelations = relations(tickets, ({ one, many }) => ({
 
 export type Ticket = typeof tickets.$inferSelect;
 export type NewTicket = typeof tickets.$inferInsert;
+

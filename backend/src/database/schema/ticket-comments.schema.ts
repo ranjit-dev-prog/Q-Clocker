@@ -29,3 +29,4 @@ export const ticketCommentsRelations = relations(ticketComments, ({ one }) => ({
 
 export type TicketComment = typeof ticketComments.$inferSelect;
 export type NewTicketComment = typeof ticketComments.$inferInsert;
+

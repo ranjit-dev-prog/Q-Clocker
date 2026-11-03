@@ -54,3 +54,4 @@ export class WorkLogsComponent {
     { task: 'TSK-2026-002 • Angular Standalone Shell & Tailwind Layout', time: '14:00 - 17:30', hours: 3.5, description: 'Crafted responsive enterprise layout with theme toggling and live role switching.', status: 'SUBMITTED' },
   ];
 }
+

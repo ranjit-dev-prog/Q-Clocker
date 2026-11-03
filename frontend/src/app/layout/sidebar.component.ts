@@ -123,3 +123,4 @@ export class SidebarComponent {
     return (user.firstName[0] || '') + (user.lastName[0] || '');
   }
 }
+

@@ -52,3 +52,4 @@ import { AuthService } from '../../core/services/auth.service';
 export class PerformanceComponent {
   authService = inject(AuthService);
 }
+

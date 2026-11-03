@@ -61,3 +61,4 @@ export class ReportsComponent {
     alert(`Export initiated for ${formatOrName}. Your download is being prepared.`);
   }
 }
+

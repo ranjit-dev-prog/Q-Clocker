@@ -71,3 +71,4 @@ export class EmployeesComponent {
     { name: 'David Ross', email: 'employee@qclocker.io', role: 'EMPLOYEE', dept: 'Software Engineering', title: 'Full-Stack Software Engineer' },
   ];
 }
+

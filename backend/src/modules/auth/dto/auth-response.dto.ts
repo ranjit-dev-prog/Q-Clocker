@@ -36,3 +36,4 @@ export class AuthResponseDto {
   @ApiProperty({ type: AuthUserDto })
   user: AuthUserDto;
 }
+

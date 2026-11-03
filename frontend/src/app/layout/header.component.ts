@@ -92,3 +92,4 @@ export class HeaderComponent {
     this.authService.quickSwitchRole(role);
   }
 }
+

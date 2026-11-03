@@ -31,3 +31,4 @@ export const teamsRelations = relations(teams, ({ one, many }) => ({
 
 export type Team = typeof teams.$inferSelect;
 export type NewTeam = typeof teams.$inferInsert;
+

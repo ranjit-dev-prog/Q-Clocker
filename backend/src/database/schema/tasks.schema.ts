@@ -59,3 +59,4 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
 
 export type Task = typeof tasks.$inferSelect;
 export type NewTask = typeof tasks.$inferInsert;
+
