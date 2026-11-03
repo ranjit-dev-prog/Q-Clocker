@@ -49,6 +49,13 @@ export class DepartmentsController {
     return this.departmentsService.findAll();
   }
 
+  @Get('org-chart')
+  @ApiOperation({ summary: 'Get full organizational hierarchy chart' })
+  @ApiResponse({ status: 200, description: 'Organization chart' })
+  async getOrgChart() {
+    return this.departmentsService.getOrgChart();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: 'Get department details by ID' })
   @ApiResponse({ status: 200, description: 'Department details' })

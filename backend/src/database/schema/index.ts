@@ -90,6 +90,21 @@ export const teams = pgTable('teams', {
 export type Team = typeof teams.$inferSelect;
 export type NewTeam = typeof teams.$inferInsert;
 
+export const designations = pgTable('designations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  referenceId: varchar('reference_id', { length: 20 }).notNull().unique(),
+  name: varchar('name', { length: 100 }).notNull(),
+  code: varchar('code', { length: 50 }).notNull().unique(),
+  departmentId: uuid('department_id').references(() => departments.id, { onDelete: 'set null' }),
+  description: text('description'),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type Designation = typeof designations.$inferSelect;
+export type NewDesignation = typeof designations.$inferInsert;
+
 // =============================================================
 // 3. USERS, EMPLOYEES & SESSIONS
 // =============================================================
@@ -97,7 +112,9 @@ export type NewTeam = typeof teams.$inferInsert;
 export const users = pgTable('users', {
   id: uuid('id').defaultRandom().primaryKey(),
   referenceId: varchar('reference_id', { length: 20 }).notNull().unique(),
+  employeeCode: varchar('employee_code', { length: 50 }).unique(),
   email: varchar('email', { length: 255 }).notNull().unique(),
+  personalEmail: varchar('personal_email', { length: 255 }),
   passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   firstName: varchar('first_name', { length: 100 }).notNull(),
   lastName: varchar('last_name', { length: 100 }).notNull(),
@@ -111,13 +128,23 @@ export const users = pgTable('users', {
     onDelete: 'set null',
   }),
   teamId: uuid('team_id').references(() => teams.id, { onDelete: 'set null' }),
+  designationId: uuid('designation_id').references(() => designations.id, { onDelete: 'set null' }),
   managerId: uuid('manager_id'),
   jobTitle: varchar('job_title', { length: 100 }),
+  employmentType: varchar('employment_type', { length: 50 }).default('FULL_TIME').notNull(),
+  joiningDate: date('joining_date'),
+  workLocation: varchar('work_location', { length: 100 }).default('Headquarters').notNull(),
+  hasLoginAccount: boolean('has_login_account').default(true).notNull(),
+  accountStatus: varchar('account_status', { length: 30 }).default('ACTIVE').notNull(),
+  invitationToken: varchar('invitation_token', { length: 255 }),
+  invitationTokenExpiresAt: timestamp('invitation_token_expires_at', { withTimezone: true }),
   isActive: boolean('is_active').default(true).notNull(),
   lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  archivedAt: timestamp('archived_at', { withTimezone: true }),
+  archivedById: uuid('archived_by_id'),
 });
 
 export type User = typeof users.$inferSelect;

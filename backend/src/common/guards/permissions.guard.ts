@@ -14,49 +14,136 @@ import { UserRole } from '../enums';
 
 @Injectable()
 export class PermissionsGuard implements CanActivate {
-  // Built-in standard ERP permissions map by role code for high-throughput lookup & zero-latency fallback
-  private static readonly DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
+  // Built-in standard ERP permissions matrix by role code for high-throughput lookup & zero-latency fallback
+  public static readonly DEFAULT_ROLE_PERMISSIONS: Record<string, string[]> = {
     SUPER_ADMIN: ['*'], // Global bypass
     ADMIN: [
-      'task.create',
-      'task.assign',
-      'task.update',
-      'task.approve',
-      'ticket.create',
-      'ticket.assign',
-      'ticket.escalate',
-      'ticket.resolve',
-      'attendance.record',
-      'attendance.correct',
-      'timesheet.submit',
-      'timesheet.approve',
-      'employee.manage',
-      'department.manage',
-      'report.export',
-      'audit.view',
+      'employees.create',
+      'employees.read',
+      'employees.update',
+      'employees.delete',
+      'employees.archive',
+      'employees.import',
+      'employees.export',
+      'departments.create',
+      'departments.read',
+      'departments.update',
+      'departments.delete',
+      'roles.read',
+      'roles.create',
+      'roles.update',
+      'roles.assign',
+      'permissions.read',
+      'tasks.create',
+      'tasks.read',
+      'tasks.update',
+      'tasks.assign',
+      'tasks.delete',
+      'tickets.create',
+      'tickets.read',
+      'tickets.update',
+      'tickets.assign',
+      'tickets.close',
+      'attendance.read',
+      'attendance.create',
+      'attendance.update',
+      'attendance.approve',
+      'timesheets.read',
+      'timesheets.create',
+      'timesheets.update',
+      'timesheets.approve',
+      'reports.read',
+      'reports.export',
+      'audit_logs.read',
+      'settings.read',
+      'settings.update',
+    ],
+    HR_MANAGER: [
+      'employees.create',
+      'employees.read',
+      'employees.update',
+      'employees.archive',
+      'employees.import',
+      'employees.export',
+      'departments.read',
+      'attendance.read',
+      'attendance.create',
+      'attendance.update',
+      'attendance.approve',
+      'timesheets.read',
+      'timesheets.approve',
+      'reports.read',
+      'reports.export',
+    ],
+    HR_EXECUTIVE: [
+      'employees.create',
+      'employees.read',
+      'employees.update',
+      'departments.read',
+      'attendance.read',
+      'attendance.create',
+      'reports.read',
+    ],
+    IT_MANAGER: [
+      'tickets.create',
+      'tickets.read',
+      'tickets.update',
+      'tickets.assign',
+      'tickets.close',
+      'tasks.create',
+      'tasks.read',
+      'tasks.update',
+      'tasks.assign',
+      'employees.read',
+      'departments.read',
+      'reports.read',
+      'reports.export',
+    ],
+    IT_EXECUTIVE: [
+      'tickets.read',
+      'tickets.update',
+      'tasks.read',
+      'tasks.update',
+      'employees.read',
     ],
     TEAM_LEAD: [
-      'task.create',
-      'task.assign',
-      'task.update',
-      'task.approve',
-      'ticket.create',
-      'ticket.assign',
-      'ticket.resolve',
-      'attendance.record',
-      'timesheet.submit',
-      'timesheet.approve',
-      'report.export',
+      'tasks.create',
+      'tasks.read',
+      'tasks.update',
+      'tasks.assign',
+      'tickets.create',
+      'tickets.read',
+      'attendance.read',
+      'timesheets.read',
+      'timesheets.approve',
+      'employees.read',
+      'reports.read',
     ],
     EMPLOYEE: [
-      'task.update',
-      'ticket.create',
-      'attendance.record',
-      'timesheet.submit',
+      'tasks.read',
+      'tasks.update',
+      'tickets.create',
+      'tickets.read',
+      'attendance.read',
+      'attendance.create',
+      'timesheets.read',
+      'timesheets.create',
     ],
     AUDITOR: [
-      'audit.view',
-      'report.export',
+      'audit_logs.read',
+      'reports.read',
+      'reports.export',
+      'employees.read',
+      'departments.read',
+      'roles.read',
+      'permissions.read',
+    ],
+    READ_ONLY: [
+      'employees.read',
+      'departments.read',
+      'tasks.read',
+      'tickets.read',
+      'reports.read',
     ],
   };
 
@@ -91,7 +178,9 @@ export class PermissionsGuard implements CanActivate {
     const userPermissions = await this.getUserPermissions(user.roleId, userRoleCode);
 
     const hasAll = requiredPermissions.every((perm) =>
-      userPermissions.includes(perm) || userPermissions.includes('*'),
+      userPermissions.includes(perm) ||
+      userPermissions.includes('*') ||
+      userPermissions.includes(`${perm.split('.')[0]}.*`),
     );
 
     if (!hasAll) {
@@ -103,15 +192,13 @@ export class PermissionsGuard implements CanActivate {
     return true;
   }
 
-  private async getUserPermissions(
-    roleId?: string,
-    roleCode?: string,
-  ): Promise<string[]> {
-    // 1. Check database if connected and roleId provided
+  private async getUserPermissions(roleId?: string, roleCode?: string): Promise<string[]> {
     if (this.dbService.getConnectionStatus() && roleId) {
       try {
         const rows = await this.dbService.db
-          .select({ code: schema.permissions.code })
+          .select({
+            code: schema.permissions.code,
+          })
           .from(schema.rolePermissions)
           .innerJoin(
             schema.permissions,
@@ -122,16 +209,11 @@ export class PermissionsGuard implements CanActivate {
         if (rows.length > 0) {
           return rows.map((r) => r.code);
         }
-      } catch {
-        // Fallback to static matrix on query error
+      } catch (err) {
+        // Fall back to built-in map
       }
     }
 
-    // 2. Fallback to predefined enterprise role matrix
-    if (roleCode && PermissionsGuard.DEFAULT_ROLE_PERMISSIONS[roleCode]) {
-      return PermissionsGuard.DEFAULT_ROLE_PERMISSIONS[roleCode];
-    }
-
-    return [];
+    return PermissionsGuard.DEFAULT_ROLE_PERMISSIONS[roleCode || 'EMPLOYEE'] || [];
   }
 }

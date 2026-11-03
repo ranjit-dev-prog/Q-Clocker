@@ -289,4 +289,31 @@ export class DepartmentsService {
 
     return this.memoryTeams.filter((t) => t.departmentId === departmentId);
   }
+
+  async getOrgChart() {
+    const depts = await this.findAll();
+    const tree = await Promise.all(
+      depts.map(async (dept) => {
+        const teams = await this.findTeams(dept.id);
+        return {
+          id: dept.id,
+          name: dept.name,
+          code: dept.code,
+          referenceId: dept.referenceId,
+          head: dept.managerName || 'Unassigned Head',
+          teams: teams.map((t) => ({
+            id: t.id,
+            name: t.name,
+            lead: (t as any).leadName || 'Team Lead',
+          })),
+        };
+      }),
+    );
+
+    return {
+      organizationName: 'Q Clocker Enterprise',
+      ceo: 'Alexander Vance (Chief Information Officer)',
+      departments: tree,
+    };
+  }
 }
