@@ -8,12 +8,18 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RolesController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const roles_service_1 = require("./roles.service");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
+const roles_guard_1 = require("../../common/guards/roles.guard");
+const roles_decorator_1 = require("../../common/decorators/roles.decorator");
+const enums_1 = require("../../common/enums");
 let RolesController = class RolesController {
     rolesService;
     constructor(rolesService) {
@@ -22,20 +28,46 @@ let RolesController = class RolesController {
     async findAll() {
         return this.rolesService.findAll();
     }
+    async findOne(id) {
+        return this.rolesService.findOne(id);
+    }
+    async create(dto) {
+        return this.rolesService.create(dto);
+    }
 };
 exports.RolesController = RolesController;
 __decorate([
     (0, common_1.Get)(),
-    (0, swagger_1.ApiOperation)({ summary: 'List all available application roles' }),
+    (0, swagger_1.ApiOperation)({ summary: 'List all system and custom RBAC roles' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'List of roles' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], RolesController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)(':id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get role details with assigned permissions' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Role details' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], RolesController.prototype, "findOne", null);
+__decorate([
+    (0, common_1.Post)(),
+    (0, roles_decorator_1.Roles)(enums_1.UserRole.SUPER_ADMIN, enums_1.UserRole.ADMIN),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
+    (0, swagger_1.ApiOperation)({ summary: 'Create a new custom RBAC role' }),
+    (0, swagger_1.ApiResponse)({ status: 201, description: 'Role created successfully' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], RolesController.prototype, "create", null);
 exports.RolesController = RolesController = __decorate([
-    (0, swagger_1.ApiTags)('Roles & Permissions'),
+    (0, swagger_1.ApiTags)('Roles & Access Control'),
     (0, common_1.Controller)('roles'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, swagger_1.ApiBearerAuth)(),
     __metadata("design:paramtypes", [roles_service_1.RolesService])
 ], RolesController);

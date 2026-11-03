@@ -2,7 +2,14 @@ import { RolesService } from './roles.service';
 export declare class RolesController {
     private readonly rolesService;
     constructor(rolesService: RolesService);
-    findAll(): Promise<{
+    findAll(): Promise<any[]>;
+    findOne(id: string): Promise<any>;
+    create(dto: {
+        name: string;
+        code: string;
+        description?: string;
+        permissions?: string[];
+    }): Promise<{
         id: string;
         name: string;
         code: string;
@@ -10,11 +17,5 @@ export declare class RolesController {
         isSystem: boolean;
         createdAt: Date;
         updatedAt: Date;
-    }[] | {
-        id: string;
-        code: string;
-        name: string;
-        description: string;
-        isSystem: boolean;
-    }[]>;
+    }>;
 }

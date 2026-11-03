@@ -64,11 +64,26 @@ async function runMigrations() {
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
+    -- 4b. Designations
+    CREATE TABLE IF NOT EXISTS designations (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      reference_id VARCHAR(20) NOT NULL UNIQUE,
+      name VARCHAR(100) NOT NULL,
+      code VARCHAR(50) NOT NULL UNIQUE,
+      department_id UUID REFERENCES departments(id) ON DELETE SET NULL,
+      description TEXT,
+      is_active BOOLEAN NOT NULL DEFAULT true,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
     -- 5. Users
     CREATE TABLE IF NOT EXISTS users (
       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
       reference_id VARCHAR(20) NOT NULL UNIQUE,
+      employee_code VARCHAR(50) UNIQUE,
       email VARCHAR(255) NOT NULL UNIQUE,
+      personal_email VARCHAR(255),
       password_hash VARCHAR(255) NOT NULL,
       first_name VARCHAR(100) NOT NULL,
       last_name VARCHAR(100) NOT NULL,
@@ -78,14 +93,38 @@ async function runMigrations() {
       role_code VARCHAR(50) NOT NULL DEFAULT 'EMPLOYEE',
       department_id UUID REFERENCES departments(id) ON DELETE SET NULL,
       team_id UUID REFERENCES teams(id) ON DELETE SET NULL,
+      designation_id UUID REFERENCES designations(id) ON DELETE SET NULL,
       manager_id UUID REFERENCES users(id) ON DELETE SET NULL,
       job_title VARCHAR(100),
+      employment_type VARCHAR(50) NOT NULL DEFAULT 'FULL_TIME',
+      joining_date DATE,
+      work_location VARCHAR(100) NOT NULL DEFAULT 'Headquarters',
+      has_login_account BOOLEAN NOT NULL DEFAULT true,
+      account_status VARCHAR(30) NOT NULL DEFAULT 'ACTIVE',
+      invitation_token VARCHAR(255),
+      invitation_token_expires_at TIMESTAMPTZ,
       is_active BOOLEAN NOT NULL DEFAULT true,
       last_login_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      deleted_at TIMESTAMPTZ
+      deleted_at TIMESTAMPTZ,
+      archived_at TIMESTAMPTZ,
+      archived_by_id UUID
     );
+
+    -- Backward compatibility alter columns
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS employee_code VARCHAR(50) UNIQUE;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS personal_email VARCHAR(255);
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS designation_id UUID REFERENCES designations(id) ON DELETE SET NULL;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS employment_type VARCHAR(50) NOT NULL DEFAULT 'FULL_TIME';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS joining_date DATE;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS work_location VARCHAR(100) NOT NULL DEFAULT 'Headquarters';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS has_login_account BOOLEAN NOT NULL DEFAULT true;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS account_status VARCHAR(30) NOT NULL DEFAULT 'ACTIVE';
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS invitation_token VARCHAR(255);
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS invitation_token_expires_at TIMESTAMPTZ;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ;
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS archived_by_id UUID;
 
     -- 6. User Sessions & Refresh Tokens
     CREATE TABLE IF NOT EXISTS user_sessions (

@@ -16,6 +16,7 @@ const enums_1 = require("../../../common/enums");
 class UserQueryDto {
     search;
     role;
+    roleCode;
     departmentId;
     isActive;
 }
@@ -32,6 +33,12 @@ __decorate([
     (0, class_validator_1.IsEnum)(enums_1.UserRole),
     __metadata("design:type", String)
 ], UserQueryDto.prototype, "role", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ enum: enums_1.UserRole, description: 'Filter by user role code' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(enums_1.UserRole),
+    __metadata("design:type", String)
+], UserQueryDto.prototype, "roleCode", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: 'Filter by department ID' }),
     (0, class_validator_1.IsOptional)(),

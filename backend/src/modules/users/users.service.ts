@@ -267,17 +267,25 @@ export class UsersService {
   }
 
   async findAll(query: UserQueryDto) {
+    const roleFilter = query.roleCode || query.role;
+    const activeFilter =
+      query.isActive !== undefined
+        ? typeof query.isActive === 'string'
+          ? query.isActive === 'true'
+          : Boolean(query.isActive)
+        : undefined;
+
     if (this.dbService.getConnectionStatus()) {
       const conditions: any[] = [];
 
-      if (query.roleCode) {
-        conditions.push(eq(schema.users.roleCode, query.roleCode));
+      if (roleFilter) {
+        conditions.push(eq(schema.users.roleCode, roleFilter));
       }
       if (query.departmentId) {
         conditions.push(eq(schema.users.departmentId, query.departmentId));
       }
-      if (query.isActive !== undefined) {
-        conditions.push(eq(schema.users.isActive, query.isActive));
+      if (activeFilter !== undefined) {
+        conditions.push(eq(schema.users.isActive, activeFilter));
       }
       if (query.search) {
         const pattern = `%${query.search.trim()}%`;
@@ -327,9 +335,9 @@ export class UsersService {
     }
 
     return this.memoryUsers.filter((u) => {
-      if (query.roleCode && u.roleCode !== query.roleCode) return false;
+      if (roleFilter && u.roleCode !== roleFilter) return false;
       if (query.departmentId && u.departmentId !== query.departmentId) return false;
-      if (query.isActive !== undefined && u.isActive !== query.isActive) return false;
+      if (activeFilter !== undefined && u.isActive !== activeFilter) return false;
       if (query.search) {
         const s = query.search.toLowerCase();
         return (

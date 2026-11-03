@@ -142,4 +142,20 @@ export declare class DepartmentsService {
         departmentId: string;
         leadId: string | null;
     }[]>;
+    getOrgChart(): Promise<{
+        organizationName: string;
+        ceo: string;
+        departments: {
+            id: any;
+            name: any;
+            code: any;
+            referenceId: any;
+            head: any;
+            teams: {
+                id: any;
+                name: any;
+                lead: any;
+            }[];
+        }[];
+    }>;
 }

@@ -25,6 +25,7 @@ export type EntityPrefix =
   | 'EMP'
   | 'DEP'
   | 'TEM'
+  | 'DSG'
   | 'TSK'
   | 'TKT'
   | 'TMS'

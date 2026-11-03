@@ -1,9 +1,26 @@
 export declare enum UserRole {
     SUPER_ADMIN = "SUPER_ADMIN",
     ADMIN = "ADMIN",
+    HR_MANAGER = "HR_MANAGER",
+    HR_EXECUTIVE = "HR_EXECUTIVE",
+    IT_MANAGER = "IT_MANAGER",
+    IT_EXECUTIVE = "IT_EXECUTIVE",
     TEAM_LEAD = "TEAM_LEAD",
     EMPLOYEE = "EMPLOYEE",
-    AUDITOR = "AUDITOR"
+    AUDITOR = "AUDITOR",
+    READ_ONLY = "READ_ONLY"
+}
+export declare enum EmploymentType {
+    FULL_TIME = "FULL_TIME",
+    PART_TIME = "PART_TIME",
+    CONTRACT = "CONTRACT",
+    INTERN = "INTERN"
+}
+export declare enum AccountStatus {
+    ACTIVE = "ACTIVE",
+    INVITATION_PENDING = "INVITATION_PENDING",
+    DEACTIVATED = "DEACTIVATED",
+    ARCHIVED = "ARCHIVED"
 }
 export declare enum TaskStatus {
     DRAFT = "DRAFT",
@@ -72,7 +89,8 @@ export declare enum NotificationType {
     FEEDBACK_RECEIVED = "FEEDBACK_RECEIVED",
     TIMESHEET_SUBMITTED = "TIMESHEET_SUBMITTED",
     TIMESHEET_APPROVED = "TIMESHEET_APPROVED",
-    APPROVAL_REQUESTED = "APPROVAL_REQUESTED"
+    APPROVAL_REQUESTED = "APPROVAL_REQUESTED",
+    EMPLOYEE_INVITED = "EMPLOYEE_INVITED"
 }
 export declare enum ApprovalStatus {
     DRAFT = "DRAFT",

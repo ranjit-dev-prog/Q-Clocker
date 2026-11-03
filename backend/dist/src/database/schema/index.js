@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ticketTimeEntriesRelations = exports.taskTimeEntriesRelations = exports.workSessionsRelations = exports.attendanceEventsRelations = exports.workLogsRelations = exports.ticketHistoryRelations = exports.ticketCommentsRelations = exports.ticketsRelations = exports.taskAttachmentsRelations = exports.taskCommentsRelations = exports.taskAssignmentsRelations = exports.tasksRelations = exports.userSessionsRelations = exports.usersRelations = exports.teamsRelations = exports.departmentsRelations = exports.rolePermissionsRelations = exports.permissionsRelations = exports.rolesRelations = exports.auditLogs = exports.performanceReviews = exports.notifications = exports.reminders = exports.followUps = exports.approvals = exports.timesheetEntries = exports.timesheets = exports.ticketTimeEntries = exports.taskTimeEntries = exports.workSessions = exports.attendanceEvents = exports.workLogs = exports.ticketHistory = exports.ticketComments = exports.tickets = exports.slaPolicies = exports.taskDependencies = exports.taskAttachments = exports.taskComments = exports.taskAssignments = exports.tasks = exports.assets = exports.projects = exports.userSessions = exports.users = exports.teams = exports.departments = exports.rolePermissions = exports.permissions = exports.roles = void 0;
-exports.auditLogsRelations = exports.performanceReviewsRelations = exports.notificationsRelations = exports.remindersRelations = exports.followUpsRelations = exports.approvalsRelations = exports.timesheetEntriesRelations = exports.timesheetsRelations = void 0;
+exports.taskTimeEntriesRelations = exports.workSessionsRelations = exports.attendanceEventsRelations = exports.workLogsRelations = exports.ticketHistoryRelations = exports.ticketCommentsRelations = exports.ticketsRelations = exports.taskAttachmentsRelations = exports.taskCommentsRelations = exports.taskAssignmentsRelations = exports.tasksRelations = exports.userSessionsRelations = exports.usersRelations = exports.teamsRelations = exports.departmentsRelations = exports.rolePermissionsRelations = exports.permissionsRelations = exports.rolesRelations = exports.auditLogs = exports.performanceReviews = exports.notifications = exports.reminders = exports.followUps = exports.approvals = exports.timesheetEntries = exports.timesheets = exports.ticketTimeEntries = exports.taskTimeEntries = exports.workSessions = exports.attendanceEvents = exports.workLogs = exports.ticketHistory = exports.ticketComments = exports.tickets = exports.slaPolicies = exports.taskDependencies = exports.taskAttachments = exports.taskComments = exports.taskAssignments = exports.tasks = exports.assets = exports.projects = exports.userSessions = exports.users = exports.designations = exports.teams = exports.departments = exports.rolePermissions = exports.permissions = exports.roles = void 0;
+exports.auditLogsRelations = exports.performanceReviewsRelations = exports.notificationsRelations = exports.remindersRelations = exports.followUpsRelations = exports.approvalsRelations = exports.timesheetEntriesRelations = exports.timesheetsRelations = exports.ticketTimeEntriesRelations = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 exports.roles = (0, pg_core_1.pgTable)('roles', {
@@ -55,10 +55,23 @@ exports.teams = (0, pg_core_1.pgTable)('teams', {
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: (0, pg_core_1.timestamp)('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+exports.designations = (0, pg_core_1.pgTable)('designations', {
+    id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
+    referenceId: (0, pg_core_1.varchar)('reference_id', { length: 20 }).notNull().unique(),
+    name: (0, pg_core_1.varchar)('name', { length: 100 }).notNull(),
+    code: (0, pg_core_1.varchar)('code', { length: 50 }).notNull().unique(),
+    departmentId: (0, pg_core_1.uuid)('department_id').references(() => exports.departments.id, { onDelete: 'set null' }),
+    description: (0, pg_core_1.text)('description'),
+    isActive: (0, pg_core_1.boolean)('is_active').default(true).notNull(),
+    createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: (0, pg_core_1.timestamp)('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
 exports.users = (0, pg_core_1.pgTable)('users', {
     id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
     referenceId: (0, pg_core_1.varchar)('reference_id', { length: 20 }).notNull().unique(),
+    employeeCode: (0, pg_core_1.varchar)('employee_code', { length: 50 }).unique(),
     email: (0, pg_core_1.varchar)('email', { length: 255 }).notNull().unique(),
+    personalEmail: (0, pg_core_1.varchar)('personal_email', { length: 255 }),
     passwordHash: (0, pg_core_1.varchar)('password_hash', { length: 255 }).notNull(),
     firstName: (0, pg_core_1.varchar)('first_name', { length: 100 }).notNull(),
     lastName: (0, pg_core_1.varchar)('last_name', { length: 100 }).notNull(),
@@ -72,13 +85,23 @@ exports.users = (0, pg_core_1.pgTable)('users', {
         onDelete: 'set null',
     }),
     teamId: (0, pg_core_1.uuid)('team_id').references(() => exports.teams.id, { onDelete: 'set null' }),
+    designationId: (0, pg_core_1.uuid)('designation_id').references(() => exports.designations.id, { onDelete: 'set null' }),
     managerId: (0, pg_core_1.uuid)('manager_id'),
     jobTitle: (0, pg_core_1.varchar)('job_title', { length: 100 }),
+    employmentType: (0, pg_core_1.varchar)('employment_type', { length: 50 }).default('FULL_TIME').notNull(),
+    joiningDate: (0, pg_core_1.date)('joining_date'),
+    workLocation: (0, pg_core_1.varchar)('work_location', { length: 100 }).default('Headquarters').notNull(),
+    hasLoginAccount: (0, pg_core_1.boolean)('has_login_account').default(true).notNull(),
+    accountStatus: (0, pg_core_1.varchar)('account_status', { length: 30 }).default('ACTIVE').notNull(),
+    invitationToken: (0, pg_core_1.varchar)('invitation_token', { length: 255 }),
+    invitationTokenExpiresAt: (0, pg_core_1.timestamp)('invitation_token_expires_at', { withTimezone: true }),
     isActive: (0, pg_core_1.boolean)('is_active').default(true).notNull(),
     lastLoginAt: (0, pg_core_1.timestamp)('last_login_at', { withTimezone: true }),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: (0, pg_core_1.timestamp)('updated_at', { withTimezone: true }).defaultNow().notNull(),
     deletedAt: (0, pg_core_1.timestamp)('deleted_at', { withTimezone: true }),
+    archivedAt: (0, pg_core_1.timestamp)('archived_at', { withTimezone: true }),
+    archivedById: (0, pg_core_1.uuid)('archived_by_id'),
 });
 exports.userSessions = (0, pg_core_1.pgTable)('user_sessions', {
     id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),

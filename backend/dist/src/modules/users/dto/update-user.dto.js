@@ -14,17 +14,31 @@ const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 const enums_1 = require("../../../common/enums");
 class UpdateUserDto {
+    employeeCode;
     firstName;
     lastName;
+    personalEmail;
     phone;
     roleCode;
     departmentId;
     teamId;
+    designationId;
     managerId;
     jobTitle;
+    employmentType;
+    joiningDate;
+    workLocation;
+    hasLoginAccount;
+    accountStatus;
     isActive;
 }
 exports.UpdateUserDto = UpdateUserDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'EMP001', description: 'Employee badge code' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "employeeCode", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ example: 'Jane', description: 'First name' }),
     (0, class_validator_1.IsOptional)(),
@@ -37,6 +51,12 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateUserDto.prototype, "lastName", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'jane.personal@gmail.com' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEmail)(),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "personalEmail", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ example: '+1-555-0199', description: 'Phone number' }),
     (0, class_validator_1.IsOptional)(),
@@ -62,6 +82,12 @@ __decorate([
     __metadata("design:type", String)
 ], UpdateUserDto.prototype, "teamId", void 0);
 __decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Designation UUID' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "designationId", void 0);
+__decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: 'Assigned Manager UUID' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsUUID)(),
@@ -73,6 +99,36 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateUserDto.prototype, "jobTitle", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ enum: enums_1.EmploymentType }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(enums_1.EmploymentType),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "employmentType", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: '2026-11-01' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "joiningDate", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'Headquarters' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "workLocation", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: true, description: 'Login account enabled' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], UpdateUserDto.prototype, "hasLoginAccount", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ enum: enums_1.AccountStatus }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(enums_1.AccountStatus),
+    __metadata("design:type", String)
+], UpdateUserDto.prototype, "accountStatus", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ example: true, description: 'Active status' }),
     (0, class_validator_1.IsOptional)(),

@@ -15,7 +15,9 @@ const database_module_1 = require("./database/database.module");
 const auth_module_1 = require("./modules/auth/auth.module");
 const users_module_1 = require("./modules/users/users.module");
 const departments_module_1 = require("./modules/departments/departments.module");
+const designations_module_1 = require("./modules/designations/designations.module");
 const roles_module_1 = require("./modules/roles/roles.module");
+const permissions_module_1 = require("./modules/permissions/permissions.module");
 const tasks_module_1 = require("./modules/tasks/tasks.module");
 const tickets_module_1 = require("./modules/tickets/tickets.module");
 const work_logs_module_1 = require("./modules/work-logs/work-logs.module");
@@ -40,7 +42,9 @@ exports.AppModule = AppModule = __decorate([
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             departments_module_1.DepartmentsModule,
+            designations_module_1.DesignationsModule,
             roles_module_1.RolesModule,
+            permissions_module_1.PermissionsModule,
             tasks_module_1.TasksModule,
             tickets_module_1.TicketsModule,
             work_logs_module_1.WorkLogsModule,

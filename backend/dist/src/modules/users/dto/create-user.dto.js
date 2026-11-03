@@ -14,7 +14,9 @@ const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 const enums_1 = require("../../../common/enums");
 class CreateUserDto {
+    employeeCode;
     email;
+    personalEmail;
     password;
     firstName;
     lastName;
@@ -22,18 +24,37 @@ class CreateUserDto {
     roleCode;
     departmentId;
     teamId;
+    designationId;
     managerId;
     jobTitle;
+    employmentType;
+    joiningDate;
+    workLocation;
+    hasLoginAccount;
+    sendInvitation;
 }
 exports.CreateUserDto = CreateUserDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'jane.doe@qclocker.io', description: 'Employee corporate email' }),
+    (0, swagger_1.ApiPropertyOptional)({ example: 'EMP001', description: 'Internal employee badge / payroll code' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateUserDto.prototype, "employeeCode", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 'jane.doe@qclocker.io', description: 'Official corporate email' }),
     (0, class_validator_1.IsEmail)({}, { message: 'Please provide a valid corporate email address' }),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "email", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'P@ssword2026!', description: 'Temporary or initial password (min 8 chars)' }),
+    (0, swagger_1.ApiPropertyOptional)({ example: 'jane.personal@gmail.com', description: 'Personal email address' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEmail)(),
+    __metadata("design:type", String)
+], CreateUserDto.prototype, "personalEmail", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'P@ssword2026!', description: 'Initial password (min 8 chars, optional if invitation enabled)' }),
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.MinLength)(8, { message: 'Password must be at least 8 characters long' }),
     __metadata("design:type", String)
@@ -58,7 +79,7 @@ __decorate([
 ], CreateUserDto.prototype, "phone", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ enum: enums_1.UserRole, example: enums_1.UserRole.EMPLOYEE, description: 'Role assigned' }),
-    (0, class_validator_1.IsEnum)(enums_1.UserRole, { message: 'Role must be SUPER_ADMIN, ADMIN, TEAM_LEAD, or EMPLOYEE' }),
+    (0, class_validator_1.IsEnum)(enums_1.UserRole),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "roleCode", void 0);
 __decorate([
@@ -74,7 +95,13 @@ __decorate([
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "teamId", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ description: 'Assigned Manager UUID' }),
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Designation UUID' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsUUID)(),
+    __metadata("design:type", String)
+], CreateUserDto.prototype, "designationId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Assigned Reporting Manager UUID' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
@@ -85,4 +112,34 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateUserDto.prototype, "jobTitle", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ enum: enums_1.EmploymentType, default: enums_1.EmploymentType.FULL_TIME }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(enums_1.EmploymentType),
+    __metadata("design:type", String)
+], CreateUserDto.prototype, "employmentType", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: '2026-11-01', description: 'Joining date' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsDateString)(),
+    __metadata("design:type", String)
+], CreateUserDto.prototype, "joiningDate", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ example: 'Headquarters', description: 'Work location / office or remote' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateUserDto.prototype, "workLocation", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ default: true, description: 'Whether to create an active user login account' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreateUserDto.prototype, "hasLoginAccount", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ default: false, description: 'Send secure email invitation with activation token' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreateUserDto.prototype, "sendInvitation", void 0);
 //# sourceMappingURL=create-user.dto.js.map

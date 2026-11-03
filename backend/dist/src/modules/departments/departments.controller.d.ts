@@ -51,6 +51,22 @@ export declare class DepartmentsController {
         managerId: string | null;
         isActive: boolean;
     }[]>;
+    getOrgChart(): Promise<{
+        organizationName: string;
+        ceo: string;
+        departments: {
+            id: any;
+            name: any;
+            code: any;
+            referenceId: any;
+            head: any;
+            teams: {
+                id: any;
+                name: any;
+                lead: any;
+            }[];
+        }[];
+    }>;
     findOne(id: string): Promise<{
         id: string;
         referenceId?: string;

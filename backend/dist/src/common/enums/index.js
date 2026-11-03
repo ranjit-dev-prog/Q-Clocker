@@ -1,14 +1,33 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ApprovalStatus = exports.NotificationType = exports.TicketCategory = exports.TicketStatus = exports.TaskCategory = exports.Priority = exports.TaskStatus = exports.UserRole = void 0;
+exports.ApprovalStatus = exports.NotificationType = exports.TicketCategory = exports.TicketStatus = exports.TaskCategory = exports.Priority = exports.TaskStatus = exports.AccountStatus = exports.EmploymentType = exports.UserRole = void 0;
 var UserRole;
 (function (UserRole) {
     UserRole["SUPER_ADMIN"] = "SUPER_ADMIN";
     UserRole["ADMIN"] = "ADMIN";
+    UserRole["HR_MANAGER"] = "HR_MANAGER";
+    UserRole["HR_EXECUTIVE"] = "HR_EXECUTIVE";
+    UserRole["IT_MANAGER"] = "IT_MANAGER";
+    UserRole["IT_EXECUTIVE"] = "IT_EXECUTIVE";
     UserRole["TEAM_LEAD"] = "TEAM_LEAD";
     UserRole["EMPLOYEE"] = "EMPLOYEE";
     UserRole["AUDITOR"] = "AUDITOR";
+    UserRole["READ_ONLY"] = "READ_ONLY";
 })(UserRole || (exports.UserRole = UserRole = {}));
+var EmploymentType;
+(function (EmploymentType) {
+    EmploymentType["FULL_TIME"] = "FULL_TIME";
+    EmploymentType["PART_TIME"] = "PART_TIME";
+    EmploymentType["CONTRACT"] = "CONTRACT";
+    EmploymentType["INTERN"] = "INTERN";
+})(EmploymentType || (exports.EmploymentType = EmploymentType = {}));
+var AccountStatus;
+(function (AccountStatus) {
+    AccountStatus["ACTIVE"] = "ACTIVE";
+    AccountStatus["INVITATION_PENDING"] = "INVITATION_PENDING";
+    AccountStatus["DEACTIVATED"] = "DEACTIVATED";
+    AccountStatus["ARCHIVED"] = "ARCHIVED";
+})(AccountStatus || (exports.AccountStatus = AccountStatus = {}));
 var TaskStatus;
 (function (TaskStatus) {
     TaskStatus["DRAFT"] = "DRAFT";
@@ -83,6 +102,7 @@ var NotificationType;
     NotificationType["TIMESHEET_SUBMITTED"] = "TIMESHEET_SUBMITTED";
     NotificationType["TIMESHEET_APPROVED"] = "TIMESHEET_APPROVED";
     NotificationType["APPROVAL_REQUESTED"] = "APPROVAL_REQUESTED";
+    NotificationType["EMPLOYEE_INVITED"] = "EMPLOYEE_INVITED";
 })(NotificationType || (exports.NotificationType = NotificationType = {}));
 var ApprovalStatus;
 (function (ApprovalStatus) {

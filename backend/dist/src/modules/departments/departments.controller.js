@@ -34,6 +34,9 @@ let DepartmentsController = class DepartmentsController {
     async findAll() {
         return this.departmentsService.findAll();
     }
+    async getOrgChart() {
+        return this.departmentsService.getOrgChart();
+    }
     async findOne(id) {
         return this.departmentsService.findOne(id);
     }
@@ -71,6 +74,14 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], DepartmentsController.prototype, "findAll", null);
+__decorate([
+    (0, common_1.Get)('org-chart'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get full organizational hierarchy chart' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Organization chart' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], DepartmentsController.prototype, "getOrgChart", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, swagger_1.ApiOperation)({ summary: 'Get department details by ID' }),
