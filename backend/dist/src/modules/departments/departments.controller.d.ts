@@ -16,7 +16,7 @@ export declare class DepartmentsController {
         managerId: string | null;
         isActive: boolean;
     } | {
-        id: string;
+        id: `${string}-${string}-${string}-${string}-${string}`;
         referenceId: string;
         name: string;
         code: string;
@@ -111,7 +111,7 @@ export declare class DepartmentsController {
         departmentId: string;
         leadId: string | null;
     } | {
-        id: string;
+        id: `${string}-${string}-${string}-${string}-${string}`;
         referenceId: string;
         departmentId: string;
         name: string;

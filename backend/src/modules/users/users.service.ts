@@ -13,6 +13,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
 import { UserRole } from '../../common/enums';
 import { generateReferenceId } from '../../common/utils/reference-id.util';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class UsersService {
@@ -164,7 +165,7 @@ export class UsersService {
     }
 
     const newUser = {
-      id: `00000000-0000-0000-0000-${Date.now().toString().slice(-12)}`,
+      id: crypto.randomUUID(),
       referenceId: generateReferenceId('EMP'),
       email: normalizedEmail,
       firstName: dto.firstName,

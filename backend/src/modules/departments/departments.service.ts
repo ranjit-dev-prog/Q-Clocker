@@ -11,6 +11,7 @@ import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { CreateTeamDto } from './dto/create-team.dto';
 import { generateReferenceId } from '../../common/utils/reference-id.util';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class DepartmentsService {
@@ -146,7 +147,7 @@ export class DepartmentsService {
     }
 
     const newDept = {
-      id: `10000000-0000-0000-0000-${Date.now().toString().slice(-12)}`,
+      id: crypto.randomUUID(),
       referenceId: generateReferenceId('DEP'),
       name: dto.name.trim(),
       code,
@@ -265,7 +266,7 @@ export class DepartmentsService {
     }
 
     const newTeam = {
-      id: `20000000-0000-0000-0000-${Date.now().toString().slice(-12)}`,
+      id: crypto.randomUUID(),
       referenceId: generateReferenceId('TEM'),
       departmentId,
       name: dto.name,

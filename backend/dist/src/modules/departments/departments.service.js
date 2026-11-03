@@ -16,6 +16,7 @@ const database_service_1 = require("../../database/database.service");
 const schema = require("../../database/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const reference_id_util_1 = require("../../common/utils/reference-id.util");
+const crypto = require("crypto");
 let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
     dbService;
     logger = new common_1.Logger(DepartmentsService_1.name);
@@ -121,7 +122,7 @@ let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
             throw new common_1.ConflictException(`Department code '${code}' already exists`);
         }
         const newDept = {
-            id: `10000000-0000-0000-0000-${Date.now().toString().slice(-12)}`,
+            id: crypto.randomUUID(),
             referenceId: (0, reference_id_util_1.generateReferenceId)('DEP'),
             name: dto.name.trim(),
             code,
@@ -226,7 +227,7 @@ let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
             return newTeam;
         }
         const newTeam = {
-            id: `20000000-0000-0000-0000-${Date.now().toString().slice(-12)}`,
+            id: crypto.randomUUID(),
             referenceId: (0, reference_id_util_1.generateReferenceId)('TEM'),
             departmentId,
             name: dto.name,

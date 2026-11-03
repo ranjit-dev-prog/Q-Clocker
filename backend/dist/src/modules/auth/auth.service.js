@@ -199,7 +199,8 @@ let AuthService = AuthService_1 = class AuthService {
         }
         const passwordHash = await bcrypt.hash(password, 10);
         const newDemoUser = {
-            id: `00000000-0000-0000-0000-${Date.now().toString().slice(-12)}`,
+            id: crypto.randomUUID(),
+            referenceId: (0, reference_id_util_1.generateReferenceId)('EMP'),
             email: normalizedEmail,
             passwordHash,
             firstName,

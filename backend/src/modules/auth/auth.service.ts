@@ -238,7 +238,8 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(password, 10);
     const newDemoUser = {
-      id: `00000000-0000-0000-0000-${Date.now().toString().slice(-12)}`,
+      id: crypto.randomUUID(),
+      referenceId: generateReferenceId('EMP'),
       email: normalizedEmail,
       passwordHash,
       firstName,

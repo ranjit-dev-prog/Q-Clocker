@@ -26,7 +26,7 @@ export declare class UsersController {
         lastLoginAt: Date | null;
         deletedAt: Date | null;
     } | {
-        id: string;
+        id: `${string}-${string}-${string}-${string}-${string}`;
         referenceId: string;
         email: string;
         firstName: string;

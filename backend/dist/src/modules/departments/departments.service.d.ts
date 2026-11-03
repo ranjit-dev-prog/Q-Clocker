@@ -19,7 +19,7 @@ export declare class DepartmentsService {
         managerId: string | null;
         isActive: boolean;
     } | {
-        id: string;
+        id: `${string}-${string}-${string}-${string}-${string}`;
         referenceId: string;
         name: string;
         code: string;
@@ -114,7 +114,7 @@ export declare class DepartmentsService {
         departmentId: string;
         leadId: string | null;
     } | {
-        id: string;
+        id: `${string}-${string}-${string}-${string}-${string}`;
         referenceId: string;
         departmentId: string;
         name: string;
