@@ -8,3 +8,4 @@ import { PermissionsController } from './permissions.controller';
   exports: [PermissionsService],
 })
 export class PermissionsModule {}
+

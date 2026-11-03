@@ -8,3 +8,4 @@ import { DesignationsController } from './designations.controller';
   exports: [DesignationsService],
 })
 export class DesignationsModule {}
+

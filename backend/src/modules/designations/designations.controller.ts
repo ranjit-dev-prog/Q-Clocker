@@ -46,3 +46,4 @@ export class DesignationsController {
     return this.designationsService.create(dto);
   }
 }
+

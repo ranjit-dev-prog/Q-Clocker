@@ -29,3 +29,4 @@ export class PermissionsController {
     return this.permissionsService.getMatrix();
   }
 }
+

@@ -28,3 +28,4 @@ export class BulkImportConfirmDto {
   @IsArray()
   employees: ImportEmployeeRow[];
 }
+
