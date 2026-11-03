@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-11-03T11:38:08.891Z",
+  "generatedAt": "2026-11-03T12:15:10.859Z",
   "apiSummary": {
-    "totalPaths": 39,
-    "totalOperations": 54,
+    "totalPaths": 40,
+    "totalOperations": 55,
     "modules": [
       "Authentication",
       "Employees",
@@ -12,7 +12,8 @@
       "Permissions",
       "Task Management",
       "ITSM Ticket Management",
-      "Daily Work Logs"
+      "Daily Work Logs",
+      "System Health"
     ]
   },
   "apiEndpoints": [
@@ -1217,6 +1218,19 @@
       "expectedStatuses": [
         "200",
         "404"
+      ]
+    },
+    {
+      "id": "API-055",
+      "method": "GET",
+      "path": "/api/v1/health",
+      "module": "System Health",
+      "summary": "Liveness and readiness probe for container orchestrators",
+      "authRequired": false,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
       ]
     }
   ],
