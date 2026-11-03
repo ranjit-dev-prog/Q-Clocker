@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: q-clocker-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword2026
+      POSTGRES_DB: q_clocker
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d q_clocker']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - q-clocker-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: q-clocker-backend
+    restart: always
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgrespassword2026@postgres:5432/q_clocker
+      JWT_SECRET: q_clocker_super_secure_jwt_secret_key_2026_enterprise_secure
+      JWT_EXPIRATION: 1d
+      FRONTEND_URL: http://localhost:4200
+    ports:
+      - '3000:3000'
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - q-clocker-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: q-clocker-frontend
+    restart: always
+    ports:
+      - '4200:80'
+    depends_on:
+      - backend
+    networks:
+      - q-clocker-network
+
+networks:
+  q-clocker-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
