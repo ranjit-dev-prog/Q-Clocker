@@ -14,6 +14,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { UserRole } from '../../common/enums';
+import { generateReferenceId } from '../../common/utils/reference-id.util';
 
 @Injectable()
 export class AuthService {
@@ -202,6 +203,7 @@ export class AuthService {
       const [newUser] = await this.dbService.db
         .insert(schema.users)
         .values({
+          referenceId: generateReferenceId('EMP'),
           email: normalizedEmail,
           passwordHash,
           firstName,

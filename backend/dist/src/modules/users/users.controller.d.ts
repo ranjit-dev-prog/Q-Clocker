@@ -10,6 +10,8 @@ export declare class UsersController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        roleId: string;
+        referenceId: string;
         managerId: string | null;
         isActive: boolean;
         departmentId: string | null;
@@ -18,7 +20,6 @@ export declare class UsersController {
         lastName: string;
         phone: string | null;
         avatarUrl: string | null;
-        roleId: string;
         roleCode: string;
         teamId: string | null;
         jobTitle: string | null;
@@ -86,6 +87,8 @@ export declare class UsersController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        roleId: string;
+        referenceId: string;
         managerId: string | null;
         isActive: boolean;
         departmentId: string | null;
@@ -94,7 +97,6 @@ export declare class UsersController {
         lastName: string;
         phone: string | null;
         avatarUrl: string | null;
-        roleId: string;
         roleCode: string;
         teamId: string | null;
         jobTitle: string | null;
@@ -117,6 +119,7 @@ export declare class UsersController {
         createdAt: string;
     } | {
         id: string;
+        referenceId: string;
         email: string;
         firstName: string;
         lastName: string;

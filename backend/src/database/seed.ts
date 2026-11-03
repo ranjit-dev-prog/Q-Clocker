@@ -2,10 +2,11 @@ import * as bcrypt from 'bcryptjs';
 import { getDatabaseConnection } from './connection';
 import * as schema from './schema';
 import { eq } from 'drizzle-orm';
+import { generateReferenceId } from '../common/utils/reference-id.util';
 
 export async function seedDatabase() {
-  console.log('🌱 Starting Q Clocker database seeding...');
-  const { db, pool } = getDatabaseConnection();
+  console.log('🌱 Starting Enterprise Q Clocker database seeding...');
+  const { db } = getDatabaseConnection();
 
   try {
     // 1. Seed Roles
@@ -34,6 +35,12 @@ export async function seedDatabase() {
         description: 'Works on tasks, submits daily work logs, creates tickets, views personal reports',
         isSystem: true,
       },
+      {
+        code: 'AUDITOR',
+        name: 'Compliance Auditor',
+        description: 'Read-only audit and compliance inspection access across all operational logs',
+        isSystem: true,
+      },
     ];
 
     const seededRoles: Record<string, string> = {};
@@ -54,12 +61,70 @@ export async function seedDatabase() {
     }
     console.log('✅ Roles seeded:', Object.keys(seededRoles));
 
-    // 2. Seed Departments
+    // 2. Seed Granular Permissions
+    const permissionsData = [
+      { code: 'task.create', name: 'Create Task', module: 'Tasks' },
+      { code: 'task.assign', name: 'Assign Task', module: 'Tasks' },
+      { code: 'task.update', name: 'Update Task', module: 'Tasks' },
+      { code: 'task.approve', name: 'Approve Task', module: 'Tasks' },
+      { code: 'ticket.create', name: 'Create Ticket', module: 'Tickets' },
+      { code: 'ticket.assign', name: 'Assign Ticket', module: 'Tickets' },
+      { code: 'ticket.escalate', name: 'Escalate Ticket', module: 'Tickets' },
+      { code: 'ticket.resolve', name: 'Resolve Ticket', module: 'Tickets' },
+      { code: 'attendance.record', name: 'Record Attendance', module: 'Attendance' },
+      { code: 'attendance.correct', name: 'Correct Attendance', module: 'Attendance' },
+      { code: 'timesheet.submit', name: 'Submit Timesheet', module: 'Timesheets' },
+      { code: 'timesheet.approve', name: 'Approve Timesheet', module: 'Timesheets' },
+      { code: 'employee.manage', name: 'Manage Employees', module: 'Employees' },
+      { code: 'department.manage', name: 'Manage Departments', module: 'Departments' },
+      { code: 'report.export', name: 'Export Reports', module: 'Reports' },
+      { code: 'audit.view', name: 'View Audit Logs', module: 'Audit' },
+    ];
+
+    const seededPermissions: Record<string, string> = {};
+
+    for (const p of permissionsData) {
+      const existing = await db
+        .select()
+        .from(schema.permissions)
+        .where(eq(schema.permissions.code, p.code))
+        .limit(1);
+
+      if (existing.length > 0) {
+        seededPermissions[p.code] = existing[0].id;
+      } else {
+        const [inserted] = await db.insert(schema.permissions).values(p).returning();
+        seededPermissions[p.code] = inserted.id;
+      }
+    }
+    console.log('✅ Permissions seeded:', Object.keys(seededPermissions).length);
+
+    // 3. Seed Departments with Reference IDs
     const deptsData = [
-      { name: 'Information Technology', code: 'IT', description: 'Enterprise IT infrastructure, helpdesk and security' },
-      { name: 'Software Engineering', code: 'ENG', description: 'Core product development and software architecture' },
-      { name: 'Operations', code: 'OPS', description: 'Business operations, facilities, and service delivery' },
-      { name: 'Human Resources', code: 'HR', description: 'Talent management, organizational development and compliance' },
+      {
+        referenceId: 'DEP-IT0001',
+        name: 'Information Technology',
+        code: 'IT',
+        description: 'Enterprise IT infrastructure, helpdesk, network operations and cybersecurity',
+      },
+      {
+        referenceId: 'DEP-ENG001',
+        name: 'Software Engineering',
+        code: 'ENG',
+        description: 'Core product engineering, platform development, API architecture and QA',
+      },
+      {
+        referenceId: 'DEP-OPS001',
+        name: 'Operations & Facilities',
+        code: 'OPS',
+        description: 'Business continuity, facilities, vendor relationships and client delivery',
+      },
+      {
+        referenceId: 'DEP-HR0001',
+        name: 'Human Resources',
+        code: 'HR',
+        description: 'Talent acquisition, employee satisfaction, compensation and organizational policy',
+      },
     ];
 
     const seededDepts: Record<string, string> = {};
@@ -80,65 +145,98 @@ export async function seedDatabase() {
     }
     console.log('✅ Departments seeded:', Object.keys(seededDepts));
 
-    // 3. Seed Users
-    const saltRounds = 10;
-    const adminHash = await bcrypt.hash('SuperAdmin@2026!', saltRounds);
-    const mgrHash = await bcrypt.hash('Manager@2026!', saltRounds);
-    const leadHash = await bcrypt.hash('TeamLead@2026!', saltRounds);
-    const empHash = await bcrypt.hash('Employee@2026!', saltRounds);
+    // 4. Seed Teams
+    const teamsData = [
+      {
+        referenceId: 'TEM-ENG001',
+        name: 'Core Backend Squad',
+        departmentId: seededDepts['ENG'],
+        description: 'High-throughput microservices and relational data pipelines',
+      },
+      {
+        referenceId: 'TEM-IT0001',
+        name: 'Tier 1/2 Helpdesk & SecOps',
+        departmentId: seededDepts['IT'],
+        description: 'Enterprise IT support, endpoint security, and access control',
+      },
+    ];
 
+    const seededTeams: Record<string, string> = {};
+
+    for (const t of teamsData) {
+      const existing = await db
+        .select()
+        .from(schema.teams)
+        .where(eq(schema.teams.referenceId, t.referenceId))
+        .limit(1);
+
+      if (existing.length > 0) {
+        seededTeams[t.referenceId] = existing[0].id;
+      } else {
+        const [inserted] = await db.insert(schema.teams).values(t).returning();
+        seededTeams[t.referenceId] = inserted.id;
+      }
+    }
+    console.log('✅ Teams seeded:', Object.keys(seededTeams));
+
+    // 5. Seed Core Default Accounts
+    const defaultPasswordHash = await bcrypt.hash('SuperAdmin@2026!', 10);
     const usersData = [
       {
+        referenceId: 'EMP-ADM001',
         email: 'superadmin@qclocker.io',
-        passwordHash: adminHash,
+        passwordHash: defaultPasswordHash,
         firstName: 'Alexander',
         lastName: 'Vance',
+        phone: '+1-555-0100',
         roleId: seededRoles['SUPER_ADMIN'],
         roleCode: 'SUPER_ADMIN',
         departmentId: seededDepts['IT'],
         jobTitle: 'Chief Information Officer',
-        phone: '+1-555-0100',
         isActive: true,
       },
       {
+        referenceId: 'EMP-MGR001',
         email: 'itmanager@qclocker.io',
-        passwordHash: mgrHash,
+        passwordHash: await bcrypt.hash('Manager@2026!', 10),
         firstName: 'Marcus',
         lastName: 'Chen',
+        phone: '+1-555-0101',
         roleId: seededRoles['ADMIN'],
         roleCode: 'ADMIN',
         departmentId: seededDepts['IT'],
         jobTitle: 'IT Infrastructure & Operations Manager',
-        phone: '+1-555-0101',
         isActive: true,
       },
       {
+        referenceId: 'EMP-TL0001',
         email: 'teamlead@qclocker.io',
-        passwordHash: leadHash,
+        passwordHash: await bcrypt.hash('TeamLead@2026!', 10),
         firstName: 'Sarah',
         lastName: 'Jenkins',
+        phone: '+1-555-0102',
         roleId: seededRoles['TEAM_LEAD'],
         roleCode: 'TEAM_LEAD',
         departmentId: seededDepts['ENG'],
+        teamId: seededTeams['TEM-ENG001'],
         jobTitle: 'Senior Engineering Lead',
-        phone: '+1-555-0102',
         isActive: true,
       },
       {
+        referenceId: 'EMP-DEV001',
         email: 'employee@qclocker.io',
-        passwordHash: empHash,
+        passwordHash: await bcrypt.hash('Employee@2026!', 10),
         firstName: 'David',
         lastName: 'Ross',
+        phone: '+1-555-0103',
         roleId: seededRoles['EMPLOYEE'],
         roleCode: 'EMPLOYEE',
         departmentId: seededDepts['ENG'],
+        teamId: seededTeams['TEM-ENG001'],
         jobTitle: 'Full-Stack Software Engineer',
-        phone: '+1-555-0103',
         isActive: true,
       },
     ];
-
-    const seededUsers: Record<string, string> = {};
 
     for (const u of usersData) {
       const existing = await db
@@ -147,23 +245,70 @@ export async function seedDatabase() {
         .where(eq(schema.users.email, u.email))
         .limit(1);
 
-      if (existing.length > 0) {
-        seededUsers[u.email] = existing[0].id;
-      } else {
-        const [inserted] = await db.insert(schema.users).values(u).returning();
-        seededUsers[u.email] = inserted.id;
+      if (!existing.length) {
+        await db.insert(schema.users).values(u);
       }
     }
-    console.log('✅ Users seeded successfully:', Object.keys(seededUsers));
-    console.log('🎉 Seeding completed successfully!');
+    console.log('✅ Enterprise users seeded successfully');
+
+    // 6. Seed Default SLA Policies
+    const slaData = [
+      {
+        referenceId: 'SLA-CRIT01',
+        name: 'Critical Incident SLA',
+        priority: 'CRITICAL',
+        responseTimeHours: 1,
+        resolutionTimeHours: 4,
+        escalationRole: 'ADMIN',
+      },
+      {
+        referenceId: 'SLA-HIGH01',
+        name: 'High Priority SLA',
+        priority: 'HIGH',
+        responseTimeHours: 2,
+        resolutionTimeHours: 8,
+        escalationRole: 'ADMIN',
+      },
+      {
+        referenceId: 'SLA-MED001',
+        name: 'Standard Medium SLA',
+        priority: 'MEDIUM',
+        responseTimeHours: 4,
+        resolutionTimeHours: 24,
+        escalationRole: 'TEAM_LEAD',
+      },
+      {
+        referenceId: 'SLA-LOW001',
+        name: 'Low Priority Inquiry SLA',
+        priority: 'LOW',
+        responseTimeHours: 8,
+        resolutionTimeHours: 48,
+        escalationRole: 'TEAM_LEAD',
+      },
+    ];
+
+    for (const sla of slaData) {
+      const existing = await db
+        .select()
+        .from(schema.slaPolicies)
+        .where(eq(schema.slaPolicies.referenceId, sla.referenceId))
+        .limit(1);
+
+      if (!existing.length) {
+        await db.insert(schema.slaPolicies).values(sla);
+      }
+    }
+    console.log('✅ SLA Policies seeded successfully');
+
+    console.log('🎉 Enterprise Q Clocker database seeding completed successfully!');
   } catch (error) {
-    console.error('❌ Error during seeding:', error);
-  } finally {
-    await pool.end();
+    console.error('❌ Seeding failed:', (error as Error).message);
+    throw error;
   }
 }
 
 if (require.main === module) {
-  seedDatabase();
+  seedDatabase()
+    .then(() => process.exit(0))
+    .catch(() => process.exit(1));
 }
-

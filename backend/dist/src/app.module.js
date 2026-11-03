@@ -16,7 +16,6 @@ const auth_module_1 = require("./modules/auth/auth.module");
 const users_module_1 = require("./modules/users/users.module");
 const departments_module_1 = require("./modules/departments/departments.module");
 const roles_module_1 = require("./modules/roles/roles.module");
-const roles_guard_1 = require("./common/guards/roles.guard");
 const transform_interceptor_1 = require("./common/interceptors/transform.interceptor");
 let AppModule = class AppModule {
 };
@@ -44,10 +43,6 @@ exports.AppModule = AppModule = __decorate([
             {
                 provide: core_1.APP_GUARD,
                 useClass: throttler_1.ThrottlerGuard,
-            },
-            {
-                provide: core_1.APP_GUARD,
-                useClass: roles_guard_1.RolesGuard,
             },
             {
                 provide: core_1.APP_INTERCEPTOR,

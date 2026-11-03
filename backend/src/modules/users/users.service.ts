@@ -12,6 +12,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
 import { UserRole } from '../../common/enums';
+import { generateReferenceId } from '../../common/utils/reference-id.util';
 
 @Injectable()
 export class UsersService {
@@ -20,6 +21,7 @@ export class UsersService {
   // In-memory persistent demo store
   private memoryUsers: Array<{
     id: string;
+    referenceId?: string;
     email: string;
     firstName: string;
     lastName: string;
@@ -135,6 +137,7 @@ export class UsersService {
       const [newUser] = await this.dbService.db
         .insert(schema.users)
         .values({
+          referenceId: generateReferenceId('EMP'),
           email: normalizedEmail,
           passwordHash,
           firstName: dto.firstName,
@@ -162,6 +165,7 @@ export class UsersService {
 
     const newUser = {
       id: `00000000-0000-0000-0000-${Date.now().toString().slice(-12)}`,
+      referenceId: generateReferenceId('EMP'),
       email: normalizedEmail,
       firstName: dto.firstName,
       lastName: dto.lastName,

@@ -34,10 +34,6 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
       useClass: ThrottlerGuard,
     },
     {
-      provide: APP_GUARD,
-      useClass: RolesGuard,
-    },
-    {
       provide: APP_INTERCEPTOR,
       useClass: TransformInterceptor,
     },

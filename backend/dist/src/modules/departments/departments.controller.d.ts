@@ -12,6 +12,7 @@ export declare class DepartmentsController {
         description: string | null;
         createdAt: Date;
         updatedAt: Date;
+        referenceId: string;
         managerId: string | null;
         isActive: boolean;
     } | {
@@ -33,6 +34,7 @@ export declare class DepartmentsController {
         description: string | null;
         createdAt: Date;
         updatedAt: Date;
+        referenceId: string;
         managerId: string | null;
         isActive: boolean;
     }[] | ({
@@ -65,6 +67,7 @@ export declare class DepartmentsController {
         description: string | null;
         createdAt: Date;
         updatedAt: Date;
+        referenceId: string;
         managerId: string | null;
         isActive: boolean;
     } | {
@@ -92,6 +95,7 @@ export declare class DepartmentsController {
     }>;
     update(id: string, updateDepartmentDto: UpdateDepartmentDto): Promise<{
         id: string;
+        referenceId: string;
         name: string;
         code: string;
         description: string | null;
@@ -131,6 +135,7 @@ export declare class DepartmentsController {
         description: string | null;
         createdAt: Date;
         updatedAt: Date;
+        referenceId: string;
         isActive: boolean;
         departmentId: string;
         leadId: string | null;
@@ -157,6 +162,7 @@ export declare class DepartmentsController {
         description: string | null;
         createdAt: Date;
         updatedAt: Date;
+        referenceId: string;
         isActive: boolean;
         departmentId: string;
         leadId: string | null;

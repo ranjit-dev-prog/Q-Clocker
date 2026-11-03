@@ -12,6 +12,8 @@ export declare class UsersService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        roleId: string;
+        referenceId: string;
         managerId: string | null;
         isActive: boolean;
         departmentId: string | null;
@@ -20,7 +22,6 @@ export declare class UsersService {
         lastName: string;
         phone: string | null;
         avatarUrl: string | null;
-        roleId: string;
         roleCode: string;
         teamId: string | null;
         jobTitle: string | null;
@@ -88,6 +89,8 @@ export declare class UsersService {
         id: string;
         createdAt: Date;
         updatedAt: Date;
+        roleId: string;
+        referenceId: string;
         managerId: string | null;
         isActive: boolean;
         departmentId: string | null;
@@ -96,7 +99,6 @@ export declare class UsersService {
         lastName: string;
         phone: string | null;
         avatarUrl: string | null;
-        roleId: string;
         roleCode: string;
         teamId: string | null;
         jobTitle: string | null;
@@ -119,6 +121,7 @@ export declare class UsersService {
         createdAt: string;
     } | {
         id: string;
+        referenceId: string;
         email: string;
         firstName: string;
         lastName: string;
