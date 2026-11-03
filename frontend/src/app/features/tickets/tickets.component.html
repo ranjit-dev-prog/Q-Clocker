@@ -1,0 +1,1425 @@
+<div class="space-y-6">
+  <!-- Header -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+    <div>
+      <div class="flex items-center gap-2">
+        <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">Enterprise IT Service Management (ITSM)</h1>
+        <span class="px-2.5 py-0.5 rounded-full text-[11px] font-extrabold bg-blue-100 text-blue-700 dark:bg-blue-950/80 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+          ITIL v4 Engine
+        </span>
+      </div>
+      <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+        11-state incident lifecycle, dynamic SLA calculation, priority matrix, stopwatch triage timers, and bi-directional task integration
+      </p>
+    </div>
+
+    <div class="flex items-center gap-2 self-start">
+      <button
+        (click)="refreshAll()"
+        class="px-3 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs transition flex items-center gap-1.5"
+      >
+        <span class="material-icons text-base">refresh</span>
+        Sync
+      </button>
+
+      <button
+        (click)="openCreateModal()"
+        class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-semibold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5"
+      >
+        <span class="material-icons text-base">add_circle</span>
+        Create Ticket
+      </button>
+    </div>
+  </div>
+
+  <!-- SLA & Executive Metrics Dashboard -->
+  <div *ngIf="ticketService.metrics() as m" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs">
+      <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Volume</div>
+      <div class="text-2xl font-black text-slate-900 dark:text-white mt-1">{{ m.totalTickets }}</div>
+      <div class="text-[10px] text-slate-400 mt-0.5">Tickets logged</div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs">
+      <div class="text-[11px] font-semibold text-blue-500 uppercase tracking-wider">In Progress</div>
+      <div class="text-2xl font-black text-blue-600 dark:text-blue-400 mt-1">{{ m.inProgressTickets }}</div>
+      <div class="text-[10px] text-slate-400 mt-0.5">Active triage</div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs">
+      <div class="text-[11px] font-semibold text-amber-500 uppercase tracking-wider">Pending External</div>
+      <div class="text-2xl font-black text-amber-600 dark:text-amber-400 mt-1">{{ m.pendingTickets }}</div>
+      <div class="text-[10px] text-slate-400 mt-0.5">User/Vendor hold</div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs">
+      <div class="text-[11px] font-semibold text-rose-500 uppercase tracking-wider">P1 Critical</div>
+      <div class="text-2xl font-black text-rose-600 dark:text-rose-400 mt-1">{{ m.p1CriticalCount }}</div>
+      <div class="text-[10px] text-slate-400 mt-0.5">High severity incidents</div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs">
+      <div class="text-[11px] font-semibold text-orange-500 uppercase tracking-wider">Breached SLA</div>
+      <div class="text-2xl font-black text-orange-600 dark:text-orange-400 mt-1">{{ m.slaBreachedCount }}</div>
+      <div class="text-[10px] text-slate-400 mt-0.5">Deadline missed</div>
+    </div>
+
+    <div class="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3.5 shadow-xs">
+      <div class="text-[11px] font-semibold text-purple-500 uppercase tracking-wider">SLA Compliance</div>
+      <div class="text-2xl font-black text-purple-600 dark:text-purple-400 mt-1">{{ m.slaComplianceRate }}</div>
+      <div class="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold mt-0.5">Avg: {{ m.avgResolutionTimeHours }}h resolve</div>
+    </div>
+  </div>
+
+  <!-- Filters & Controls Bar -->
+  <div class="bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3 text-xs">
+    <!-- Top row: Quick Pills -->
+    <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+      <div class="flex flex-wrap items-center gap-1.5">
+        <span class="text-slate-400 font-semibold mr-1">Views:</span>
+        <button
+          (click)="setQuickFilter('all')"
+          class="px-2.5 py-1 rounded-lg font-semibold transition"
+          [ngClass]="activeQuickFilter() === 'all' ? 'bg-primary-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'"
+        >
+          All Tickets
+        </button>
+        <button
+          (click)="setQuickFilter('my_tickets')"
+          class="px-2.5 py-1 rounded-lg font-semibold transition"
+          [ngClass]="activeQuickFilter() === 'my_tickets' ? 'bg-primary-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'"
+        >
+          My Requester Tickets
+        </button>
+        <button
+          (click)="setQuickFilter('assigned_me')"
+          class="px-2.5 py-1 rounded-lg font-semibold transition"
+          [ngClass]="activeQuickFilter() === 'assigned_me' ? 'bg-primary-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'"
+        >
+          Assigned to Me
+        </button>
+        <button
+          (click)="setQuickFilter('p1_p2')"
+          class="px-2.5 py-1 rounded-lg font-semibold transition"
+          [ngClass]="activeQuickFilter() === 'p1_p2' ? 'bg-rose-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'"
+        >
+          P1 Critical
+        </button>
+        <button
+          (click)="setQuickFilter('approaching_breach')"
+          class="px-2.5 py-1 rounded-lg font-semibold transition"
+          [ngClass]="activeQuickFilter() === 'approaching_breach' ? 'bg-amber-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'"
+        >
+          Approaching Breach
+        </button>
+        <button
+          (click)="setQuickFilter('resolved')"
+          class="px-2.5 py-1 rounded-lg font-semibold transition"
+          [ngClass]="activeQuickFilter() === 'resolved' ? 'bg-emerald-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'"
+        >
+          Resolved
+        </button>
+      </div>
+
+      <div class="text-[11px] text-slate-400 font-medium">
+        Showing {{ ticketService.tickets().length }} tickets
+      </div>
+    </div>
+
+    <!-- Second row: Dropdowns & Search -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-2">
+      <!-- Search -->
+      <div class="md:col-span-2">
+        <input
+          id="ticket-search-input"
+          type="text"
+          [(ngModel)]="searchQuery"
+          (ngModelChange)="applyFilters()"
+          placeholder="Search by ID, title, requester, or summary..."
+          aria-label="Search tickets"
+          class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+        />
+      </div>
+
+      <!-- Status Filter -->
+      <div>
+        <select
+          id="ticket-status-filter"
+          [(ngModel)]="selectedStatus"
+          (ngModelChange)="applyFilters()"
+          aria-label="Filter by lifecycle status"
+          class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+        >
+          <option value="">All Statuses (11)</option>
+          <option value="NEW">New</option>
+          <option value="OPEN">Open</option>
+          <option value="ASSIGNED">Assigned</option>
+          <option value="IN_PROGRESS">In Progress</option>
+          <option value="PENDING_USER">Pending User</option>
+          <option value="PENDING_VENDOR">Pending Vendor</option>
+          <option value="ON_HOLD">On Hold</option>
+          <option value="RESOLVED">Resolved</option>
+          <option value="CLOSED">Closed</option>
+          <option value="REOPENED">Reopened</option>
+          <option value="CANCELLED">Cancelled</option>
+        </select>
+      </div>
+
+      <!-- Priority Filter -->
+      <div>
+        <select
+          id="ticket-priority-filter"
+          [(ngModel)]="selectedPriorityCode"
+          (ngModelChange)="applyFilters()"
+          aria-label="Filter by priority tier"
+          class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+        >
+          <option value="">All Priorities</option>
+          <option value="P1">P1 - Critical (4h)</option>
+          <option value="P2">P2 - High (8h)</option>
+          <option value="P3">P3 - Medium (24h)</option>
+          <option value="P4">P4 - Low (72h)</option>
+        </select>
+      </div>
+
+      <!-- Category Filter -->
+      <div>
+        <select
+          id="ticket-category-filter"
+          [(ngModel)]="selectedCategory"
+          (ngModelChange)="applyFilters()"
+          aria-label="Filter by category"
+          class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+        >
+          <option value="">All Categories</option>
+          <option *ngFor="let cat of ticketService.categories()" [value]="cat.name">{{ cat.name }}</option>
+        </select>
+      </div>
+
+      <!-- SLA Status Filter -->
+      <div>
+        <select
+          id="ticket-sla-filter"
+          [(ngModel)]="selectedSlaStatus"
+          (ngModelChange)="applyFilters()"
+          aria-label="Filter by SLA state"
+          class="w-full px-3 py-1.5 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+        >
+          <option value="">All SLA States</option>
+          <option value="WITHIN_SLA">Within SLA</option>
+          <option value="APPROACHING_BREACH">Approaching Breach</option>
+          <option value="BREACHED">Breached</option>
+          <option value="PAUSED">Paused</option>
+          <option value="MET">SLA Met</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tickets Data Table -->
+  <div class="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left text-xs">
+        <thead class="bg-slate-50/80 dark:bg-slate-800/60 text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+          <tr>
+            <th class="py-3 px-4">Ticket & Classification</th>
+            <th class="py-3 px-4">Subject & Requester</th>
+            <th class="py-3 px-4">Priority</th>
+            <th class="py-3 px-4">Status</th>
+            <th class="py-3 px-4">SLA Deadline & Target</th>
+            <th class="py-3 px-4">Technician / Team</th>
+            <th class="py-3 px-4 text-right">Action</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
+          <tr *ngFor="let t of ticketService.tickets()" class="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition">
+            <!-- Ticket Reference & Type -->
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-1.5">
+                <span class="font-mono font-black text-primary-600 dark:text-primary-400 text-xs">{{ t.referenceId }}</span>
+                <span *ngIf="t.reopenCount && t.reopenCount > 0" class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">
+                  Reopened x{{ t.reopenCount }}
+                </span>
+              </div>
+              <div class="flex items-center gap-1 mt-0.5">
+                <span class="px-1.5 py-0.2 rounded text-[9px] font-bold uppercase bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                  {{ t.ticketType || 'INCIDENT' }}
+                </span>
+                <span class="text-[10px] text-slate-400 truncate max-w-[120px]">{{ t.category }}</span>
+              </div>
+            </td>
+
+            <!-- Subject & Requester -->
+            <td class="py-3 px-4">
+              <div class="font-bold text-slate-900 dark:text-white line-clamp-1">{{ t.title }}</div>
+              <div class="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                <span class="material-icons text-xs text-slate-400">person</span>
+                <span>{{ t.requesterName || 'System User' }}</span>
+                <span *ngIf="t.departmentName" class="text-slate-300 dark:text-slate-600">•</span>
+                <span *ngIf="t.departmentName">{{ t.departmentName }}</span>
+              </div>
+            </td>
+
+            <!-- Priority Matrix Badge -->
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-1.5">
+                <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase shadow-2xs" [ngClass]="getPriorityCodeClass(t.priorityCode || 'P3')">
+                  {{ t.priorityCode || 'P3' }}
+                </span>
+                <span class="text-[10px] font-semibold text-slate-500 uppercase">{{ t.priority }}</span>
+              </div>
+            </td>
+
+            <!-- Lifecycle Status Badge -->
+            <td class="py-3 px-4">
+              <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wide inline-flex items-center gap-1" [ngClass]="getStatusClass(t.status)">
+                <span *ngIf="t.status === 'IN_PROGRESS'" class="w-1.5 h-1.5 rounded-full bg-blue-600 animate-ping"></span>
+                {{ t.status.replace('_', ' ') }}
+              </span>
+            </td>
+
+            <!-- SLA Deadline & Countdown -->
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-1.5">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase" [ngClass]="getSlaBadgeClass(t)">
+                  <span *ngIf="t.isPaused">PAUSED</span>
+                  <span *ngIf="!t.isPaused && t.slaBreached">BREACHED</span>
+                  <span *ngIf="!t.isPaused && !t.slaBreached && (t.status === 'RESOLVED' || t.status === 'CLOSED')">SLA MET</span>
+                  <span *ngIf="!t.isPaused && !t.slaBreached && t.status !== 'RESOLVED' && t.status !== 'CLOSED'">
+                    {{ t.slaRemainingFormatted || 'ON TRACK' }}
+                  </span>
+                </span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">
+                Target: {{ t.slaHours }}h (Due: {{ t.resolutionDueAt || t.dueDate | date:'short' }})
+              </div>
+            </td>
+
+            <!-- Assigned Tech & Team -->
+            <td class="py-3 px-4">
+              <div class="font-medium text-slate-800 dark:text-slate-200 flex items-center gap-1">
+                <span class="material-icons text-xs text-indigo-500">support_agent</span>
+                <span>{{ t.technicianName || 'Unassigned' }}</span>
+              </div>
+              <div class="text-[10px] text-slate-400">{{ t.teamName || 'Tier 1 Support' }}</div>
+            </td>
+
+            <!-- Action: Manage Ticket -->
+            <td class="py-3 px-4 text-right">
+              <button
+                (click)="openDetails(t)"
+                class="px-3 py-1.5 bg-primary-50 dark:bg-primary-950/60 hover:bg-primary-100 dark:hover:bg-primary-900/80 text-primary-600 dark:text-primary-400 font-bold text-xs rounded-xl transition flex items-center gap-1 ml-auto"
+              >
+                <span>Manage</span>
+                <span class="material-icons text-sm">arrow_forward</span>
+              </button>
+            </td>
+          </tr>
+
+          <tr *ngIf="ticketService.tickets().length === 0">
+            <td colspan="7" class="py-12 text-center text-slate-400 italic">
+              <span class="material-icons text-3xl text-slate-300 dark:text-slate-700 block mb-2">inbox</span>
+              No service tickets found matching current filters.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- COMPREHENSIVE TICKET DETAILS & ACTION MODAL -->
+  <!-- ======================================================== -->
+  <div *ngIf="showDetailsModal() && selectedTicketDetail() as ticket" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-4xl w-full p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      
+      <!-- Modal Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <span class="text-sm font-mono font-black text-primary-600 dark:text-primary-400">{{ ticket.referenceId }}</span>
+            <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase" [ngClass]="getPriorityCodeClass(ticket.priorityCode || 'P3')">
+              {{ ticket.priorityCode || 'P3' }} - {{ ticket.priority }}
+            </span>
+            <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase" [ngClass]="getStatusClass(ticket.status)">
+              {{ ticket.status.replace('_', ' ') }}
+            </span>
+            <span class="px-2.5 py-0.5 rounded text-[10px] font-bold uppercase" [ngClass]="getSlaBadgeClass(ticket)">
+              {{ ticket.slaStatus }} ({{ ticket.slaRemainingFormatted || 'SLA Target' }})
+            </span>
+          </div>
+          <h2 class="text-xl font-bold text-slate-900 dark:text-white mt-1">{{ ticket.title }}</h2>
+        </div>
+
+        <button (click)="showDetailsModal.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1">
+          <span class="material-icons text-2xl">close</span>
+        </button>
+      </div>
+
+      <!-- Action Toolbar Buttons -->
+      <div class="flex flex-wrap items-center gap-2 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-2xl border border-slate-100 dark:border-slate-800 text-xs">
+        <button
+          (click)="openTransitionModal()"
+          class="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 text-white font-semibold rounded-xl shadow-xs transition flex items-center gap-1"
+        >
+          <span class="material-icons text-sm">swap_horiz</span>
+          Transition Status
+        </button>
+
+        <button
+          (click)="openAssignModal()"
+          class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl shadow-xs transition flex items-center gap-1"
+        >
+          <span class="material-icons text-sm">person_add</span>
+          Assign / Transfer
+        </button>
+
+        <button
+          (click)="openEscalateModal()"
+          class="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white font-semibold rounded-xl shadow-xs transition flex items-center gap-1"
+        >
+          <span class="material-icons text-sm">trending_up</span>
+          Escalate
+        </button>
+
+        <button
+          *ngIf="ticket.status === 'RESOLVED' || ticket.status === 'CLOSED'"
+          (click)="openReopenModal()"
+          class="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-xl shadow-xs transition flex items-center gap-1"
+        >
+          <span class="material-icons text-sm">replay</span>
+          Reopen Ticket
+        </button>
+
+        <!-- Stopwatch Live Timer -->
+        <button
+          (click)="toggleTimer()"
+          class="px-3 py-1.5 font-semibold rounded-xl shadow-xs transition flex items-center gap-1"
+          [ngClass]="ticket.activeTimer?.isRunning ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse' : 'bg-slate-700 hover:bg-slate-800 text-white'"
+        >
+          <span class="material-icons text-sm">{{ ticket.activeTimer?.isRunning ? 'stop' : 'timer' }}</span>
+          <span>{{ ticket.activeTimer?.isRunning ? 'Stop Timer (' + (ticket.activeTimer?.durationMinutes || 0) + 'm)' : 'Start Timer' }}</span>
+        </button>
+
+        <!-- Create Task -->
+        <button
+          (click)="openCreateTaskModal()"
+          class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-xs transition flex items-center gap-1"
+        >
+          <span class="material-icons text-sm">assignment_add</span>
+          Create Action Task
+        </button>
+      </div>
+
+      <!-- Tab Navigation -->
+      <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 text-xs">
+        <button
+          (click)="activeTab.set('overview')"
+          class="py-2.5 px-3 font-bold border-b-2 transition flex items-center gap-1.5"
+          [ngClass]="activeTab() === 'overview' ? 'border-primary-600 text-primary-600 dark:text-primary-400' : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'"
+        >
+          <span class="material-icons text-sm">info</span>
+          Overview & SLA
+        </button>
+
+        <button
+          (click)="activeTab.set('comments')"
+          class="py-2.5 px-3 font-bold border-b-2 transition flex items-center gap-1.5"
+          [ngClass]="activeTab() === 'comments' ? 'border-primary-600 text-primary-600 dark:text-primary-400' : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'"
+        >
+          <span class="material-icons text-sm">forum</span>
+          Conversation & Internal Notes
+          <span *ngIf="ticket.comments?.length" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+            {{ ticket.comments?.length }}
+          </span>
+        </button>
+
+        <button
+          (click)="activeTab.set('timelogs')"
+          class="py-2.5 px-3 font-bold border-b-2 transition flex items-center gap-1.5"
+          [ngClass]="activeTab() === 'timelogs' ? 'border-primary-600 text-primary-600 dark:text-primary-400' : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'"
+        >
+          <span class="material-icons text-sm">schedule</span>
+          Time Tracking
+          <span *ngIf="ticket.totalTimeSpentMinutes" class="px-1.5 py-0.2 rounded-full text-[10px] bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+            {{ ticket.totalTimeSpentMinutes }}m
+          </span>
+        </button>
+
+        <button
+          (click)="activeTab.set('tasks')"
+          class="py-2.5 px-3 font-bold border-b-2 transition flex items-center gap-1.5"
+          [ngClass]="activeTab() === 'tasks' ? 'border-primary-600 text-primary-600 dark:text-primary-400' : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'"
+        >
+          <span class="material-icons text-sm">task</span>
+          Linked Tasks
+          <span *ngIf="ticket.linkedTasks?.length" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+            {{ ticket.linkedTasks?.length }}
+          </span>
+        </button>
+
+        <button
+          (click)="activeTab.set('history')"
+          class="py-2.5 px-3 font-bold border-b-2 transition flex items-center gap-1.5"
+          [ngClass]="activeTab() === 'history' ? 'border-primary-600 text-primary-600 dark:text-primary-400' : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'"
+        >
+          <span class="material-icons text-sm">history</span>
+          Audit History
+        </button>
+      </div>
+
+      <!-- TAB 1: OVERVIEW & SLA -->
+      <div *ngIf="activeTab() === 'overview'" class="space-y-4 text-xs">
+        <!-- Incident Description -->
+        <div class="p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-1.5">
+          <div class="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px]">Incident Description & Problem Statement</div>
+          <p class="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ ticket.description }}</p>
+        </div>
+
+        <!-- Resolution Details (if resolved/closed) -->
+        <div *ngIf="ticket.resolutionNotes || ticket.status === 'RESOLVED' || ticket.status === 'CLOSED'" class="p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl border border-emerald-200 dark:border-emerald-800 space-y-2">
+          <div class="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5 text-xs">
+            <span class="material-icons text-sm">verified</span>
+            Resolution Summary & RCA
+          </div>
+          <div *ngIf="ticket.rootCause" class="text-slate-700 dark:text-slate-300">
+            <span class="font-semibold text-slate-900 dark:text-white">Root Cause:</span> {{ ticket.rootCause }}
+          </div>
+          <div class="text-slate-700 dark:text-slate-300">
+            <span class="font-semibold text-slate-900 dark:text-white">Remediation:</span> {{ ticket.resolutionNotes }}
+          </div>
+          <div class="text-[10px] text-emerald-600 dark:text-emerald-400">
+            Resolved by technician at {{ ticket.resolvedAt | date:'medium' }}
+          </div>
+        </div>
+
+        <!-- Classification & SLA Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Classification Card -->
+          <div class="p-4 bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-2.5">
+            <div class="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] pb-1 border-b border-slate-100 dark:border-slate-700">
+              Classification & Priority Matrix
+            </div>
+            <div class="flex justify-between py-0.5">
+              <span class="text-slate-400">Ticket Type:</span>
+              <span class="font-bold text-slate-800 dark:text-slate-200">{{ ticket.ticketType }}</span>
+            </div>
+            <div class="flex justify-between py-0.5">
+              <span class="text-slate-400">Impact:</span>
+              <span class="font-bold text-slate-800 dark:text-slate-200">{{ ticket.impact }}</span>
+            </div>
+            <div class="flex justify-between py-0.5">
+              <span class="text-slate-400">Urgency:</span>
+              <span class="font-bold text-slate-800 dark:text-slate-200">{{ ticket.urgency }}</span>
+            </div>
+            <div class="flex justify-between py-0.5">
+              <span class="text-slate-400">Category:</span>
+              <span class="font-bold text-slate-800 dark:text-slate-200">{{ ticket.category }}</span>
+            </div>
+            <div class="flex justify-between py-0.5">
+              <span class="text-slate-400">Subcategory:</span>
+              <span class="font-bold text-slate-800 dark:text-slate-200">{{ ticket.subcategory || 'Standard' }}</span>
+            </div>
+            <div class="flex justify-between py-0.5">
+              <span class="text-slate-400">Source:</span>
+              <span class="font-bold text-slate-800 dark:text-slate-200">{{ ticket.source || 'Portal' }}</span>
+            </div>
+          </div>
+
+          <!-- Assignment & SLA Card -->
+          <div class="p-4 bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-2.5">
+            <div class="font-bold text-slate-900 dark:text-white uppercase tracking-wider text-[11px] pb-1 border-b border-slate-100 dark:border-slate-700">
+              Stakeholders & SLA Deadlines
+            </div>
+            <div class="flex justify-between py-0.5">
+              <span class="text-slate-400">Requester:</span>
+              <span class="font-bold text-slate-800 dark:text-slate-200">{{ ticket.requesterName }} ({{ ticket.requesterEmail }})</span>
+            </div>
+            <div class="flex justify-between py-0.5">
+              <span class="text-slate-400">Department:</span>
+              <span class="font-bold text-slate-800 dark:text-slate-200">{{ ticket.departmentName || 'General IT' }}</span>
+            </div>
+            <div class="flex justify-between py-0.5">
+              <span class="text-slate-400">Assigned Technician:</span>
+              <span class="font-bold text-indigo-600 dark:text-indigo-400">{{ ticket.technicianName || 'Unassigned' }}</span>
+            </div>
+            <div class="flex justify-between py-0.5">
+              <span class="text-slate-400">Support Team:</span>
+              <span class="font-bold text-slate-800 dark:text-slate-200">{{ ticket.teamName || 'Tier 1 Support' }}</span>
+            </div>
+            <div class="flex justify-between py-0.5">
+              <span class="text-slate-400">SLA Resolution Due:</span>
+              <span class="font-bold text-rose-600 dark:text-rose-400">{{ ticket.resolutionDueAt || ticket.dueDate | date:'medium' }}</span>
+            </div>
+            <div class="flex justify-between py-0.5">
+              <span class="text-slate-400">Pause Duration:</span>
+              <span class="font-bold text-slate-700 dark:text-slate-300">{{ ticket.slaPauseDurationSeconds || 0 }} seconds</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: CONVERSATION & INTERNAL NOTES -->
+      <div *ngIf="activeTab() === 'comments'" class="space-y-4 text-xs">
+        <div class="space-y-3 max-h-72 overflow-y-auto pr-2">
+          <div
+            *ngFor="let comment of ticket.comments"
+            class="p-3.5 rounded-2xl border text-xs space-y-1.5 transition"
+            [ngClass]="comment.isInternalNote ? 'bg-amber-50/70 dark:bg-amber-950/40 border-amber-300 dark:border-amber-800' : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800'"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-900 dark:text-white">{{ comment.userName || 'IT Specialist' }}</span>
+                <span *ngIf="comment.userRole" class="text-[10px] text-slate-400">({{ comment.userRole }})</span>
+                <span *ngIf="comment.isInternalNote" class="px-2 py-0.2 rounded-full text-[9px] font-black uppercase bg-amber-200 text-amber-900 dark:bg-amber-900 dark:text-amber-200 flex items-center gap-0.5">
+                  <span class="material-icons text-[10px]">visibility_off</span>
+                  Internal Technician Note
+                </span>
+              </div>
+              <span class="text-[10px] text-slate-400">{{ comment.createdAt | date:'short' }}</span>
+            </div>
+            <p class="text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{{ comment.comment }}</p>
+          </div>
+
+          <div *ngIf="!ticket.comments || ticket.comments.length === 0" class="py-8 text-center text-slate-400 italic">
+            No public comments or technician notes recorded yet.
+          </div>
+        </div>
+
+        <!-- Add Comment / Internal Note Box -->
+        <div class="p-3.5 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2">
+          <textarea
+            id="ticket-comment-input"
+            [(ngModel)]="newCommentText"
+            rows="2"
+            placeholder="Type a public response or internal triage note..."
+            aria-label="Add response or internal note"
+            class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+          ></textarea>
+
+          <div class="flex items-center justify-between">
+            <label for="internal-note-toggle" class="flex items-center gap-1.5 text-xs text-amber-700 dark:text-amber-300 cursor-pointer font-semibold">
+              <input
+                id="internal-note-toggle"
+                type="checkbox"
+                [(ngModel)]="isInternalComment"
+                aria-label="Mark as internal technician note"
+                class="rounded text-amber-600 focus:ring-amber-500"
+              />
+              <span class="material-icons text-sm">lock</span>
+              Internal Note (Hidden from Requester)
+            </label>
+
+            <button
+              [disabled]="!newCommentText.trim()"
+              (click)="submitComment()"
+              class="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-xs transition"
+            >
+              Post Note
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: TIME TRACKING -->
+      <div *ngIf="activeTab() === 'timelogs'" class="space-y-4 text-xs">
+        <div class="flex items-center justify-between bg-slate-50 dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div>
+            <div class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Triage & Fix Time</div>
+            <div class="text-2xl font-black text-slate-900 dark:text-white mt-0.5">
+              {{ ticket.totalTimeSpentMinutes || 0 }} minutes
+            </div>
+            <div class="text-[10px] text-slate-400">Strictly decoupled from shift attendance and billing timesheets</div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              (click)="toggleTimer()"
+              class="px-3.5 py-2 font-semibold text-xs rounded-xl shadow-xs transition flex items-center gap-1.5"
+              [ngClass]="ticket.activeTimer?.isRunning ? 'bg-rose-600 hover:bg-rose-700 text-white animate-pulse' : 'bg-primary-600 hover:bg-primary-700 text-white'"
+            >
+              <span class="material-icons text-base">{{ ticket.activeTimer?.isRunning ? 'stop' : 'play_arrow' }}</span>
+              <span>{{ ticket.activeTimer?.isRunning ? 'Stop Live Stopwatch' : 'Start Stopwatch' }}</span>
+            </button>
+
+            <button
+              (click)="showTimeEntryModal.set(true)"
+              class="px-3.5 py-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold text-xs rounded-xl border border-slate-200 dark:border-slate-700 shadow-xs transition flex items-center gap-1.5"
+            >
+              <span class="material-icons text-base">add</span>
+              Manual Log
+            </button>
+          </div>
+        </div>
+
+        <!-- Time Entries Table -->
+        <div class="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden">
+          <table class="w-full text-left text-xs">
+            <thead class="bg-slate-50 dark:bg-slate-800/60 text-slate-400 font-semibold uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+              <tr>
+                <th class="py-2.5 px-4">Technician</th>
+                <th class="py-2.5 px-4">Started At</th>
+                <th class="py-2.5 px-4">Duration</th>
+                <th class="py-2.5 px-4">Work Performed & Notes</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+              <tr *ngFor="let te of ticket.timeEntries">
+                <td class="py-2.5 px-4 font-semibold text-slate-900 dark:text-white">{{ te.employeeName || 'Technician' }}</td>
+                <td class="py-2.5 px-4 text-slate-500">{{ te.startedAt | date:'short' }}</td>
+                <td class="py-2.5 px-4 font-bold text-primary-600 dark:text-primary-400">
+                  <span *ngIf="te.isRunning" class="px-2 py-0.5 rounded text-[10px] bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 animate-pulse font-black">
+                    RUNNING
+                  </span>
+                  <span *ngIf="!te.isRunning">{{ te.durationMinutes }} mins</span>
+                </td>
+                <td class="py-2.5 px-4 text-slate-600 dark:text-slate-300">{{ te.notes || 'No description provided' }}</td>
+              </tr>
+              <tr *ngIf="!ticket.timeEntries || ticket.timeEntries.length === 0">
+                <td colspan="4" class="py-6 text-center text-slate-400 italic">No time logs recorded on this ticket yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- TAB 4: LINKED TASKS -->
+      <div *ngIf="activeTab() === 'tasks'" class="space-y-4 text-xs">
+        <div class="flex items-center justify-between">
+          <div>
+            <div class="font-bold text-slate-900 dark:text-white text-xs">Downstream Engineering & Remediation Tasks</div>
+            <div class="text-[11px] text-slate-400">Bi-directional integration: ticket state remains decoupled from task completion</div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              (click)="openLinkTaskModal()"
+              class="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold rounded-xl transition flex items-center gap-1"
+            >
+              <span class="material-icons text-sm">link</span>
+              Link Existing
+            </button>
+
+            <button
+              (click)="openCreateTaskModal()"
+              class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl shadow-xs transition flex items-center gap-1"
+            >
+              <span class="material-icons text-sm">add_task</span>
+              Create Task
+            </button>
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <div
+            *ngFor="let link of ticket.linkedTasks"
+            class="p-3.5 bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700 flex items-center justify-between"
+          >
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-mono font-bold text-primary-600 dark:text-primary-400">{{ link.taskReferenceId || 'TSK' }}</span>
+                <span class="font-bold text-slate-900 dark:text-white">{{ link.taskTitle || 'Remediation Task' }}</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">Linked on {{ link.createdAt | date:'short' }}</div>
+            </div>
+
+            <span class="px-2.5 py-0.5 rounded-lg text-[10px] font-bold uppercase bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
+              {{ link.taskStatus || 'IN_PROGRESS' }}
+            </span>
+          </div>
+
+          <div *ngIf="!ticket.linkedTasks || ticket.linkedTasks.length === 0" class="py-8 text-center text-slate-400 italic">
+            No engineering tasks linked to this ticket yet.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: AUDIT HISTORY -->
+      <div *ngIf="activeTab() === 'history'" class="space-y-4 text-xs">
+        <div class="space-y-2 max-h-72 overflow-y-auto pr-2">
+          <div
+            *ngFor="let h of ticket.history"
+            class="p-3 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between"
+          >
+            <div>
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-900 dark:text-white uppercase">{{ h.fieldChanged }}</span>
+                <span class="text-slate-400 text-xs">changed from</span>
+                <span class="font-mono text-rose-500 font-semibold">{{ h.oldValue || 'None' }}</span>
+                <span class="text-slate-400 text-xs">→</span>
+                <span class="font-mono text-emerald-500 font-semibold">{{ h.newValue }}</span>
+              </div>
+              <div class="text-[10px] text-slate-400 mt-0.5">By {{ h.changedByName || 'System' }}</div>
+            </div>
+            <span class="text-[10px] text-slate-400">{{ h.changedAt | date:'short' }}</span>
+          </div>
+
+          <div *ngIf="!ticket.history || ticket.history.length === 0" class="py-8 text-center text-slate-400 italic">
+            No audit events logged yet.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: CREATE TICKET (WITH LIVE PRIORITY MATRIX PREVIEW) -->
+  <!-- ======================================================== -->
+  <div *ngIf="showCreateModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-xl w-full p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <div>
+          <h3 class="text-base font-bold text-slate-900 dark:text-white">Create Enterprise Service Ticket</h3>
+          <p class="text-xs text-slate-400 mt-0.5">Automated priority calculation and SLA deadline enforcement</p>
+        </div>
+        <button (click)="showCreateModal.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <span class="material-icons text-xl">close</span>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <!-- Subject Line -->
+        <div>
+          <label for="create-ticket-title" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Subject Line *</label>
+          <input
+            id="create-ticket-title"
+            type="text"
+            [(ngModel)]="newTicketTitle"
+            placeholder="e.g., Core PostgreSQL Connection Pool Exhaustion"
+            aria-label="Ticket subject line"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+          />
+        </div>
+
+        <!-- Description -->
+        <div>
+          <label for="create-ticket-desc" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Problem Description & Reproduction *</label>
+          <textarea
+            id="create-ticket-desc"
+            [(ngModel)]="newTicketDesc"
+            rows="3"
+            placeholder="Observed error logs, symptoms, affected users, steps..."
+            aria-label="Problem description"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-primary-500"
+          ></textarea>
+        </div>
+
+        <!-- Type & Source -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="create-ticket-type" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Ticket Type</label>
+            <select
+              id="create-ticket-type"
+              [(ngModel)]="newTicketType"
+              aria-label="Ticket type"
+              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+            >
+              <option value="INCIDENT">Incident (Break / Fix)</option>
+              <option value="SERVICE_REQUEST">Service Request</option>
+              <option value="PROBLEM">Problem (Known Defect)</option>
+              <option value="CHANGE_REQUEST">Change Request (RFC)</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="create-ticket-source" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Source Channel</label>
+            <select
+              id="create-ticket-source"
+              [(ngModel)]="newTicketSource"
+              aria-label="Source channel"
+              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+            >
+              <option value="PORTAL">Self-Service Portal</option>
+              <option value="EMAIL">Inbound Email</option>
+              <option value="PHONE">IT Helpdesk Phone</option>
+              <option value="SLACK">Slack / MS Teams Bot</option>
+              <option value="MONITORING_ALERT">Monitoring Alert (Datadog/Sentry)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Category & Subcategory -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="create-ticket-category" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Category</label>
+            <select
+              id="create-ticket-category"
+              [(ngModel)]="newTicketCategory"
+              (ngModelChange)="onCategoryChange()"
+              aria-label="Category"
+              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+            >
+              <option *ngFor="let cat of ticketService.categories()" [value]="cat.code">{{ cat.name }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="create-ticket-subcategory" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Subcategory</label>
+            <select
+              id="create-ticket-subcategory"
+              [(ngModel)]="newTicketSubcategory"
+              aria-label="Subcategory"
+              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+            >
+              <option *ngFor="let sub of currentSubcategories()" [value]="sub.code">{{ sub.name }} ({{ sub.defaultSlaHours }}h SLA)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Priority Matrix: Impact x Urgency -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="create-ticket-impact" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Impact Level</label>
+            <select
+              id="create-ticket-impact"
+              [(ngModel)]="newTicketImpact"
+              aria-label="Impact level"
+              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+            >
+              <option value="CRITICAL">Critical (Enterprise-wide)</option>
+              <option value="HIGH">High (Entire Department)</option>
+              <option value="MEDIUM">Medium (Single Team)</option>
+              <option value="LOW">Low (Single User)</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="create-ticket-urgency" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Urgency Level</label>
+            <select
+              id="create-ticket-urgency"
+              [(ngModel)]="newTicketUrgency"
+              aria-label="Urgency level"
+              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+            >
+              <option value="CRITICAL">Critical (Complete Work Stop)</option>
+              <option value="HIGH">High (Degraded Performance)</option>
+              <option value="MEDIUM">Medium (Workaround Available)</option>
+              <option value="LOW">Low (Informational / Future)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- LIVE PRIORITY MATRIX PREVIEW -->
+        <div class="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-icons text-base text-primary-500">bolt</span>
+            <span class="font-bold text-slate-700 dark:text-slate-300">Computed Priority:</span>
+            <span class="px-2 py-0.5 rounded text-[11px] font-black uppercase shadow-2xs" [ngClass]="calculatedPriorityPreview().colorClass">
+              {{ calculatedPriorityPreview().label }}
+            </span>
+          </div>
+          <div class="text-[11px] font-bold text-primary-600 dark:text-primary-400">
+            SLA Target: {{ calculatedPriorityPreview().slaHours }} Hours
+          </div>
+        </div>
+
+        <!-- Optional Assignment -->
+        <div>
+          <label for="create-ticket-tech" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Assign Technician (Optional)</label>
+          <select
+            id="create-ticket-tech"
+            [(ngModel)]="newTicketTechnicianId"
+            aria-label="Assign technician"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+          >
+            <option value="">Unassigned (Route to Tier 1 Queue)</option>
+            <option *ngFor="let emp of employeeService.employees()" [value]="emp.id">
+              {{ emp.firstName }} {{ emp.lastName }} ({{ emp.roleCode }})
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <button
+          (click)="showCreateModal.set(false)"
+          class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+        >
+          Cancel
+        </button>
+        <button
+          [disabled]="!newTicketTitle.trim() || !newTicketDesc.trim() || isSubmitting()"
+          (click)="submitCreateTicket()"
+          class="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-xs transition"
+        >
+          {{ isSubmitting() ? 'Provisioning...' : 'Log Service Ticket' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: TRANSITION STATUS -->
+  <!-- ======================================================== -->
+  <div *ngIf="showTransitionModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Transition Ticket Lifecycle</h3>
+        <button (click)="showTransitionModal.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <span class="material-icons text-xl">close</span>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label for="transition-target-status" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Target Status *</label>
+          <select
+            id="transition-target-status"
+            [(ngModel)]="transitionTargetStatus"
+            aria-label="Target lifecycle status"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-bold"
+          >
+            <option *ngFor="let s of selectedTicketDetail()?.permittedNextStatuses" [value]="s">
+              {{ s.replace('_', ' ') }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label for="transition-reason" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Operational Reason (Optional)</label>
+          <input
+            id="transition-reason"
+            type="text"
+            [(ngModel)]="transitionReason"
+            placeholder="e.g., Awaiting customer reproduction steps"
+            aria-label="Transition operational reason"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+          />
+        </div>
+
+        <!-- Mandatory fields if target is RESOLVED -->
+        <div *ngIf="transitionTargetStatus === 'RESOLVED'" class="space-y-3 p-3 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-200 dark:border-emerald-800">
+          <div class="font-bold text-emerald-800 dark:text-emerald-300 text-xs">Resolution Requirements</div>
+
+          <div>
+            <label for="transition-resolution-notes" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Resolution Summary & Fix Applied *</label>
+            <textarea
+              id="transition-resolution-notes"
+              [(ngModel)]="transitionResolutionNotes"
+              rows="2"
+              placeholder="State the permanent fix or workaround deployed..."
+              aria-label="Resolution notes"
+              class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+            ></textarea>
+          </div>
+
+          <div>
+            <label for="transition-root-cause" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Root Cause Analysis (RCA)</label>
+            <input
+              id="transition-root-cause"
+              type="text"
+              [(ngModel)]="transitionRootCause"
+              placeholder="e.g., Expired Let's Encrypt intermediate cert"
+              aria-label="Root cause"
+              class="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <button
+          (click)="showTransitionModal.set(false)"
+          class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+        >
+          Cancel
+        </button>
+        <button
+          [disabled]="isSubmitting() || !transitionTargetStatus"
+          (click)="submitTransition()"
+          class="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-xs transition"
+        >
+          Apply Transition
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: ASSIGN TICKET -->
+  <!-- ======================================================== -->
+  <div *ngIf="showAssignModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Assign / Transfer Ticket</h3>
+        <button (click)="showAssignModal.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <span class="material-icons text-xl">close</span>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label for="assign-technician" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Technician</label>
+          <select
+            id="assign-technician"
+            [(ngModel)]="assignTechnicianId"
+            aria-label="Assign technician"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+          >
+            <option value="">Unassigned</option>
+            <option *ngFor="let emp of employeeService.employees()" [value]="emp.id">
+              {{ emp.firstName }} {{ emp.lastName }} ({{ emp.roleCode }})
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label for="assign-reason" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Assignment Note / Reason</label>
+          <input
+            id="assign-reason"
+            type="text"
+            [(ngModel)]="assignReason"
+            placeholder="e.g., Escalating to Senior NetOps Engineer"
+            aria-label="Assignment reason"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+          />
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <button
+          (click)="showAssignModal.set(false)"
+          class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+        >
+          Cancel
+        </button>
+        <button
+          [disabled]="isSubmitting()"
+          (click)="submitAssign()"
+          class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-xs transition"
+        >
+          Confirm Assignment
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: ESCALATE TICKET -->
+  <!-- ======================================================== -->
+  <div *ngIf="showEscalateModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Escalate Service Ticket</h3>
+        <button (click)="showEscalateModal.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <span class="material-icons text-xl">close</span>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label for="escalate-role" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Target Management Tier</label>
+          <select
+            id="escalate-role"
+            [(ngModel)]="escalationTargetRole"
+            aria-label="Target escalation tier"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+          >
+            <option value="IT_MANAGER">IT Operations Manager</option>
+            <option value="ADMIN">System Administrator</option>
+            <option value="SUPER_ADMIN">Executive / Super Admin</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="escalate-reason" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Escalation Justification *</label>
+          <textarea
+            id="escalate-reason"
+            [(ngModel)]="escalationReason"
+            rows="3"
+            placeholder="Explain why standard Tier 1/2 triage was insufficient..."
+            aria-label="Escalation justification"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <button
+          (click)="showEscalateModal.set(false)"
+          class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+        >
+          Cancel
+        </button>
+        <button
+          [disabled]="isSubmitting() || !escalationReason.trim()"
+          (click)="submitEscalate()"
+          class="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-xs transition"
+        >
+          Confirm Escalation
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: REOPEN TICKET -->
+  <!-- ======================================================== -->
+  <div *ngIf="showReopenModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Reopen Service Ticket</h3>
+        <button (click)="showReopenModal.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <span class="material-icons text-xl">close</span>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label for="reopen-reason" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Reason for Reopening *</label>
+          <textarea
+            id="reopen-reason"
+            [(ngModel)]="reopenReason"
+            rows="3"
+            placeholder="Detail why the issue recurred or the fix was incomplete..."
+            aria-label="Reason for reopening ticket"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <button
+          (click)="showReopenModal.set(false)"
+          class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+        >
+          Cancel
+        </button>
+        <button
+          [disabled]="isSubmitting() || !reopenReason.trim()"
+          (click)="submitReopen()"
+          class="px-4 py-2 bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-xs transition"
+        >
+          Reopen Ticket
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: MANUAL TIME LOG ENTRY -->
+  <!-- ======================================================== -->
+  <div *ngIf="showTimeEntryModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Log Work Time</h3>
+        <button (click)="showTimeEntryModal.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <span class="material-icons text-xl">close</span>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label for="manual-time-duration" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Duration (Minutes) *</label>
+          <input
+            id="manual-time-duration"
+            type="number"
+            min="1"
+            max="1440"
+            [(ngModel)]="manualDurationMinutes"
+            aria-label="Work duration in minutes"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+          />
+        </div>
+
+        <div>
+          <label for="manual-time-notes" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Work Description</label>
+          <textarea
+            id="manual-time-notes"
+            [(ngModel)]="manualTimeNotes"
+            rows="3"
+            placeholder="Details of triage, patch applied, vendor communications..."
+            aria-label="Work description"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <button
+          (click)="showTimeEntryModal.set(false)"
+          class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+        >
+          Cancel
+        </button>
+        <button
+          [disabled]="isSubmitting() || !manualDurationMinutes"
+          (click)="submitManualTimeEntry()"
+          class="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-xs transition"
+        >
+          Save Log Entry
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: CREATE TASK FROM TICKET -->
+  <!-- ======================================================== -->
+  <div *ngIf="showTaskModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-lg w-full p-6 space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Create Downstream Remediation Task</h3>
+        <button (click)="showTaskModal.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <span class="material-icons text-xl">close</span>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label for="new-task-title" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Task Title *</label>
+          <input
+            id="new-task-title"
+            type="text"
+            [(ngModel)]="newTaskTitle"
+            placeholder="e.g., Replace failed SSD on node-04"
+            aria-label="Task title"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+          />
+        </div>
+
+        <div>
+          <label for="new-task-desc" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Instructions</label>
+          <textarea
+            id="new-task-desc"
+            [(ngModel)]="newTaskDescription"
+            rows="3"
+            aria-label="Task instructions"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+          ></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label for="new-task-priority" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Priority</label>
+            <select
+              id="new-task-priority"
+              [(ngModel)]="newTaskPriority"
+              aria-label="Task priority"
+              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+            >
+              <option value="LOW">Low</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HIGH">High</option>
+              <option value="CRITICAL">Critical</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="new-task-assignee" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Assigned Engineer</label>
+            <select
+              id="new-task-assignee"
+              [(ngModel)]="newTaskAssignedEmployeeId"
+              aria-label="Task assigned employee"
+              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+            >
+              <option value="">Unassigned</option>
+              <option *ngFor="let emp of employeeService.employees()" [value]="emp.id">
+                {{ emp.firstName }} {{ emp.lastName }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label for="new-task-start" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Start Date</label>
+            <input
+              id="new-task-start"
+              type="date"
+              [(ngModel)]="newTaskStartDate"
+              aria-label="Start date"
+              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label for="new-task-due" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Due Date</label>
+            <input
+              id="new-task-due"
+              type="date"
+              [(ngModel)]="newTaskDueDate"
+              aria-label="Due date"
+              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+            />
+          </div>
+
+          <div>
+            <label for="new-task-est-hours" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Est. Hours</label>
+            <input
+              id="new-task-est-hours"
+              type="number"
+              min="0.5"
+              step="0.5"
+              [(ngModel)]="newTaskEstimatedHours"
+              aria-label="Estimated hours"
+              class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <button
+          (click)="showTaskModal.set(false)"
+          class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+        >
+          Cancel
+        </button>
+        <button
+          [disabled]="isSubmitting() || !newTaskTitle.trim()"
+          (click)="submitCreateTask()"
+          class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-xs transition"
+        >
+          Create & Link Task
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======================================================== -->
+  <!-- MODAL: LINK EXISTING TASK -->
+  <!-- ======================================================== -->
+  <div *ngIf="showLinkTaskModal()" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-6 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white">Link Existing Task</h3>
+        <button (click)="showLinkTaskModal.set(false)" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <span class="material-icons text-xl">close</span>
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div>
+          <label for="link-task-id" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Task UUID *</label>
+          <input
+            id="link-task-id"
+            type="text"
+            [(ngModel)]="linkTaskIdInput"
+            placeholder="e.g., 30000000-0000-0000-0000-000000000001"
+            aria-label="Existing task UUID"
+            class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono"
+          />
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+        <button
+          (click)="showLinkTaskModal.set(false)"
+          class="px-4 py-2 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 font-semibold text-xs rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+        >
+          Cancel
+        </button>
+        <button
+          [disabled]="isSubmitting() || !linkTaskIdInput.trim()"
+          (click)="submitLinkTask()"
+          class="px-4 py-2 bg-primary-600 hover:bg-primary-700 disabled:opacity-50 text-white font-semibold text-xs rounded-xl shadow-xs transition"
+        >
+          Link Task
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
