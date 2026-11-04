@@ -9,6 +9,20 @@ export const routes: Routes = [
       import('./features/auth/login/login.component').then((m) => m.LoginComponent),
   },
   {
+    path: 'auth/forgot-password',
+    loadComponent: () =>
+      import('./features/auth/forgot-password/forgot-password.component').then(
+        (m) => m.ForgotPasswordComponent,
+      ),
+  },
+  {
+    path: 'auth/reset-password',
+    loadComponent: () =>
+      import('./features/auth/reset-password/reset-password.component').then(
+        (m) => m.ResetPasswordComponent,
+      ),
+  },
+  {
     path: '',
     component: ShellComponent,
     canActivate: [authGuard],
@@ -69,6 +83,17 @@ export const routes: Routes = [
         },
         loadComponent: () =>
           import('./features/employees/employees.component').then((m) => m.EmployeesComponent),
+      },
+      {
+        path: 'employees/bulk',
+        canActivate: [roleGuard],
+        data: {
+          roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR', 'HR_MANAGER', 'HR_ADMINISTRATOR'],
+        },
+        loadComponent: () =>
+          import('./features/employees/bulk-upload/bulk-upload.component').then(
+            (m) => m.BulkUploadComponent,
+          ),
       },
       {
         path: 'departments',
