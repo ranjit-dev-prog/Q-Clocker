@@ -16,6 +16,7 @@ import { ImportEmployeeRow } from './dto/import-employee.dto';
 import { UserRole, AccountStatus, EmploymentType } from '../../common/enums';
 import { generateReferenceId } from '../../common/utils/reference-id.util';
 import * as crypto from 'crypto';
+import * as ExcelJS from 'exceljs';
 
 @Injectable()
 export class UsersService {
@@ -800,5 +801,241 @@ EMP006,Priya,Nair,priya.nair@qclocker.io,Software Engineering,Full-Stack Softwar
       departmentDistribution: deptDist,
       recentRegistrations: all.slice(0, 5),
     };
+  }
+
+  /**
+   * Generates a structured .xlsx template with corporate validation instructions
+   */
+  async generateBulkTemplate(): Promise<Buffer> {
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = 'Q Clocker Enterprise Identity Engine';
+    workbook.created = new Date();
+
+    const sheet = workbook.addWorksheet('Employee_Onboarding', {
+      views: [{ state: 'frozen', ySplit: 1 }],
+    });
+
+    sheet.columns = [
+      { header: 'EmployeeCode', key: 'employeeCode', width: 16 },
+      { header: 'FirstName', key: 'firstName', width: 16 },
+      { header: 'LastName', key: 'lastName', width: 16 },
+      { header: 'CorporateEmail', key: 'email', width: 28 },
+      { header: 'RoleCode', key: 'roleCode', width: 22 },
+      { header: 'DepartmentCode', key: 'departmentCode', width: 18 },
+      { header: 'JobTitle', key: 'jobTitle', width: 26 },
+      { header: 'Phone', key: 'phone', width: 18 },
+      { header: 'EmploymentType', key: 'employmentType', width: 18 },
+      { header: 'WorkLocation', key: 'workLocation', width: 18 },
+    ];
+
+    // Style header row
+    const headerRow = sheet.getRow(1);
+    headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FF4338CA' },
+    };
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+    headerRow.height = 26;
+
+    // Add sample rows
+    sheet.addRow({
+      employeeCode: 'EMP101',
+      firstName: 'Emily',
+      lastName: 'Carter',
+      email: 'emily.carter@qclocker.io',
+      roleCode: 'EMPLOYEE',
+      departmentCode: 'ENG',
+      jobTitle: 'Senior Full Stack Engineer',
+      phone: '+1-555-0182',
+      employmentType: 'FULL_TIME',
+      workLocation: 'New York HQ',
+    });
+
+    sheet.addRow({
+      employeeCode: 'EMP102',
+      firstName: 'Liam',
+      lastName: 'Nakamura',
+      email: 'liam.nakamura@qclocker.io',
+      roleCode: 'TEAM_LEAD',
+      departmentCode: 'ENG',
+      jobTitle: 'Lead Software Architect',
+      phone: '+1-555-0183',
+      employmentType: 'FULL_TIME',
+      workLocation: 'San Francisco Hub',
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return Buffer.from(buffer);
+  }
+
+  /**
+   * Bulk Onboard Employees from .xlsx or .csv
+   */
+  async bulkUpload(file: Express.Multer.File, actorUser?: any) {
+    if (!file || !file.buffer) {
+      throw new BadRequestException('No file buffer provided for bulk onboarding');
+    }
+
+    const rowsData: any[] = [];
+    const isCsv = file.mimetype === 'text/csv' || (file.originalname && file.originalname.endsWith('.csv'));
+
+    if (isCsv) {
+      const content = file.buffer.toString('utf-8');
+      const lines = content.split(/\r?\n/).filter((l) => l.trim().length > 0);
+      if (lines.length <= 1) {
+        throw new BadRequestException('CSV file must contain a header row and at least one data row');
+      }
+      const headers = lines[0].split(',').map((h) => h.trim().replace(/^"|"$/g, ''));
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map((v) => v.trim().replace(/^"|"$/g, ''));
+        const row: Record<string, any> = {};
+        headers.forEach((h, idx) => {
+          row[h] = values[idx] || '';
+        });
+        rowsData.push({ rowNumber: i + 1, data: row });
+      }
+    } else {
+      const workbook = new ExcelJS.Workbook();
+      await workbook.xlsx.load(file.buffer);
+      const sheet = workbook.getWorksheet(1) || workbook.worksheets[0];
+      if (!sheet || sheet.rowCount < 2) {
+        throw new BadRequestException('Workbook must contain at least one data row');
+      }
+
+      const headers: string[] = [];
+      const headerRow = sheet.getRow(1);
+      headerRow.eachCell((cell, colNumber) => {
+        headers[colNumber] = String(cell.value || '').trim();
+      });
+
+      sheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return;
+        const rowData: Record<string, any> = {};
+        row.eachCell((cell, colNumber) => {
+          const header = headers[colNumber];
+          if (header) {
+            let val = cell.value;
+            if (val && typeof val === 'object' && 'text' in val) {
+              val = (val as any).text;
+            }
+            rowData[header] = String(val ?? '').trim();
+          }
+        });
+        if (Object.keys(rowData).length > 0) {
+          rowsData.push({ rowNumber, data: rowData });
+        }
+      });
+    }
+
+    const report = {
+      totalRows: rowsData.length,
+      validRows: 0,
+      invalidRows: 0,
+      errors: [] as Array<{ rowNumber: number; email?: string; error: string }>,
+      insertedUsers: [] as Array<{ id: string; email: string; employeeCode: string; temporaryPassword?: string }>,
+    };
+
+    for (const item of rowsData) {
+      const d = item.data;
+      const rowNum = item.rowNumber;
+
+      const getVal = (...keys: string[]) => {
+        for (const k of keys) {
+          for (const actualKey of Object.keys(d)) {
+            if (actualKey.toLowerCase() === k.toLowerCase()) {
+              return d[actualKey];
+            }
+          }
+        }
+        return '';
+      };
+
+      const firstName = getVal('firstName', 'first_name');
+      const lastName = getVal('lastName', 'last_name');
+      const email = getVal('email', 'corporateEmail', 'corporate_email');
+      const employeeCode = getVal('employeeCode', 'employee_code') || `EMP-${Date.now().toString().slice(-4)}`;
+      const roleCode = getVal('roleCode', 'role_code', 'role') || UserRole.EMPLOYEE;
+      const jobTitle = getVal('jobTitle', 'job_title', 'designation') || 'Employee';
+      const phone = getVal('phone', 'phone_number');
+      const employmentType = getVal('employmentType', 'employment_type') || EmploymentType.FULL_TIME;
+      const workLocation = getVal('workLocation', 'work_location') || 'Headquarters';
+
+      if (!firstName || !lastName || !email) {
+        report.invalidRows++;
+        report.errors.push({
+          rowNumber: rowNum,
+          email,
+          error: 'Missing mandatory fields: firstName, lastName, and email are required',
+        });
+        continue;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        report.invalidRows++;
+        report.errors.push({
+          rowNumber: rowNum,
+          email,
+          error: `Invalid corporate email format: ${email}`,
+        });
+        continue;
+      }
+
+      const existing = this.memoryUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+      if (existing) {
+        report.invalidRows++;
+        report.errors.push({
+          rowNumber: rowNum,
+          email,
+          error: `Account with email ${email} already exists`,
+        });
+        continue;
+      }
+
+      const tempPass = `Temp#${crypto.randomBytes(4).toString('hex')}2026!`;
+
+      try {
+        const created = await this.create(
+          {
+            firstName,
+            lastName,
+            email,
+            employeeCode,
+            roleCode: roleCode as UserRole,
+            jobTitle,
+            phone,
+            employmentType: employmentType as EmploymentType,
+            workLocation,
+            hasLoginAccount: true,
+            sendInvitation: true,
+          },
+          actorUser,
+        );
+
+        const memUser = this.memoryUsers.find((u) => u.email.toLowerCase() === email.toLowerCase());
+        if (memUser) {
+          memUser.isPasswordChangeRequired = true;
+          memUser.temporaryPassword = tempPass;
+        }
+
+        report.validRows++;
+        report.insertedUsers.push({
+          id: created.id,
+          email: created.email,
+          employeeCode: created.employeeCode,
+          temporaryPassword: tempPass,
+        });
+      } catch (err: any) {
+        report.invalidRows++;
+        report.errors.push({
+          rowNumber: rowNum,
+          email,
+          error: err?.message || 'Failed to persist employee record',
+        });
+      }
+    }
+
+    return report;
   }
 }

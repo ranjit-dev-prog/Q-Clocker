@@ -188,4 +188,16 @@ export class EmployeeService {
       }),
     );
   }
+
+  downloadBulkTemplate(): Observable<Blob> {
+    return this.http.get(`${this.apiUrl}/bulk-template`, {
+      responseType: 'blob',
+    });
+  }
+
+  uploadBulk(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('file', file, file.name);
+    return this.http.post<any>(`${this.apiUrl}/bulk-upload`, formData);
+  }
 }

@@ -11,7 +11,12 @@ import {
   HttpCode,
   HttpStatus,
   Header,
+  UseInterceptors,
+  UploadedFile,
+  Res,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -19,6 +24,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { UsersService } from './users.service';
+import { AuthService } from '../auth/auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
@@ -34,7 +40,54 @@ import { UserRole } from '../../common/enums';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @ApiBearerAuth()
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly authService: AuthService,
+  ) {}
+
+  @Get('bulk-template')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HR_MANAGER)
+  @ApiOperation({ summary: 'Download employee bulk onboarding .xlsx template' })
+  async getBulkTemplate(@Res() res: Response) {
+    const buffer = await this.usersService.generateBulkTemplate();
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="q_clocker_bulk_onboarding_template.xlsx"',
+    );
+    return res.end(buffer);
+  }
+
+  @Post('bulk-upload')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HR_MANAGER)
+  @UseInterceptors(FileInterceptor('file'))
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Bulk onboard employees via .xlsx or .csv with schema validation' })
+  async bulkUpload(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() actor: any,
+  ) {
+    return this.usersService.bulkUpload(file, actor);
+  }
+
+  @Post(':id/admin-reset-password')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HR_MANAGER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Administratively reset employee password with temporary credential' })
+  async adminResetPassword(@Param('id') id: string) {
+    return this.authService.adminResetPassword(id);
+  }
+
+  @Post(':id/revoke-sessions')
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Revoke all active sessions for an employee' })
+  async revokeSessions(@Param('id') id: string) {
+    return this.authService.revokeUserSessions(id);
+  }
 
   @Get('admin-dashboard')
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.HR_MANAGER)
