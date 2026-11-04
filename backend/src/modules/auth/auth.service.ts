@@ -11,9 +11,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import * as crypto from 'crypto';
-import { DatabaseService } from '../../database/database.service';
-import * as schema from '../../database/schema';
-import { eq, and, gt, desc } from 'drizzle-orm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
@@ -190,7 +188,7 @@ export class AuthService {
   >();
 
   constructor(
-    private dbService: DatabaseService,
+    private prisma: PrismaService,
     private jwtService: JwtService,
   ) {}
 
@@ -237,13 +235,11 @@ export class AuthService {
     this.checkRateLimit(clientKey);
 
     // Check database first if connected
-    if (this.dbService.getConnectionStatus()) {
+    if (this.prisma.isConnected) {
       try {
-        const [user] = await this.dbService.db
-          .select()
-          .from(schema.users)
-          .where(eq(schema.users.email, email.toLowerCase().trim()))
-          .limit(1);
+        const user = await this.prisma.user.findFirst({
+          where: { email: email.toLowerCase().trim() },
+        });
 
         if (user) {
           if (!user.isActive) {
@@ -259,10 +255,10 @@ export class AuthService {
           this.resetFailedAttempts(clientKey);
 
           // Update last login
-          await this.dbService.db
-            .update(schema.users)
-            .set({ lastLoginAt: new Date() })
-            .where(eq(schema.users.id, user.id));
+          await this.prisma.user.update({
+            where: { id: user.id },
+            data: { lastLoginAt: new Date() },
+          });
 
           return await this.generateAuthResponse(
             {
