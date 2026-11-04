@@ -61,11 +61,16 @@ export declare class AuthController {
     forgotPassword(dto: ForgotPasswordDto, req: Request): Promise<{
         success: boolean;
         message: string;
+        token: string;
         resetToken: string;
     }>;
     getResetChallenge(token: string): Promise<{
         valid: boolean;
         email: string;
+        questions: {
+            id: string;
+            prompt: string;
+        }[];
         question1: string;
         question2: string;
     }>;

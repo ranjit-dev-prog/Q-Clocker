@@ -80,11 +80,16 @@ export declare class AuthService {
     }): Promise<{
         success: boolean;
         message: string;
+        token: string;
         resetToken: string;
     }>;
     getResetChallenge(token: string): Promise<{
         valid: boolean;
         email: string;
+        questions: {
+            id: string;
+            prompt: string;
+        }[];
         question1: string;
         question2: string;
     }>;

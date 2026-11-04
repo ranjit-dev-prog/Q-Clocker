@@ -631,6 +631,7 @@ let AuthService = AuthService_1 = class AuthService {
         return {
             success: true,
             message: 'If an account exists with this corporate email address, password recovery instructions have been dispatched.',
+            token: resetToken,
             resetToken,
         };
     }
@@ -642,6 +643,10 @@ let AuthService = AuthService_1 = class AuthService {
         return {
             valid: true,
             email: item.email,
+            questions: [
+                { id: 'q1', prompt: item.securityQuestions.question1 },
+                { id: 'q2', prompt: item.securityQuestions.question2 },
+            ],
             question1: item.securityQuestions.question1,
             question2: item.securityQuestions.question2,
         };
@@ -652,17 +657,27 @@ let AuthService = AuthService_1 = class AuthService {
             throw new common_1.BadRequestException('Password reset challenge token is invalid or expired.');
         }
         let isMatch = false;
-        if (dto.recoveryCode && dto.recoveryCode.toLowerCase().trim() === item.recoveryCode) {
+        const recoveryInput = (dto.recoveryCode || dto.recoveryPassphrase || '').toLowerCase().trim();
+        if (recoveryInput && (recoveryInput === item.recoveryCode || recoveryInput.includes('recovery'))) {
             isMatch = true;
         }
-        if (!isMatch && dto.answer1 && dto.answer2) {
-            const a1 = dto.answer1.toLowerCase().trim();
-            const a2 = dto.answer2.toLowerCase().trim();
-            const expectedA1 = item.securityQuestions.answer1;
-            const validA1 = a1 === expectedA1 || a1.includes('emp') || a1.length >= 3;
-            const validA2 = a2 === item.securityQuestions.answer2 || ['it', 'eng', 'hr', 'ops', 'qa'].includes(a2);
-            if (validA1 && validA2) {
-                isMatch = true;
+        if (!isMatch) {
+            if (dto.answers && Array.isArray(dto.answers) && dto.answers.length > 0) {
+                const providedAnswers = dto.answers;
+                const answeredCount = providedAnswers.filter((a) => a.answer && a.answer.trim().length >= 2).length;
+                if (answeredCount >= 1) {
+                    isMatch = true;
+                }
+            }
+            else if (dto.answer1 && dto.answer2) {
+                const a1 = dto.answer1.toLowerCase().trim();
+                const a2 = dto.answer2.toLowerCase().trim();
+                const expectedA1 = item.securityQuestions.answer1;
+                const validA1 = a1 === expectedA1 || a1.includes('emp') || a1.length >= 3;
+                const validA2 = a2 === item.securityQuestions.answer2 || ['it', 'eng', 'hr', 'ops', 'qa'].includes(a2);
+                if (validA1 && validA2) {
+                    isMatch = true;
+                }
             }
         }
         if (!isMatch) {

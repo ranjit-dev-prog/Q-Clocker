@@ -92,7 +92,7 @@ async function runTests() {
   );
 
   assert(forgotRes.statusCode === 200, 'POST /auth/forgot-password returns HTTP 200 generic message');
-  const resetToken = forgotRes.data?.data?.token;
+  const resetToken = forgotRes.data?.data?.token || forgotRes.data?.data?.resetToken || forgotRes.data?.token || forgotRes.data?.resetToken;
   assert(!!resetToken, 'Single-use 15-minute challenge token generated');
 
   const challengeRes = await request({
@@ -101,6 +101,7 @@ async function runTests() {
     path: `/api/v1/auth/reset-challenge?token=${encodeURIComponent(resetToken)}`,
     method: 'GET',
   });
+  console.log('    [DEBUG] resetToken:', resetToken, 'challengeRes:', challengeRes.statusCode, challengeRes.data);
 
   assert(challengeRes.statusCode === 200, 'GET /auth/reset-challenge returns HTTP 200');
   assert(Array.isArray(challengeRes.data?.data?.questions), 'Security challenge questions returned');
@@ -284,3 +285,4 @@ runTests().catch((err) => {
   console.error('Fatal test runner error:', err);
   process.exit(1);
 });
+
