@@ -271,21 +271,15 @@ export class PermissionsGuard implements CanActivate {
   }
 
   private async getUserPermissions(roleId?: string, roleCode?: string): Promise<string[]> {
-    if (this.dbService.getConnectionStatus() && roleId) {
+    if (this.prisma.isConnected && roleId) {
       try {
-        const rows = await this.dbService.db
-          .select({
-            code: schema.permissions.code,
-          })
-          .from(schema.rolePermissions)
-          .innerJoin(
-            schema.permissions,
-            eq(schema.rolePermissions.permissionId, schema.permissions.id),
-          )
-          .where(eq(schema.rolePermissions.roleId, roleId));
+        const rows = await this.prisma.rolePermission.findMany({
+          where: { roleId },
+          include: { permission: true },
+        });
 
         if (rows.length > 0) {
-          return rows.map((r) => r.code);
+          return rows.map((r) => r.permission.code);
         }
       } catch (err) {
         // Fall back to built-in map

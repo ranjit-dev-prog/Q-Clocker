@@ -2,9 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { DatabaseService } from '../../../database/database.service';
-import * as schema from '../../../database/schema';
-import { eq } from 'drizzle-orm';
+import { PrismaService } from '../../../prisma/prisma.service';
 
 export interface JwtPayload {
   sub: string;
@@ -18,7 +16,7 @@ export interface JwtPayload {
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
     private configService: ConfigService,
-    private dbService: DatabaseService,
+    private prisma: PrismaService,
   ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
@@ -30,7 +28,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
-    if (!this.dbService.getConnectionStatus()) {
+    if (!this.prisma.isConnected) {
       // In offline/mock mode if db disconnected, validate based on payload
       return {
         id: payload.sub,
@@ -39,26 +37,33 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       };
     }
 
-    const [user] = await this.dbService.db
-      .select({
-        id: schema.users.id,
-        email: schema.users.email,
-        firstName: schema.users.firstName,
-        lastName: schema.users.lastName,
-        role: schema.users.roleCode,
-        departmentId: schema.users.departmentId,
-        teamId: schema.users.teamId,
-        isActive: schema.users.isActive,
-      })
-      .from(schema.users)
-      .where(eq(schema.users.id, payload.sub))
-      .limit(1);
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        roleCode: true,
+        departmentId: true,
+        teamId: true,
+        isActive: true,
+      },
+    });
 
     if (!user || !user.isActive) {
       throw new UnauthorizedException('User account is deactivated or not found');
     }
 
-    return user;
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.roleCode,
+      departmentId: user.departmentId,
+      teamId: user.teamId,
+      isActive: user.isActive,
+    };
   }
 }
-
