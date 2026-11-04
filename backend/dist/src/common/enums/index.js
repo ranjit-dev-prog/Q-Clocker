@@ -142,6 +142,7 @@ var TicketCategory;
     TicketCategory["CLOUD_SECURITY"] = "Cloud Security";
     TicketCategory["COMPLIANCE"] = "Compliance";
     TicketCategory["HR_SUPPORT"] = "HR Support";
+    TicketCategory["FACILITY_ADMIN"] = "Facility & Admin";
     TicketCategory["GENERAL"] = "General Requests";
 })(TicketCategory || (exports.TicketCategory = TicketCategory = {}));
 var NotificationType;

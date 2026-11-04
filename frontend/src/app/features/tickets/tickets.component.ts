@@ -142,6 +142,7 @@ export class TicketsComponent implements OnInit {
         this.selectedStatus = '';
         this.selectedPriorityCode = '';
         this.selectedSlaStatus = '';
+        this.selectedCategory = '';
         this.applyFilters();
         break;
       case 'my_tickets':
@@ -161,6 +162,7 @@ export class TicketsComponent implements OnInit {
       case 'p1_p2':
         this.selectedStatus = '';
         this.selectedPriorityCode = 'P1';
+        this.selectedCategory = '';
         this.applyFilters();
         break;
       case 'approaching_breach':
@@ -173,6 +175,27 @@ export class TicketsComponent implements OnInit {
         this.selectedStatus = 'RESOLVED';
         this.selectedPriorityCode = '';
         this.selectedSlaStatus = '';
+        this.applyFilters();
+        break;
+      case 'queue_it':
+        this.selectedStatus = '';
+        this.selectedPriorityCode = '';
+        this.selectedSlaStatus = '';
+        this.selectedCategory = 'IT_SUPPORT';
+        this.applyFilters();
+        break;
+      case 'queue_hr':
+        this.selectedStatus = '';
+        this.selectedPriorityCode = '';
+        this.selectedSlaStatus = '';
+        this.selectedCategory = 'HR_SUPPORT';
+        this.applyFilters();
+        break;
+      case 'queue_facility':
+        this.selectedStatus = '';
+        this.selectedPriorityCode = '';
+        this.selectedSlaStatus = '';
+        this.selectedCategory = 'FACILITY_ADMIN';
         this.applyFilters();
         break;
     }

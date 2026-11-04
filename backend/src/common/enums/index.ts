@@ -138,6 +138,7 @@ export enum TicketCategory {
   CLOUD_SECURITY = 'Cloud Security',
   COMPLIANCE = 'Compliance',
   HR_SUPPORT = 'HR Support',
+  FACILITY_ADMIN = 'Facility & Admin',
   GENERAL = 'General Requests',
 }
 

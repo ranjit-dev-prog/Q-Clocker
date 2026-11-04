@@ -14,6 +14,8 @@ import { TicketsModule } from './modules/tickets/tickets.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { WorkLogsModule } from './modules/work-logs/work-logs.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { PayrollModule } from './modules/payroll/payroll.module';
+import { LifecycleModule } from './modules/lifecycle/lifecycle.module';
 import { HealthModule } from './modules/health/health.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
@@ -42,6 +44,8 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     NotificationsModule,
     WorkLogsModule,
     ReportsModule,
+    PayrollModule,
+    LifecycleModule,
     HealthModule,
   ],
   providers: [

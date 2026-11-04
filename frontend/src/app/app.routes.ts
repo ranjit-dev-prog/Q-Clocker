@@ -117,6 +117,35 @@ export const routes: Routes = [
             (m) => m.RolesAdminComponent,
           ),
       },
+      {
+        path: 'my-finances',
+        loadComponent: () =>
+          import('./features/finances/my-finances.component').then(
+            (m) => m.MyFinancesComponent,
+          ),
+      },
+      {
+        path: 'hr/reminders',
+        canActivate: [roleGuard],
+        data: {
+          roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR', 'HR_MANAGER', 'HR_ADMINISTRATOR'],
+        },
+        loadComponent: () =>
+          import('./features/hr/reminders/hr-reminders.component').then(
+            (m) => m.HrRemindersComponent,
+          ),
+      },
+      {
+        path: 'admin/system-health',
+        canActivate: [roleGuard],
+        data: {
+          roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR'],
+        },
+        loadComponent: () =>
+          import('./features/admin/system-health/system-health.component').then(
+            (m) => m.SystemHealthComponent,
+          ),
+      },
     ],
   },
   {

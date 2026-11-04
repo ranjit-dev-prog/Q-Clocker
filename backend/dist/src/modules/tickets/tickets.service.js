@@ -85,6 +85,17 @@ let TicketsService = TicketsService_1 = class TicketsService {
                 { code: 'PAYROLL_QUERY', name: 'Payroll & Compensation Inquiries', defaultSlaHours: 48 },
             ],
         },
+        {
+            code: 'FACILITY_ADMIN',
+            name: 'Facility & Workplace Administration',
+            description: 'Office access, ID badges, workstation seating, maintenance and event logistics',
+            subcategories: [
+                { code: 'ACCESS_BADGE', name: 'Keycard / RFID Access Badge Issue', defaultSlaHours: 8 },
+                { code: 'DESK_ERGONOMICS', name: 'Workstation Chair / Standing Desk Repair', defaultSlaHours: 24 },
+                { code: 'OFFICE_MAINTENANCE', name: 'HVAC / Electrical / Facility Repair', defaultSlaHours: 12 },
+                { code: 'VISITOR_PASS', name: 'Client & Visitor Security Clearance', defaultSlaHours: 4 },
+            ],
+        },
     ];
     demoTickets = [
         {

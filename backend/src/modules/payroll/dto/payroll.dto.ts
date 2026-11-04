@@ -42,3 +42,4 @@ export class TaxDeclarationDto {
   @IsOptional()
   otherExemptions?: number;
 }
+

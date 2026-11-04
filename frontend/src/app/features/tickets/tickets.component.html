@@ -119,6 +119,31 @@
         >
           Resolved
         </button>
+        <span class="text-slate-300 dark:text-slate-700 mx-1">|</span>
+        <button
+          (click)="setQuickFilter('queue_it')"
+          class="px-2.5 py-1 rounded-lg font-semibold transition flex items-center gap-1"
+          [ngClass]="activeQuickFilter() === 'queue_it' ? 'bg-indigo-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'"
+        >
+          <span class="material-icons text-xs">computer</span>
+          IT Support
+        </button>
+        <button
+          (click)="setQuickFilter('queue_hr')"
+          class="px-2.5 py-1 rounded-lg font-semibold transition flex items-center gap-1"
+          [ngClass]="activeQuickFilter() === 'queue_hr' ? 'bg-teal-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'"
+        >
+          <span class="material-icons text-xs">groups</span>
+          HR Desk
+        </button>
+        <button
+          (click)="setQuickFilter('queue_facility')"
+          class="px-2.5 py-1 rounded-lg font-semibold transition flex items-center gap-1"
+          [ngClass]="activeQuickFilter() === 'queue_facility' ? 'bg-cyan-600 text-white shadow-xs' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'"
+        >
+          <span class="material-icons text-xs">apartment</span>
+          Facility Desk
+        </button>
       </div>
 
       <div class="text-[11px] text-slate-400 font-medium">

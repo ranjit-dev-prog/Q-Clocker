@@ -130,17 +130,20 @@ export class SidebarComponent {
     { label: 'IT Support Tickets', route: '/tickets', icon: 'confirmation_number' },
     { label: 'Timesheet & Work Log', route: '/work-logs', icon: 'access_time' },
     { label: 'My Performance', route: '/performance', icon: 'trending_up' },
+    { label: 'My Finances & Payslips', route: '/my-finances', icon: 'payments' },
     { label: 'Notifications', route: '/notifications', icon: 'notifications' },
   ];
 
   managementNav: NavItem[] = [
     { label: 'Employees', route: '/employees', icon: 'people', roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR', 'HR_MANAGER', 'HR_ADMINISTRATOR', 'TEAM_LEAD', 'AUDITOR'] },
     { label: 'Departments', route: '/departments', icon: 'corporate_fare', roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR', 'HR_MANAGER', 'HR_ADMINISTRATOR', 'TEAM_LEAD', 'AUDITOR'] },
+    { label: 'HR Reminders & Lifecycle', route: '/hr/reminders', icon: 'event_repeat', roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR', 'HR_MANAGER', 'HR_ADMINISTRATOR'] },
     { label: 'Reports & Analytics', route: '/reports', icon: 'insights', roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR', 'HR_MANAGER', 'IT_MANAGER', 'AUDITOR'] },
   ];
 
   adminNav: NavItem[] = [
     { label: 'Roles & RBAC', route: '/admin/roles', icon: 'admin_panel_settings' },
+    { label: 'System Health & Engine', route: '/admin/system-health', icon: 'monitor_heart' },
   ];
 
   canAccessManagement(): boolean {

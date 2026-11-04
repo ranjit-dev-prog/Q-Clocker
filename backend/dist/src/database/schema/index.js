@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.attendanceEventsRelations = exports.workLogsRelations = exports.ticketHistoryRelations = exports.ticketCommentsRelations = exports.ticketsRelations = exports.taskAttachmentsRelations = exports.taskCommentsRelations = exports.taskAssignmentsRelations = exports.tasksRelations = exports.userSessionsRelations = exports.usersRelations = exports.teamsRelations = exports.departmentsRelations = exports.rolePermissionsRelations = exports.permissionsRelations = exports.rolesRelations = exports.auditLogs = exports.performanceReviews = exports.notifications = exports.reminders = exports.followUps = exports.approvals = exports.timesheetEntries = exports.timesheets = exports.ticketTimeEntries = exports.taskTimeEntries = exports.workSessions = exports.attendanceEvents = exports.workLogs = exports.ticketHistory = exports.ticketComments = exports.tickets = exports.slaPolicies = exports.ticketSubcategories = exports.ticketCategories = exports.taskDependencies = exports.taskAttachments = exports.taskComments = exports.taskAssignments = exports.tasks = exports.assets = exports.projects = exports.userSessions = exports.users = exports.designations = exports.teams = exports.departments = exports.rolePermissions = exports.permissions = exports.roles = void 0;
-exports.auditLogsRelations = exports.performanceReviewsRelations = exports.notificationsRelations = exports.remindersRelations = exports.followUpsRelations = exports.approvalsRelations = exports.timesheetEntriesRelations = exports.timesheetsRelations = exports.ticketTimeEntriesRelations = exports.taskTimeEntriesRelations = exports.workSessionsRelations = void 0;
+exports.appSettings = exports.lifecycleEvents = exports.taxDeclarations = exports.payslips = exports.payrollBatches = exports.auditLogsRelations = exports.performanceReviewsRelations = exports.notificationsRelations = exports.remindersRelations = exports.followUpsRelations = exports.approvalsRelations = exports.timesheetEntriesRelations = exports.timesheetsRelations = exports.ticketTimeEntriesRelations = exports.taskTimeEntriesRelations = exports.workSessionsRelations = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 exports.roles = (0, pg_core_1.pgTable)('roles', {
@@ -861,4 +861,79 @@ exports.auditLogsRelations = (0, drizzle_orm_1.relations)(exports.auditLogs, ({ 
         references: [exports.users.id],
     }),
 }));
+exports.payrollBatches = (0, pg_core_1.pgTable)('payroll_batches', {
+    id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
+    batchNumber: (0, pg_core_1.varchar)('batch_number', { length: 30 }).notNull().unique(),
+    month: (0, pg_core_1.integer)('month').notNull(),
+    year: (0, pg_core_1.integer)('year').notNull(),
+    totalDisbursed: (0, pg_core_1.numeric)('total_disbursed', { precision: 12, scale: 2 }).default('0.00').notNull(),
+    employeeCount: (0, pg_core_1.integer)('employee_count').default(0).notNull(),
+    status: (0, pg_core_1.varchar)('status', { length: 30 }).default('PROCESSED').notNull(),
+    processedById: (0, pg_core_1.uuid)('processed_by_id').references(() => exports.users.id, { onDelete: 'set null' }),
+    createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+exports.payslips = (0, pg_core_1.pgTable)('payslips', {
+    id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
+    referenceId: (0, pg_core_1.varchar)('reference_id', { length: 30 }).notNull().unique(),
+    batchId: (0, pg_core_1.uuid)('batch_id').references(() => exports.payrollBatches.id, { onDelete: 'cascade' }),
+    employeeId: (0, pg_core_1.uuid)('employee_id')
+        .notNull()
+        .references(() => exports.users.id, { onDelete: 'cascade' }),
+    month: (0, pg_core_1.integer)('month').notNull(),
+    year: (0, pg_core_1.integer)('year').notNull(),
+    basicPay: (0, pg_core_1.numeric)('basic_pay', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    hra: (0, pg_core_1.numeric)('hra', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    allowances: (0, pg_core_1.numeric)('allowances', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    overtimePay: (0, pg_core_1.numeric)('overtime_pay', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    grossEarnings: (0, pg_core_1.numeric)('gross_earnings', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    taxDeduction: (0, pg_core_1.numeric)('tax_deduction', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    pfDeduction: (0, pg_core_1.numeric)('pf_deduction', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    insurance: (0, pg_core_1.numeric)('insurance', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    unpaidLeaveDeductions: (0, pg_core_1.numeric)('unpaid_leave_deductions', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    totalDeductions: (0, pg_core_1.numeric)('total_deductions', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    netSalary: (0, pg_core_1.numeric)('net_salary', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    pdfUrl: (0, pg_core_1.text)('pdf_url'),
+    isEncrypted: (0, pg_core_1.boolean)('is_encrypted').default(true).notNull(),
+    status: (0, pg_core_1.varchar)('status', { length: 30 }).default('GENERATED').notNull(),
+    createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+exports.taxDeclarations = (0, pg_core_1.pgTable)('tax_declarations', {
+    id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
+    employeeId: (0, pg_core_1.uuid)('employee_id')
+        .notNull()
+        .references(() => exports.users.id, { onDelete: 'cascade' }),
+    financialYear: (0, pg_core_1.varchar)('financial_year', { length: 15 }).notNull(),
+    regime: (0, pg_core_1.varchar)('regime', { length: 20 }).default('NEW').notNull(),
+    section80c: (0, pg_core_1.numeric)('section_80c', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    section80d: (0, pg_core_1.numeric)('section_80d', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    hraRentPaid: (0, pg_core_1.numeric)('hra_rent_paid', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    homeLoanInterest: (0, pg_core_1.numeric)('home_loan_interest', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    otherExemptions: (0, pg_core_1.numeric)('other_exemptions', { precision: 10, scale: 2 }).default('0.00').notNull(),
+    status: (0, pg_core_1.varchar)('status', { length: 30 }).default('SUBMITTED').notNull(),
+    verifiedById: (0, pg_core_1.uuid)('verified_by_id').references(() => exports.users.id, { onDelete: 'set null' }),
+    updatedAt: (0, pg_core_1.timestamp)('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+exports.lifecycleEvents = (0, pg_core_1.pgTable)('lifecycle_events', {
+    id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
+    employeeId: (0, pg_core_1.uuid)('employee_id')
+        .notNull()
+        .references(() => exports.users.id, { onDelete: 'cascade' }),
+    eventType: (0, pg_core_1.varchar)('event_type', { length: 50 }).notNull(),
+    eventDate: (0, pg_core_1.date)('event_date').notNull(),
+    title: (0, pg_core_1.varchar)('title', { length: 150 }).notNull(),
+    description: (0, pg_core_1.text)('description'),
+    urgency: (0, pg_core_1.varchar)('urgency', { length: 20 }).default('UPCOMING').notNull(),
+    actionTaken: (0, pg_core_1.boolean)('action_taken').default(false).notNull(),
+    congratulationsCount: (0, pg_core_1.integer)('congratulations_count').default(0).notNull(),
+    createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+exports.appSettings = (0, pg_core_1.pgTable)('app_settings', {
+    id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
+    key: (0, pg_core_1.varchar)('key', { length: 100 }).notNull().unique(),
+    value: (0, pg_core_1.text)('value').notNull(),
+    category: (0, pg_core_1.varchar)('category', { length: 50 }).default('GENERAL').notNull(),
+    description: (0, pg_core_1.text)('description'),
+    updatedById: (0, pg_core_1.uuid)('updated_by_id').references(() => exports.users.id, { onDelete: 'set null' }),
+    updatedAt: (0, pg_core_1.timestamp)('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
 //# sourceMappingURL=index.js.map
