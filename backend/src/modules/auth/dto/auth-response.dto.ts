@@ -30,6 +30,9 @@ export class AuthUserDto {
 
   @ApiPropertyOptional({ nullable: true })
   avatarUrl?: string | null;
+
+  @ApiPropertyOptional({ type: [String], description: 'Granular permissions list' })
+  permissions?: string[];
 }
 
 export class AuthResponseDto {

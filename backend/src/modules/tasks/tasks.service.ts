@@ -3,6 +3,7 @@ import {
   NotFoundException,
   ForbiddenException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
 import * as schema from '../../database/schema';
@@ -13,6 +14,7 @@ import { TaskQueryDto } from './dto/task-query.dto';
 import { CreateTaskCommentDto } from './dto/task-comment.dto';
 import { generateReferenceId } from '../../common/utils/reference-id.util';
 import { TaskStatus, UserRole } from '../../common/enums';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class TasksService {
@@ -138,7 +140,10 @@ export class TasksService {
     },
   ];
 
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(
+    private readonly dbService: DatabaseService,
+    @Optional() private readonly notificationsService?: NotificationsService,
+  ) {}
 
   async create(createTaskDto: CreateTaskDto, user: any) {
     const referenceId = generateReferenceId('TSK');

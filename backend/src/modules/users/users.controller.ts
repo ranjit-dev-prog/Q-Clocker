@@ -93,10 +93,18 @@ export class UsersController {
   @Roles(
     UserRole.SUPER_ADMIN,
     UserRole.ADMIN,
+    UserRole.SYSTEM_ADMINISTRATOR,
     UserRole.HR_MANAGER,
+    UserRole.HR_ADMINISTRATOR,
     UserRole.HR_EXECUTIVE,
+    UserRole.IT_MANAGER,
+    UserRole.IT_EXECUTIVE,
+    UserRole.DEPARTMENT_MANAGER,
     UserRole.TEAM_LEAD,
+    UserRole.EMPLOYEE,
     UserRole.AUDITOR,
+    UserRole.READ_ONLY,
+    UserRole.VIEWER,
   )
   @ApiOperation({ summary: 'List employees with optional filters (Search, Role, Department, Active)' })
   @ApiResponse({ status: 200, description: 'List of employees returned' })

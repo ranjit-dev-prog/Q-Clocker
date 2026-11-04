@@ -3,12 +3,14 @@ import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto, UpdateTaskStatusDto } from './dto/update-task.dto';
 import { TaskQueryDto } from './dto/task-query.dto';
 import { CreateTaskCommentDto } from './dto/task-comment.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 export declare class TasksService {
     private readonly dbService;
+    private readonly notificationsService?;
     private readonly logger;
     private demoTasks;
     private demoComments;
-    constructor(dbService: DatabaseService);
+    constructor(dbService: DatabaseService, notificationsService?: NotificationsService | undefined);
     create(createTaskDto: CreateTaskDto, user: any): Promise<any>;
     findAll(query: TaskQueryDto, user: any): Promise<any[]>;
     findById(id: string): Promise<any>;

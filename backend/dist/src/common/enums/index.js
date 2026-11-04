@@ -5,14 +5,18 @@ var UserRole;
 (function (UserRole) {
     UserRole["SUPER_ADMIN"] = "SUPER_ADMIN";
     UserRole["ADMIN"] = "ADMIN";
+    UserRole["SYSTEM_ADMINISTRATOR"] = "SYSTEM_ADMINISTRATOR";
     UserRole["HR_MANAGER"] = "HR_MANAGER";
+    UserRole["HR_ADMINISTRATOR"] = "HR_ADMINISTRATOR";
     UserRole["HR_EXECUTIVE"] = "HR_EXECUTIVE";
     UserRole["IT_MANAGER"] = "IT_MANAGER";
     UserRole["IT_EXECUTIVE"] = "IT_EXECUTIVE";
+    UserRole["DEPARTMENT_MANAGER"] = "DEPARTMENT_MANAGER";
     UserRole["TEAM_LEAD"] = "TEAM_LEAD";
     UserRole["EMPLOYEE"] = "EMPLOYEE";
     UserRole["AUDITOR"] = "AUDITOR";
     UserRole["READ_ONLY"] = "READ_ONLY";
+    UserRole["VIEWER"] = "VIEWER";
 })(UserRole || (exports.UserRole = UserRole = {}));
 var EmploymentType;
 (function (EmploymentType) {

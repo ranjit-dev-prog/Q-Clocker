@@ -11,6 +11,7 @@ import { RolesModule } from './modules/roles/roles.module';
 import { PermissionsModule } from './modules/permissions/permissions.module';
 import { TasksModule } from './modules/tasks/tasks.module';
 import { TicketsModule } from './modules/tickets/tickets.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 import { WorkLogsModule } from './modules/work-logs/work-logs.module';
 import { HealthModule } from './modules/health/health.module';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -37,6 +38,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     PermissionsModule,
     TasksModule,
     TicketsModule,
+    NotificationsModule,
     WorkLogsModule,
     HealthModule,
   ],

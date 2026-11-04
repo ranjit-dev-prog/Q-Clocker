@@ -8,6 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 var TicketsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TicketsService = void 0;
@@ -17,6 +20,7 @@ const schema = require("../../database/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const ticket_state_machine_service_1 = require("./services/ticket-state-machine.service");
 const ticket_sla_service_1 = require("./services/ticket-sla.service");
+const notifications_service_1 = require("../notifications/notifications.service");
 const reference_id_util_1 = require("../../common/utils/reference-id.util");
 const enums_1 = require("../../common/enums");
 const crypto = require("crypto");
@@ -24,6 +28,7 @@ let TicketsService = TicketsService_1 = class TicketsService {
     dbService;
     stateMachine;
     slaService;
+    notificationsService;
     logger = new common_1.Logger(TicketsService_1.name);
     defaultCategories = [
         {
@@ -245,10 +250,11 @@ let TicketsService = TicketsService_1 = class TicketsService {
         },
     ];
     demoTaskLinks = [];
-    constructor(dbService, stateMachine, slaService) {
+    constructor(dbService, stateMachine, slaService, notificationsService) {
         this.dbService = dbService;
         this.stateMachine = stateMachine;
         this.slaService = slaService;
+        this.notificationsService = notificationsService;
     }
     getCategories() {
         return this.defaultCategories;
@@ -715,6 +721,16 @@ let TicketsService = TicketsService_1 = class TicketsService {
                 oldValue: ticket.status,
                 newValue: dto.status,
             });
+            if (ticket.requesterId && this.notificationsService) {
+                this.notificationsService.create({
+                    userId: ticket.requesterId,
+                    title: `Ticket Status Updated: ${ticket.referenceId || ticket.ticketNumber}`,
+                    message: `Your ticket "${ticket.title}" has been updated to ${dto.status}.`,
+                    type: dto.status === 'RESOLVED' ? 'SUCCESS' : 'INFO',
+                    entityType: 'TICKET',
+                    entityId: ticket.id,
+                }).catch(() => { });
+            }
             return this.findById(ticket.id, user);
         }
         const stored = this.demoTickets.find((t) => t.id === ticket.id || t.referenceId === ticket.referenceId);
@@ -730,6 +746,16 @@ let TicketsService = TicketsService_1 = class TicketsService {
             changedAt: now,
             changedByName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Staff',
         });
+        if (ticket.requesterId && this.notificationsService) {
+            this.notificationsService.create({
+                userId: ticket.requesterId,
+                title: `Ticket Status Updated: ${ticket.referenceId || ticket.ticketNumber}`,
+                message: `Your ticket "${ticket.title}" has been updated to ${dto.status}.`,
+                type: dto.status === 'RESOLVED' ? 'SUCCESS' : 'INFO',
+                entityType: 'TICKET',
+                entityId: ticket.id,
+            }).catch(() => { });
+        }
         return this.findById(ticket.id, user);
     }
     async assign(id, dto, user) {
@@ -758,6 +784,16 @@ let TicketsService = TicketsService_1 = class TicketsService {
                 oldValue: ticket.assignedTechnicianId || 'Unassigned',
                 newValue: logEntry,
             });
+            if (dto.assignedTechnicianId && this.notificationsService) {
+                this.notificationsService.create({
+                    userId: dto.assignedTechnicianId,
+                    title: `Ticket Assigned: ${ticket.referenceId || ticket.ticketNumber}`,
+                    message: `${user?.firstName || 'System'} assigned you to ticket "${ticket.title}".`,
+                    type: 'TICKET',
+                    entityType: 'TICKET',
+                    entityId: ticket.id,
+                }).catch(() => { });
+            }
             return this.findById(ticket.id, user);
         }
         const stored = this.demoTickets.find((t) => t.id === ticket.id || t.referenceId === ticket.referenceId);
@@ -773,6 +809,16 @@ let TicketsService = TicketsService_1 = class TicketsService {
             changedAt: now,
             changedByName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Staff',
         });
+        if (dto.assignedTechnicianId && this.notificationsService) {
+            this.notificationsService.create({
+                userId: dto.assignedTechnicianId,
+                title: `Ticket Assigned: ${ticket.referenceId || ticket.ticketNumber}`,
+                message: `${user?.firstName || 'System'} assigned you to ticket "${ticket.title}".`,
+                type: 'TICKET',
+                entityType: 'TICKET',
+                entityId: ticket.id,
+            }).catch(() => { });
+        }
         return this.findById(ticket.id, user);
     }
     async escalate(id, dto, user) {
@@ -799,6 +845,16 @@ let TicketsService = TicketsService_1 = class TicketsService {
                 oldValue: ticket.priorityCode || 'P3',
                 newValue: `Escalated to ${targetRole}: ${dto.escalationReason.trim()}`,
             });
+            if (ticket.requesterId && this.notificationsService) {
+                this.notificationsService.create({
+                    userId: ticket.requesterId,
+                    title: `Ticket Escalated: ${ticket.referenceId || ticket.ticketNumber}`,
+                    message: `Ticket "${ticket.title}" escalated to ${targetRole}: ${dto.escalationReason.trim()}`,
+                    type: 'URGENT',
+                    entityType: 'TICKET',
+                    entityId: ticket.id,
+                }).catch(() => { });
+            }
             return this.findById(ticket.id, user);
         }
         const stored = this.demoTickets.find((t) => t.id === ticket.id || t.referenceId === ticket.referenceId);
@@ -814,6 +870,16 @@ let TicketsService = TicketsService_1 = class TicketsService {
             changedAt: now,
             changedByName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Staff',
         });
+        if (ticket.requesterId && this.notificationsService) {
+            this.notificationsService.create({
+                userId: ticket.requesterId,
+                title: `Ticket Escalated: ${ticket.referenceId || ticket.ticketNumber}`,
+                message: `Ticket "${ticket.title}" escalated to ${targetRole}: ${dto.escalationReason.trim()}`,
+                type: 'URGENT',
+                entityType: 'TICKET',
+                entityId: ticket.id,
+            }).catch(() => { });
+        }
         return this.findById(ticket.id, user);
     }
     async update(id, updateTicketDto, user) {
@@ -1139,8 +1205,10 @@ let TicketsService = TicketsService_1 = class TicketsService {
 exports.TicketsService = TicketsService;
 exports.TicketsService = TicketsService = TicketsService_1 = __decorate([
     (0, common_1.Injectable)(),
+    __param(3, (0, common_1.Optional)()),
     __metadata("design:paramtypes", [database_service_1.DatabaseService,
         ticket_state_machine_service_1.TicketStateMachineService,
-        ticket_sla_service_1.TicketSlaService])
+        ticket_sla_service_1.TicketSlaService,
+        notifications_service_1.NotificationsService])
 ], TicketsService);
 //# sourceMappingURL=tickets.service.js.map

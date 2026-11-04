@@ -4,6 +4,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Logger,
+  Optional,
 } from '@nestjs/common';
 import { DatabaseService } from '../../database/database.service';
 import * as schema from '../../database/schema';
@@ -23,6 +24,7 @@ import { CreateTicketTimeEntryDto, StartTicketTimerDto } from './dto/ticket-time
 import { CreateTaskFromTicketDto, LinkExistingTaskDto } from './dto/ticket-task-link.dto';
 import { TicketStateMachineService } from './services/ticket-state-machine.service';
 import { TicketSlaService } from './services/ticket-sla.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { generateReferenceId } from '../../common/utils/reference-id.util';
 import {
   Priority,
@@ -274,6 +276,7 @@ export class TicketsService {
     private readonly dbService: DatabaseService,
     private readonly stateMachine: TicketStateMachineService,
     private readonly slaService: TicketSlaService,
+    @Optional() private readonly notificationsService?: NotificationsService,
   ) {}
 
   getCategories() {
@@ -804,6 +807,17 @@ export class TicketsService {
         newValue: dto.status,
       });
 
+      if (ticket.requesterId && this.notificationsService) {
+        this.notificationsService.create({
+          userId: ticket.requesterId,
+          title: `Ticket Status Updated: ${ticket.referenceId || ticket.ticketNumber}`,
+          message: `Your ticket "${ticket.title}" has been updated to ${dto.status}.`,
+          type: dto.status === 'RESOLVED' ? 'SUCCESS' : 'INFO',
+          entityType: 'TICKET',
+          entityId: ticket.id,
+        }).catch(() => {});
+      }
+
       return this.findById(ticket.id, user);
     }
 
@@ -820,6 +834,17 @@ export class TicketsService {
       changedAt: now,
       changedByName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Staff',
     });
+
+    if (ticket.requesterId && this.notificationsService) {
+      this.notificationsService.create({
+        userId: ticket.requesterId,
+        title: `Ticket Status Updated: ${ticket.referenceId || ticket.ticketNumber}`,
+        message: `Your ticket "${ticket.title}" has been updated to ${dto.status}.`,
+        type: dto.status === 'RESOLVED' ? 'SUCCESS' : 'INFO',
+        entityType: 'TICKET',
+        entityId: ticket.id,
+      }).catch(() => {});
+    }
 
     return this.findById(ticket.id, user);
   }
@@ -858,7 +883,18 @@ export class TicketsService {
         newValue: logEntry,
       });
 
-      return this.findById(ticket.id, user);
+      if (dto.assignedTechnicianId && this.notificationsService) {
+      this.notificationsService.create({
+        userId: dto.assignedTechnicianId,
+        title: `Ticket Assigned: ${ticket.referenceId || ticket.ticketNumber}`,
+        message: `${user?.firstName || 'System'} assigned you to ticket "${ticket.title}".`,
+        type: 'TICKET',
+        entityType: 'TICKET',
+        entityId: ticket.id,
+      }).catch(() => {});
+    }
+
+    return this.findById(ticket.id, user);
     }
 
     const stored = this.demoTickets.find((t) => t.id === ticket.id || t.referenceId === ticket.referenceId);
@@ -874,6 +910,17 @@ export class TicketsService {
       changedAt: now,
       changedByName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Staff',
     });
+
+    if (dto.assignedTechnicianId && this.notificationsService) {
+      this.notificationsService.create({
+        userId: dto.assignedTechnicianId,
+        title: `Ticket Assigned: ${ticket.referenceId || ticket.ticketNumber}`,
+        message: `${user?.firstName || 'System'} assigned you to ticket "${ticket.title}".`,
+        type: 'TICKET',
+        entityType: 'TICKET',
+        entityId: ticket.id,
+      }).catch(() => {});
+    }
 
     return this.findById(ticket.id, user);
   }
@@ -909,6 +956,17 @@ export class TicketsService {
         newValue: `Escalated to ${targetRole}: ${dto.escalationReason.trim()}`,
       });
 
+      if (ticket.requesterId && this.notificationsService) {
+        this.notificationsService.create({
+          userId: ticket.requesterId,
+          title: `Ticket Escalated: ${ticket.referenceId || ticket.ticketNumber}`,
+          message: `Ticket "${ticket.title}" escalated to ${targetRole}: ${dto.escalationReason.trim()}`,
+          type: 'URGENT',
+          entityType: 'TICKET',
+          entityId: ticket.id,
+        }).catch(() => {});
+      }
+
       return this.findById(ticket.id, user);
     }
 
@@ -925,6 +983,17 @@ export class TicketsService {
       changedAt: now,
       changedByName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Staff',
     });
+
+    if (ticket.requesterId && this.notificationsService) {
+      this.notificationsService.create({
+        userId: ticket.requesterId,
+        title: `Ticket Escalated: ${ticket.referenceId || ticket.ticketNumber}`,
+        message: `Ticket "${ticket.title}" escalated to ${targetRole}: ${dto.escalationReason.trim()}`,
+        type: 'URGENT',
+        entityType: 'TICKET',
+        entityId: ticket.id,
+      }).catch(() => {});
+    }
 
     return this.findById(ticket.id, user);
   }

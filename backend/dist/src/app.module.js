@@ -20,6 +20,7 @@ const roles_module_1 = require("./modules/roles/roles.module");
 const permissions_module_1 = require("./modules/permissions/permissions.module");
 const tasks_module_1 = require("./modules/tasks/tasks.module");
 const tickets_module_1 = require("./modules/tickets/tickets.module");
+const notifications_module_1 = require("./modules/notifications/notifications.module");
 const work_logs_module_1 = require("./modules/work-logs/work-logs.module");
 const health_module_1 = require("./modules/health/health.module");
 const transform_interceptor_1 = require("./common/interceptors/transform.interceptor");
@@ -48,6 +49,7 @@ exports.AppModule = AppModule = __decorate([
             permissions_module_1.PermissionsModule,
             tasks_module_1.TasksModule,
             tickets_module_1.TicketsModule,
+            notifications_module_1.NotificationsModule,
             work_logs_module_1.WorkLogsModule,
             health_module_1.HealthModule,
         ],

@@ -22,6 +22,7 @@ class AuthUserDto {
     teamId;
     jobTitle;
     avatarUrl;
+    permissions;
 }
 exports.AuthUserDto = AuthUserDto;
 __decorate([
@@ -64,6 +65,10 @@ __decorate([
     (0, swagger_1.ApiPropertyOptional)({ nullable: true }),
     __metadata("design:type", Object)
 ], AuthUserDto.prototype, "avatarUrl", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ type: [String], description: 'Granular permissions list' }),
+    __metadata("design:type", Array)
+], AuthUserDto.prototype, "permissions", void 0);
 class AuthResponseDto {
     accessToken;
     refreshToken;

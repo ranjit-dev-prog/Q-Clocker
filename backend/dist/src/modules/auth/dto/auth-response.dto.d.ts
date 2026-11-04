@@ -9,6 +9,7 @@ export declare class AuthUserDto {
     teamId?: string | null;
     jobTitle?: string | null;
     avatarUrl?: string | null;
+    permissions?: string[];
 }
 export declare class AuthResponseDto {
     accessToken: string;

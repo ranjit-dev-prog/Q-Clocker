@@ -124,7 +124,7 @@ __decorate([
 ], UsersController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, roles_decorator_1.Roles)(enums_1.UserRole.SUPER_ADMIN, enums_1.UserRole.ADMIN, enums_1.UserRole.HR_MANAGER, enums_1.UserRole.HR_EXECUTIVE, enums_1.UserRole.TEAM_LEAD, enums_1.UserRole.AUDITOR),
+    (0, roles_decorator_1.Roles)(enums_1.UserRole.SUPER_ADMIN, enums_1.UserRole.ADMIN, enums_1.UserRole.SYSTEM_ADMINISTRATOR, enums_1.UserRole.HR_MANAGER, enums_1.UserRole.HR_ADMINISTRATOR, enums_1.UserRole.HR_EXECUTIVE, enums_1.UserRole.IT_MANAGER, enums_1.UserRole.IT_EXECUTIVE, enums_1.UserRole.DEPARTMENT_MANAGER, enums_1.UserRole.TEAM_LEAD, enums_1.UserRole.EMPLOYEE, enums_1.UserRole.AUDITOR, enums_1.UserRole.READ_ONLY, enums_1.UserRole.VIEWER),
     (0, swagger_1.ApiOperation)({ summary: 'List employees with optional filters (Search, Role, Department, Active)' }),
     (0, swagger_1.ApiResponse)({ status: 200, description: 'List of employees returned' }),
     __param(0, (0, common_1.Query)()),

@@ -20,6 +20,7 @@ const schema = require("../../database/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const enums_1 = require("../../common/enums");
 const reference_id_util_1 = require("../../common/utils/reference-id.util");
+const permissions_guard_1 = require("../../common/guards/permissions.guard");
 let AuthService = AuthService_1 = class AuthService {
     dbService;
     jwtService;
@@ -39,18 +40,54 @@ let AuthService = AuthService_1 = class AuthService {
         },
         {
             id: '00000000-0000-0000-0000-000000000002',
-            referenceId: 'EMP-MGR001',
-            email: 'itmanager@qclocker.io',
+            referenceId: 'EMP-SYS001',
+            email: 'sysadmin@qclocker.io',
             passwordHash: '$2a$10$wEkgzW4pI4x12Q3nC8iKte2x7r4w7FjY6T9jJpB1aZ1mUq0O2hKGi',
-            firstName: 'Marcus',
-            lastName: 'Chen',
+            firstName: 'Benjamin',
+            lastName: 'Hayes',
             roleCode: enums_1.UserRole.ADMIN,
-            jobTitle: 'IT Infrastructure & Operations Manager',
+            jobTitle: 'Principal Systems Administrator',
             departmentId: '10000000-0000-0000-0000-000000000001',
             isActive: true,
         },
         {
             id: '00000000-0000-0000-0000-000000000003',
+            referenceId: 'EMP-HR001',
+            email: 'hradmin@qclocker.io',
+            passwordHash: '$2a$10$wEkgzW4pI4x12Q3nC8iKte2x7r4w7FjY6T9jJpB1aZ1mUq0O2hKGi',
+            firstName: 'Elena',
+            lastName: 'Rostova',
+            roleCode: enums_1.UserRole.HR_MANAGER,
+            jobTitle: 'Director of Human Resources',
+            departmentId: '10000000-0000-0000-0000-000000000003',
+            isActive: true,
+        },
+        {
+            id: '00000000-0000-0000-0000-000000000004',
+            referenceId: 'EMP-MGR001',
+            email: 'itmanager@qclocker.io',
+            passwordHash: '$2a$10$wEkgzW4pI4x12Q3nC8iKte2x7r4w7FjY6T9jJpB1aZ1mUq0O2hKGi',
+            firstName: 'Marcus',
+            lastName: 'Chen',
+            roleCode: enums_1.UserRole.IT_MANAGER,
+            jobTitle: 'IT Infrastructure & Operations Manager',
+            departmentId: '10000000-0000-0000-0000-000000000001',
+            isActive: true,
+        },
+        {
+            id: '00000000-0000-0000-0000-000000000005',
+            referenceId: 'EMP-DPT001',
+            email: 'deptmanager@qclocker.io',
+            passwordHash: '$2a$10$wEkgzW4pI4x12Q3nC8iKte2x7r4w7FjY6T9jJpB1aZ1mUq0O2hKGi',
+            firstName: 'Diana',
+            lastName: 'Prince',
+            roleCode: enums_1.UserRole.DEPARTMENT_MANAGER,
+            jobTitle: 'Engineering Department Director',
+            departmentId: '10000000-0000-0000-0000-000000000002',
+            isActive: true,
+        },
+        {
+            id: '00000000-0000-0000-0000-000000000006',
             referenceId: 'EMP-TL0001',
             email: 'teamlead@qclocker.io',
             passwordHash: '$2a$10$wEkgzW4pI4x12Q3nC8iKte2x7r4w7FjY6T9jJpB1aZ1mUq0O2hKGi',
@@ -62,7 +99,7 @@ let AuthService = AuthService_1 = class AuthService {
             isActive: true,
         },
         {
-            id: '00000000-0000-0000-0000-000000000004',
+            id: '00000000-0000-0000-0000-000000000007',
             referenceId: 'EMP-EMP001',
             email: 'employee@qclocker.io',
             passwordHash: '$2a$10$wEkgzW4pI4x12Q3nC8iKte2x7r4w7FjY6T9jJpB1aZ1mUq0O2hKGi',
@@ -71,6 +108,30 @@ let AuthService = AuthService_1 = class AuthService {
             roleCode: enums_1.UserRole.EMPLOYEE,
             jobTitle: 'Full-Stack Software Engineer',
             departmentId: '10000000-0000-0000-0000-000000000002',
+            isActive: true,
+        },
+        {
+            id: '00000000-0000-0000-0000-000000000008',
+            referenceId: 'EMP-AUD001',
+            email: 'auditor@qclocker.io',
+            passwordHash: '$2a$10$wEkgzW4pI4x12Q3nC8iKte2x7r4w7FjY6T9jJpB1aZ1mUq0O2hKGi',
+            firstName: 'Rachel',
+            lastName: 'Adams',
+            roleCode: enums_1.UserRole.AUDITOR,
+            jobTitle: 'Senior Compliance & IT Auditor',
+            departmentId: '10000000-0000-0000-0000-000000000004',
+            isActive: true,
+        },
+        {
+            id: '00000000-0000-0000-0000-000000000009',
+            referenceId: 'EMP-VIW001',
+            email: 'viewer@qclocker.io',
+            passwordHash: '$2a$10$wEkgzW4pI4x12Q3nC8iKte2x7r4w7FjY6T9jJpB1aZ1mUq0O2hKGi',
+            firstName: 'Victor',
+            lastName: 'Stone',
+            roleCode: enums_1.UserRole.VIEWER,
+            jobTitle: 'Executive Stakeholder & Observer',
+            departmentId: '10000000-0000-0000-0000-000000000001',
             isActive: true,
         },
     ];
@@ -125,9 +186,15 @@ let AuthService = AuthService_1 = class AuthService {
         if (demo) {
             const validDemoPasswords = [
                 'SuperAdmin@2026!',
+                'SysAdmin@2026!',
                 'Manager@2026!',
+                'ItManager@2026!',
+                'HrAdmin@2026!',
+                'DeptManager@2026!',
                 'TeamLead@2026!',
                 'Employee@2026!',
+                'Auditor@2026!',
+                'Viewer@2026!',
                 'password123',
             ];
             if (!validDemoPasswords.includes(password) && !(await bcrypt.compare(password, demo.passwordHash))) {
@@ -476,11 +543,15 @@ let AuthService = AuthService_1 = class AuthService {
                 createdAt: new Date(),
             });
         }
+        const userWithPerms = {
+            ...user,
+            permissions: permissions_guard_1.PermissionsGuard.DEFAULT_ROLE_PERMISSIONS[user.role] || ['*'],
+        };
         return {
             accessToken,
             refreshToken: rawRefreshToken,
             expiresIn,
-            user,
+            user: userWithPerms,
         };
     }
 };

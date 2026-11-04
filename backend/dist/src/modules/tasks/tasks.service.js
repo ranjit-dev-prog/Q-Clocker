@@ -8,6 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 var TasksService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TasksService = void 0;
@@ -17,8 +20,10 @@ const schema = require("../../database/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const reference_id_util_1 = require("../../common/utils/reference-id.util");
 const enums_1 = require("../../common/enums");
+const notifications_service_1 = require("../notifications/notifications.service");
 let TasksService = TasksService_1 = class TasksService {
     dbService;
+    notificationsService;
     logger = new common_1.Logger(TasksService_1.name);
     demoTasks = [
         {
@@ -137,8 +142,9 @@ let TasksService = TasksService_1 = class TasksService {
             createdAt: new Date('2026-11-02T11:00:00Z'),
         },
     ];
-    constructor(dbService) {
+    constructor(dbService, notificationsService) {
         this.dbService = dbService;
+        this.notificationsService = notificationsService;
     }
     async create(createTaskDto, user) {
         const referenceId = (0, reference_id_util_1.generateReferenceId)('TSK');
@@ -516,6 +522,8 @@ let TasksService = TasksService_1 = class TasksService {
 exports.TasksService = TasksService;
 exports.TasksService = TasksService = TasksService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService])
+    __param(1, (0, common_1.Optional)()),
+    __metadata("design:paramtypes", [database_service_1.DatabaseService,
+        notifications_service_1.NotificationsService])
 ], TasksService);
 //# sourceMappingURL=tasks.service.js.map

@@ -7,10 +7,12 @@ import { CreateTicketTimeEntryDto, StartTicketTimerDto } from './dto/ticket-time
 import { CreateTaskFromTicketDto, LinkExistingTaskDto } from './dto/ticket-task-link.dto';
 import { TicketStateMachineService } from './services/ticket-state-machine.service';
 import { TicketSlaService } from './services/ticket-sla.service';
+import { NotificationsService } from '../notifications/notifications.service';
 export declare class TicketsService {
     private readonly dbService;
     private readonly stateMachine;
     private readonly slaService;
+    private readonly notificationsService?;
     private readonly logger;
     private readonly defaultCategories;
     private demoTickets;
@@ -18,7 +20,7 @@ export declare class TicketsService {
     private demoHistory;
     private demoTimeEntries;
     private demoTaskLinks;
-    constructor(dbService: DatabaseService, stateMachine: TicketStateMachineService, slaService: TicketSlaService);
+    constructor(dbService: DatabaseService, stateMachine: TicketStateMachineService, slaService: TicketSlaService, notificationsService?: NotificationsService | undefined);
     getCategories(): {
         code: string;
         name: string;

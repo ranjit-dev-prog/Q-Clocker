@@ -12,11 +12,13 @@ const tickets_service_1 = require("./tickets.service");
 const tickets_controller_1 = require("./tickets.controller");
 const ticket_state_machine_service_1 = require("./services/ticket-state-machine.service");
 const ticket_sla_service_1 = require("./services/ticket-sla.service");
+const notifications_module_1 = require("../notifications/notifications.module");
 let TicketsModule = class TicketsModule {
 };
 exports.TicketsModule = TicketsModule;
 exports.TicketsModule = TicketsModule = __decorate([
     (0, common_1.Module)({
+        imports: [notifications_module_1.NotificationsModule],
         controllers: [tickets_controller_1.TicketsController],
         providers: [tickets_service_1.TicketsService, ticket_state_machine_service_1.TicketStateMachineService, ticket_sla_service_1.TicketSlaService],
         exports: [tickets_service_1.TicketsService, ticket_state_machine_service_1.TicketStateMachineService, ticket_sla_service_1.TicketSlaService],
