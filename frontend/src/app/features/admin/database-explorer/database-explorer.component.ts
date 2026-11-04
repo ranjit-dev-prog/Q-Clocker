@@ -82,11 +82,11 @@ import { DatabaseExplorerService, DrizzleTableMeta, DrizzleColumnMeta } from '..
                 <button
                   *ngFor="let tbl of cat.tables"
                   (click)="selectTable(tbl.name)"
-                  [class.bg-indigo-50]="selectedTable() === tbl.name"
-                  [class.dark:bg-indigo-950/40]="selectedTable() === tbl.name"
-                  [class.border-indigo-200]="selectedTable() === tbl.name"
-                  [class.dark:border-indigo-800]="selectedTable() === tbl.name"
-                  class="w-full text-left px-3 py-2.5 rounded-xl border border-transparent hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all flex items-center justify-between group"
+                  [ngClass]="{
+                    'bg-indigo-50 border-indigo-200': selectedTable() === tbl.name,
+                    'border-transparent': selectedTable() !== tbl.name
+                  }"
+                  class="w-full text-left px-3 py-2.5 rounded-xl border hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all flex items-center justify-between group"
                 >
                   <div class="min-w-0 pr-2">
                     <div class="text-xs font-semibold text-slate-800 dark:text-slate-200 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 truncate">
@@ -128,12 +128,8 @@ import { DatabaseExplorerService, DrizzleTableMeta, DrizzleColumnMeta } from '..
             <div class="flex items-center p-1 bg-slate-200/80 dark:bg-slate-800 rounded-xl">
               <button
                 (click)="activeTab = 'data'"
-                [class.bg-white]="activeTab === 'data'"
-                [class.dark:bg-slate-900]="activeTab === 'data'"
-                [class.shadow-sm]="activeTab === 'data'"
-                [class.text-indigo-600]="activeTab === 'data'"
-                [class.dark:text-indigo-400]="activeTab === 'data'"
-                class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-600 dark:text-slate-400 transition-all flex items-center gap-1.5"
+                [ngClass]="activeTab === 'data' ? 'bg-white dark:bg-slate-900 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400'"
+                class="px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/>
@@ -142,12 +138,8 @@ import { DatabaseExplorerService, DrizzleTableMeta, DrizzleColumnMeta } from '..
               </button>
               <button
                 (click)="activeTab = 'schema'"
-                [class.bg-white]="activeTab === 'schema'"
-                [class.dark:bg-slate-900]="activeTab === 'schema'"
-                [class.shadow-sm]="activeTab === 'schema'"
-                [class.text-indigo-600]="activeTab === 'schema'"
-                [class.dark:text-indigo-400]="activeTab === 'schema'"
-                class="px-3.5 py-1.5 text-xs font-semibold rounded-lg text-slate-600 dark:text-slate-400 transition-all flex items-center gap-1.5"
+                [ngClass]="activeTab === 'schema' ? 'bg-white dark:bg-slate-900 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400'"
+                class="px-3.5 py-1.5 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5"
               >
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
