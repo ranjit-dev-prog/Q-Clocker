@@ -144,6 +144,7 @@ export class SidebarComponent {
   adminNav: NavItem[] = [
     { label: 'Roles & RBAC', route: '/admin/roles', icon: 'admin_panel_settings' },
     { label: 'System Health & Engine', route: '/admin/system-health', icon: 'monitor_heart' },
+    { label: 'Drizzle DB Explorer', route: '/admin/database', icon: 'storage' },
   ];
 
   canAccessManagement(): boolean {
