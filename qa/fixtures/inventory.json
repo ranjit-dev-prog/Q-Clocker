@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-11-04T06:34:23.770Z",
+  "generatedAt": "2026-11-04T07:48:26.085Z",
   "apiSummary": {
-    "totalPaths": 54,
-    "totalOperations": 70,
+    "totalPaths": 68,
+    "totalOperations": 84,
     "modules": [
       "Authentication",
       "Employees",
@@ -14,6 +14,7 @@
       "Notifications",
       "ITSM Ticket Management",
       "Daily Work Logs",
+      "Reports & Analytics",
       "System Health"
     ]
   },
@@ -115,6 +116,183 @@
     },
     {
       "id": "API-008",
+      "method": "POST",
+      "path": "/api/v1/auth/forgot-password",
+      "module": "Authentication",
+      "summary": "Initiate dual-factor account recovery (Anti-enumeration)",
+      "authRequired": false,
+      "parameters": [],
+      "hasRequestBody": true,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-009",
+      "method": "GET",
+      "path": "/api/v1/auth/reset-challenge",
+      "module": "Authentication",
+      "summary": "Retrieve security questions for a reset challenge token",
+      "authRequired": false,
+      "parameters": [
+        {
+          "name": "token",
+          "required": true,
+          "in": "query",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200",
+        "404"
+      ]
+    },
+    {
+      "id": "API-010",
+      "method": "POST",
+      "path": "/api/v1/auth/verify-reset-challenge",
+      "module": "Authentication",
+      "summary": "Verify security question answers or recovery passphrase",
+      "authRequired": false,
+      "parameters": [],
+      "hasRequestBody": true,
+      "expectedStatuses": [
+        "200",
+        "401"
+      ]
+    },
+    {
+      "id": "API-011",
+      "method": "POST",
+      "path": "/api/v1/auth/reset-password",
+      "module": "Authentication",
+      "summary": "Set new enterprise password and revoke all active sessions",
+      "authRequired": false,
+      "parameters": [],
+      "hasRequestBody": true,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-012",
+      "method": "POST",
+      "path": "/api/v1/auth/users/{id}/revoke-sessions",
+      "module": "Authentication",
+      "summary": "Administrative termination of all active sessions for user",
+      "authRequired": true,
+      "parameters": [
+        {
+          "name": "id",
+          "required": true,
+          "in": "path",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-013",
+      "method": "POST",
+      "path": "/api/v1/auth/users/{id}/admin-reset-password",
+      "module": "Authentication",
+      "summary": "Direct administrative password reset with temporary credential generation",
+      "authRequired": true,
+      "parameters": [
+        {
+          "name": "id",
+          "required": true,
+          "in": "path",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": true,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-014",
+      "method": "GET",
+      "path": "/api/v1/users/bulk-template",
+      "module": "Employees",
+      "summary": "Download employee bulk onboarding .xlsx template",
+      "authRequired": true,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-015",
+      "method": "POST",
+      "path": "/api/v1/users/bulk-upload",
+      "module": "Employees",
+      "summary": "Bulk onboard employees via .xlsx or .csv with schema validation",
+      "authRequired": true,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-016",
+      "method": "POST",
+      "path": "/api/v1/users/{id}/admin-reset-password",
+      "module": "Employees",
+      "summary": "Administratively reset employee password with temporary credential",
+      "authRequired": true,
+      "parameters": [
+        {
+          "name": "id",
+          "required": true,
+          "in": "path",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-017",
+      "method": "POST",
+      "path": "/api/v1/users/{id}/revoke-sessions",
+      "module": "Employees",
+      "summary": "Revoke all active sessions for an employee",
+      "authRequired": true,
+      "parameters": [
+        {
+          "name": "id",
+          "required": true,
+          "in": "path",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-018",
       "method": "GET",
       "path": "/api/v1/users/admin-dashboard",
       "module": "Employees",
@@ -127,7 +305,7 @@
       ]
     },
     {
-      "id": "API-009",
+      "id": "API-019",
       "method": "GET",
       "path": "/api/v1/users/import/template",
       "module": "Employees",
@@ -140,7 +318,7 @@
       ]
     },
     {
-      "id": "API-010",
+      "id": "API-020",
       "method": "POST",
       "path": "/api/v1/users/import/preview",
       "module": "Employees",
@@ -153,7 +331,7 @@
       ]
     },
     {
-      "id": "API-011",
+      "id": "API-021",
       "method": "POST",
       "path": "/api/v1/users/import/confirm",
       "module": "Employees",
@@ -166,7 +344,7 @@
       ]
     },
     {
-      "id": "API-012",
+      "id": "API-022",
       "method": "POST",
       "path": "/api/v1/users",
       "module": "Employees",
@@ -181,7 +359,7 @@
       ]
     },
     {
-      "id": "API-013",
+      "id": "API-023",
       "method": "GET",
       "path": "/api/v1/users",
       "module": "Employees",
@@ -272,7 +450,7 @@
       ]
     },
     {
-      "id": "API-014",
+      "id": "API-024",
       "method": "GET",
       "path": "/api/v1/users/{id}",
       "module": "Employees",
@@ -295,7 +473,7 @@
       ]
     },
     {
-      "id": "API-015",
+      "id": "API-025",
       "method": "PATCH",
       "path": "/api/v1/users/{id}",
       "module": "Employees",
@@ -318,7 +496,7 @@
       ]
     },
     {
-      "id": "API-016",
+      "id": "API-026",
       "method": "DELETE",
       "path": "/api/v1/users/{id}",
       "module": "Employees",
@@ -341,7 +519,7 @@
       ]
     },
     {
-      "id": "API-017",
+      "id": "API-027",
       "method": "POST",
       "path": "/api/v1/users/{id}/archive",
       "module": "Employees",
@@ -363,7 +541,7 @@
       ]
     },
     {
-      "id": "API-018",
+      "id": "API-028",
       "method": "POST",
       "path": "/api/v1/users/{id}/reactivate",
       "module": "Employees",
@@ -385,7 +563,7 @@
       ]
     },
     {
-      "id": "API-019",
+      "id": "API-029",
       "method": "GET",
       "path": "/api/v1/users/{id}/subordinates",
       "module": "Employees",
@@ -407,7 +585,7 @@
       ]
     },
     {
-      "id": "API-020",
+      "id": "API-030",
       "method": "POST",
       "path": "/api/v1/departments",
       "module": "Departments & Teams",
@@ -421,7 +599,7 @@
       ]
     },
     {
-      "id": "API-021",
+      "id": "API-031",
       "method": "GET",
       "path": "/api/v1/departments",
       "module": "Departments & Teams",
@@ -434,7 +612,7 @@
       ]
     },
     {
-      "id": "API-022",
+      "id": "API-032",
       "method": "GET",
       "path": "/api/v1/departments/org-chart",
       "module": "Departments & Teams",
@@ -447,7 +625,7 @@
       ]
     },
     {
-      "id": "API-023",
+      "id": "API-033",
       "method": "GET",
       "path": "/api/v1/departments/{id}",
       "module": "Departments & Teams",
@@ -469,7 +647,7 @@
       ]
     },
     {
-      "id": "API-024",
+      "id": "API-034",
       "method": "PATCH",
       "path": "/api/v1/departments/{id}",
       "module": "Departments & Teams",
@@ -491,7 +669,7 @@
       ]
     },
     {
-      "id": "API-025",
+      "id": "API-035",
       "method": "DELETE",
       "path": "/api/v1/departments/{id}",
       "module": "Departments & Teams",
@@ -513,7 +691,7 @@
       ]
     },
     {
-      "id": "API-026",
+      "id": "API-036",
       "method": "POST",
       "path": "/api/v1/departments/{id}/teams",
       "module": "Departments & Teams",
@@ -535,7 +713,7 @@
       ]
     },
     {
-      "id": "API-027",
+      "id": "API-037",
       "method": "GET",
       "path": "/api/v1/departments/{id}/teams",
       "module": "Departments & Teams",
@@ -557,7 +735,7 @@
       ]
     },
     {
-      "id": "API-028",
+      "id": "API-038",
       "method": "GET",
       "path": "/api/v1/designations",
       "module": "Designations",
@@ -570,7 +748,7 @@
       ]
     },
     {
-      "id": "API-029",
+      "id": "API-039",
       "method": "POST",
       "path": "/api/v1/designations",
       "module": "Designations",
@@ -583,7 +761,7 @@
       ]
     },
     {
-      "id": "API-030",
+      "id": "API-040",
       "method": "GET",
       "path": "/api/v1/designations/{id}",
       "module": "Designations",
@@ -605,7 +783,7 @@
       ]
     },
     {
-      "id": "API-031",
+      "id": "API-041",
       "method": "GET",
       "path": "/api/v1/roles",
       "module": "Roles & Access Control",
@@ -618,7 +796,7 @@
       ]
     },
     {
-      "id": "API-032",
+      "id": "API-042",
       "method": "POST",
       "path": "/api/v1/roles",
       "module": "Roles & Access Control",
@@ -631,7 +809,7 @@
       ]
     },
     {
-      "id": "API-033",
+      "id": "API-043",
       "method": "GET",
       "path": "/api/v1/roles/{id}",
       "module": "Roles & Access Control",
@@ -653,7 +831,7 @@
       ]
     },
     {
-      "id": "API-034",
+      "id": "API-044",
       "method": "GET",
       "path": "/api/v1/permissions",
       "module": "Permissions",
@@ -666,7 +844,7 @@
       ]
     },
     {
-      "id": "API-035",
+      "id": "API-045",
       "method": "GET",
       "path": "/api/v1/permissions/matrix",
       "module": "Permissions",
@@ -679,7 +857,7 @@
       ]
     },
     {
-      "id": "API-036",
+      "id": "API-046",
       "method": "POST",
       "path": "/api/v1/tasks",
       "module": "Task Management",
@@ -692,7 +870,7 @@
       ]
     },
     {
-      "id": "API-037",
+      "id": "API-047",
       "method": "GET",
       "path": "/api/v1/tasks",
       "module": "Task Management",
@@ -781,7 +959,7 @@
       ]
     },
     {
-      "id": "API-038",
+      "id": "API-048",
       "method": "GET",
       "path": "/api/v1/tasks/kanban",
       "module": "Task Management",
@@ -794,7 +972,7 @@
       ]
     },
     {
-      "id": "API-039",
+      "id": "API-049",
       "method": "GET",
       "path": "/api/v1/tasks/{id}",
       "module": "Task Management",
@@ -817,7 +995,7 @@
       ]
     },
     {
-      "id": "API-040",
+      "id": "API-050",
       "method": "PATCH",
       "path": "/api/v1/tasks/{id}",
       "module": "Task Management",
@@ -839,7 +1017,7 @@
       ]
     },
     {
-      "id": "API-041",
+      "id": "API-051",
       "method": "PATCH",
       "path": "/api/v1/tasks/{id}/status",
       "module": "Task Management",
@@ -861,7 +1039,7 @@
       ]
     },
     {
-      "id": "API-042",
+      "id": "API-052",
       "method": "POST",
       "path": "/api/v1/tasks/{id}/comments",
       "module": "Task Management",
@@ -883,7 +1061,7 @@
       ]
     },
     {
-      "id": "API-043",
+      "id": "API-053",
       "method": "GET",
       "path": "/api/v1/tasks/{id}/comments",
       "module": "Task Management",
@@ -905,7 +1083,7 @@
       ]
     },
     {
-      "id": "API-044",
+      "id": "API-054",
       "method": "GET",
       "path": "/api/v1/notifications",
       "module": "Notifications",
@@ -927,7 +1105,7 @@
       ]
     },
     {
-      "id": "API-045",
+      "id": "API-055",
       "method": "POST",
       "path": "/api/v1/notifications",
       "module": "Notifications",
@@ -940,7 +1118,7 @@
       ]
     },
     {
-      "id": "API-046",
+      "id": "API-056",
       "method": "GET",
       "path": "/api/v1/notifications/unread-count",
       "module": "Notifications",
@@ -953,7 +1131,7 @@
       ]
     },
     {
-      "id": "API-047",
+      "id": "API-057",
       "method": "PATCH",
       "path": "/api/v1/notifications/{id}/read",
       "module": "Notifications",
@@ -975,7 +1153,7 @@
       ]
     },
     {
-      "id": "API-048",
+      "id": "API-058",
       "method": "PATCH",
       "path": "/api/v1/notifications/read-all",
       "module": "Notifications",
@@ -988,7 +1166,7 @@
       ]
     },
     {
-      "id": "API-049",
+      "id": "API-059",
       "method": "POST",
       "path": "/api/v1/tickets",
       "module": "ITSM Ticket Management",
@@ -1001,7 +1179,7 @@
       ]
     },
     {
-      "id": "API-050",
+      "id": "API-060",
       "method": "GET",
       "path": "/api/v1/tickets",
       "module": "ITSM Ticket Management",
@@ -1125,7 +1303,7 @@
       ]
     },
     {
-      "id": "API-051",
+      "id": "API-061",
       "method": "GET",
       "path": "/api/v1/tickets/categories",
       "module": "ITSM Ticket Management",
@@ -1138,7 +1316,7 @@
       ]
     },
     {
-      "id": "API-052",
+      "id": "API-062",
       "method": "GET",
       "path": "/api/v1/tickets/metrics",
       "module": "ITSM Ticket Management",
@@ -1151,7 +1329,7 @@
       ]
     },
     {
-      "id": "API-053",
+      "id": "API-063",
       "method": "GET",
       "path": "/api/v1/tickets/{id}",
       "module": "ITSM Ticket Management",
@@ -1174,7 +1352,7 @@
       ]
     },
     {
-      "id": "API-054",
+      "id": "API-064",
       "method": "PATCH",
       "path": "/api/v1/tickets/{id}",
       "module": "ITSM Ticket Management",
@@ -1196,7 +1374,7 @@
       ]
     },
     {
-      "id": "API-055",
+      "id": "API-065",
       "method": "POST",
       "path": "/api/v1/tickets/{id}/transition",
       "module": "ITSM Ticket Management",
@@ -1218,7 +1396,7 @@
       ]
     },
     {
-      "id": "API-056",
+      "id": "API-066",
       "method": "POST",
       "path": "/api/v1/tickets/{id}/assign",
       "module": "ITSM Ticket Management",
@@ -1240,7 +1418,7 @@
       ]
     },
     {
-      "id": "API-057",
+      "id": "API-067",
       "method": "POST",
       "path": "/api/v1/tickets/{id}/escalate",
       "module": "ITSM Ticket Management",
@@ -1262,7 +1440,7 @@
       ]
     },
     {
-      "id": "API-058",
+      "id": "API-068",
       "method": "POST",
       "path": "/api/v1/tickets/{id}/resolve",
       "module": "ITSM Ticket Management",
@@ -1284,7 +1462,7 @@
       ]
     },
     {
-      "id": "API-059",
+      "id": "API-069",
       "method": "POST",
       "path": "/api/v1/tickets/{id}/reopen",
       "module": "ITSM Ticket Management",
@@ -1306,7 +1484,7 @@
       ]
     },
     {
-      "id": "API-060",
+      "id": "API-070",
       "method": "POST",
       "path": "/api/v1/tickets/{id}/comments",
       "module": "ITSM Ticket Management",
@@ -1328,7 +1506,7 @@
       ]
     },
     {
-      "id": "API-061",
+      "id": "API-071",
       "method": "POST",
       "path": "/api/v1/tickets/{id}/timer/start",
       "module": "ITSM Ticket Management",
@@ -1350,7 +1528,7 @@
       ]
     },
     {
-      "id": "API-062",
+      "id": "API-072",
       "method": "POST",
       "path": "/api/v1/tickets/{id}/timer/stop",
       "module": "ITSM Ticket Management",
@@ -1372,7 +1550,7 @@
       ]
     },
     {
-      "id": "API-063",
+      "id": "API-073",
       "method": "POST",
       "path": "/api/v1/tickets/{id}/time-entries",
       "module": "ITSM Ticket Management",
@@ -1394,7 +1572,7 @@
       ]
     },
     {
-      "id": "API-064",
+      "id": "API-074",
       "method": "POST",
       "path": "/api/v1/tickets/{id}/tasks",
       "module": "ITSM Ticket Management",
@@ -1416,7 +1594,7 @@
       ]
     },
     {
-      "id": "API-065",
+      "id": "API-075",
       "method": "POST",
       "path": "/api/v1/tickets/{id}/link-task",
       "module": "ITSM Ticket Management",
@@ -1438,7 +1616,7 @@
       ]
     },
     {
-      "id": "API-066",
+      "id": "API-076",
       "method": "POST",
       "path": "/api/v1/work-logs",
       "module": "Daily Work Logs",
@@ -1451,7 +1629,7 @@
       ]
     },
     {
-      "id": "API-067",
+      "id": "API-077",
       "method": "GET",
       "path": "/api/v1/work-logs",
       "module": "Daily Work Logs",
@@ -1501,7 +1679,7 @@
       ]
     },
     {
-      "id": "API-068",
+      "id": "API-078",
       "method": "GET",
       "path": "/api/v1/work-logs/daily-summary",
       "module": "Daily Work Logs",
@@ -1523,7 +1701,7 @@
       ]
     },
     {
-      "id": "API-069",
+      "id": "API-079",
       "method": "GET",
       "path": "/api/v1/work-logs/{id}",
       "module": "Daily Work Logs",
@@ -1546,7 +1724,291 @@
       ]
     },
     {
-      "id": "API-070",
+      "id": "API-080",
+      "method": "GET",
+      "path": "/api/v1/reports/itsm",
+      "module": "Reports & Analytics",
+      "summary": "ITSM Service Desk Performance & SLA Analytics",
+      "authRequired": true,
+      "parameters": [
+        {
+          "name": "startDate",
+          "required": false,
+          "in": "query",
+          "description": "Filter start date ISO string",
+          "schema": {
+            "example": "2026-10-01T00:00:00Z",
+            "type": "string"
+          }
+        },
+        {
+          "name": "endDate",
+          "required": false,
+          "in": "query",
+          "description": "Filter end date ISO string",
+          "schema": {
+            "example": "2026-11-04T23:59:59Z",
+            "type": "string"
+          }
+        },
+        {
+          "name": "departmentId",
+          "required": false,
+          "in": "query",
+          "description": "Filter by Department UUID",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "reportType",
+          "required": false,
+          "in": "query",
+          "schema": {
+            "default": "itsm",
+            "enum": [
+              "itsm",
+              "workforce",
+              "audit"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "name": "format",
+          "required": false,
+          "in": "query",
+          "schema": {
+            "default": "json",
+            "enum": [
+              "json",
+              "xlsx",
+              "csv"
+            ],
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-081",
+      "method": "GET",
+      "path": "/api/v1/reports/workforce",
+      "module": "Reports & Analytics",
+      "summary": "Workforce Timesheet, Utilization & Productivity Analytics",
+      "authRequired": true,
+      "parameters": [
+        {
+          "name": "startDate",
+          "required": false,
+          "in": "query",
+          "description": "Filter start date ISO string",
+          "schema": {
+            "example": "2026-10-01T00:00:00Z",
+            "type": "string"
+          }
+        },
+        {
+          "name": "endDate",
+          "required": false,
+          "in": "query",
+          "description": "Filter end date ISO string",
+          "schema": {
+            "example": "2026-11-04T23:59:59Z",
+            "type": "string"
+          }
+        },
+        {
+          "name": "departmentId",
+          "required": false,
+          "in": "query",
+          "description": "Filter by Department UUID",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "reportType",
+          "required": false,
+          "in": "query",
+          "schema": {
+            "default": "itsm",
+            "enum": [
+              "itsm",
+              "workforce",
+              "audit"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "name": "format",
+          "required": false,
+          "in": "query",
+          "schema": {
+            "default": "json",
+            "enum": [
+              "json",
+              "xlsx",
+              "csv"
+            ],
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-082",
+      "method": "GET",
+      "path": "/api/v1/reports/audit",
+      "module": "Reports & Analytics",
+      "summary": "Security Audit & Compliance Trail Report",
+      "authRequired": true,
+      "parameters": [
+        {
+          "name": "startDate",
+          "required": false,
+          "in": "query",
+          "description": "Filter start date ISO string",
+          "schema": {
+            "example": "2026-10-01T00:00:00Z",
+            "type": "string"
+          }
+        },
+        {
+          "name": "endDate",
+          "required": false,
+          "in": "query",
+          "description": "Filter end date ISO string",
+          "schema": {
+            "example": "2026-11-04T23:59:59Z",
+            "type": "string"
+          }
+        },
+        {
+          "name": "departmentId",
+          "required": false,
+          "in": "query",
+          "description": "Filter by Department UUID",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "reportType",
+          "required": false,
+          "in": "query",
+          "schema": {
+            "default": "itsm",
+            "enum": [
+              "itsm",
+              "workforce",
+              "audit"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "name": "format",
+          "required": false,
+          "in": "query",
+          "schema": {
+            "default": "json",
+            "enum": [
+              "json",
+              "xlsx",
+              "csv"
+            ],
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-083",
+      "method": "GET",
+      "path": "/api/v1/reports/export",
+      "module": "Reports & Analytics",
+      "summary": "Export structured reports to Microsoft Excel (.xlsx) or CSV",
+      "authRequired": true,
+      "parameters": [
+        {
+          "name": "startDate",
+          "required": false,
+          "in": "query",
+          "description": "Filter start date ISO string",
+          "schema": {
+            "example": "2026-10-01T00:00:00Z",
+            "type": "string"
+          }
+        },
+        {
+          "name": "endDate",
+          "required": false,
+          "in": "query",
+          "description": "Filter end date ISO string",
+          "schema": {
+            "example": "2026-11-04T23:59:59Z",
+            "type": "string"
+          }
+        },
+        {
+          "name": "departmentId",
+          "required": false,
+          "in": "query",
+          "description": "Filter by Department UUID",
+          "schema": {
+            "type": "string"
+          }
+        },
+        {
+          "name": "reportType",
+          "required": false,
+          "in": "query",
+          "schema": {
+            "default": "itsm",
+            "enum": [
+              "itsm",
+              "workforce",
+              "audit"
+            ],
+            "type": "string"
+          }
+        },
+        {
+          "name": "format",
+          "required": false,
+          "in": "query",
+          "schema": {
+            "default": "json",
+            "enum": [
+              "json",
+              "xlsx",
+              "csv"
+            ],
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-084",
       "method": "GET",
       "path": "/api/v1/health",
       "module": "System Health",
