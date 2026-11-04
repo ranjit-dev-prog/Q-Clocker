@@ -6,9 +6,7 @@ import {
   Logger,
   Optional,
 } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
-import * as schema from '../../database/schema';
-import { eq, desc, and, or, ilike } from 'drizzle-orm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import {
   UpdateTicketDto,
@@ -284,7 +282,7 @@ export class TicketsService {
   private demoTaskLinks: Array<any> = [];
 
   constructor(
-    private readonly dbService: DatabaseService,
+    private readonly prisma: PrismaService,
     private readonly stateMachine: TicketStateMachineService,
     private readonly slaService: TicketSlaService,
     @Optional() private readonly notificationsService?: NotificationsService,
@@ -315,10 +313,9 @@ export class TicketsService {
       ? TicketStatus.ASSIGNED
       : TicketStatus.NEW;
 
-    if (this.dbService.getConnectionStatus()) {
-      const [newTicket] = await this.dbService.db
-        .insert(schema.tickets)
-        .values({
+    if (this.prisma.isConnected) {
+      const newTicket = await this.prisma.ticket.create({
+        data: {
           referenceId,
           ticketNumber,
           title: createTicketDto.title.trim(),
@@ -332,29 +329,24 @@ export class TicketsService {
           urgency: createTicketDto.urgency || TicketUrgency.MEDIUM,
           priority: createTicketDto.priority || priority,
           priorityCode: priorityCode,
-          category: createTicketDto.category || 'IT Support',
-          subcategory: createTicketDto.subcategory || null,
           status: initialStatus,
           source: createTicketDto.source || TicketSource.PORTAL,
           slaPolicyId: createTicketDto.slaPolicyId || null,
           firstResponseDueAt: sla.firstResponseDueAt,
           resolutionDueAt: sla.resolutionDueAt,
-          dueDate: sla.resolutionDueAt,
-          slaHours: sla.resolutionHours,
           slaStatus: SlaStatus.WITHIN_SLA,
-          slaBreached: false,
-          relatedTaskId: createTicketDto.relatedTaskId || null,
-          relatedAssetId: createTicketDto.relatedAssetId || null,
-        })
-        .returning();
+        },
+      });
 
       // Record creation audit event
-      await this.dbService.db.insert(schema.ticketHistory).values({
-        ticketId: newTicket.id,
-        changedById: user.id,
-        fieldChanged: 'CREATION',
-        oldValue: null,
-        newValue: `Created ticket ${newTicket.referenceId} with Priority ${priorityCode}`,
+      await this.prisma.ticketHistory.create({
+        data: {
+          ticketId: newTicket.id,
+          changedBy: user.id,
+          field: 'CREATION',
+          oldValue: null,
+          newValue: `Created ticket ${newTicket.referenceId} with Priority ${priorityCode}`,
+        },
       });
 
       if (createTicketDto.assignedTechnicianId && this.notificationsService) {
@@ -439,98 +431,64 @@ export class TicketsService {
   async findAll(query: TicketQueryDto, user: any) {
     const isEmployeeOnly = user?.role === UserRole.EMPLOYEE;
 
-    if (this.dbService.getConnectionStatus()) {
-      const conditions: any[] = [];
+    if (this.prisma.isConnected) {
+      const where: any = {};
 
       // IDOR Scope Check: Standard employees without agent role only view their own tickets
       if (isEmployeeOnly) {
-        conditions.push(eq(schema.tickets.requesterId, user.id));
+        where.requesterId = user.id;
       }
 
       if (query.status) {
-        conditions.push(eq(schema.tickets.status, query.status as TicketStatus));
+        where.status = query.status;
       }
       if (query.priority) {
-        conditions.push(eq(schema.tickets.priority, query.priority));
+        where.priority = query.priority;
       }
       if (query.priorityCode) {
-        conditions.push(eq(schema.tickets.priorityCode, query.priorityCode));
-      }
-      if (query.category) {
-        conditions.push(eq(schema.tickets.category, query.category));
+        where.priorityCode = query.priorityCode;
       }
       if (query.departmentId) {
-        conditions.push(eq(schema.tickets.departmentId, query.departmentId));
+        where.departmentId = query.departmentId;
       }
       if (query.assignedTechnicianId) {
-        conditions.push(eq(schema.tickets.assignedTechnicianId, query.assignedTechnicianId));
+        where.assignedTechnicianId = query.assignedTechnicianId;
       }
       if (query.assignedTeamId) {
-        conditions.push(eq(schema.tickets.assignedTeamId, query.assignedTeamId));
+        where.assignedTeamId = query.assignedTeamId;
       }
       if (query.requesterId) {
-        conditions.push(eq(schema.tickets.requesterId, query.requesterId));
+        where.requesterId = query.requesterId;
       }
       if (query.search) {
-        const pattern = `%${query.search.trim()}%`;
-        conditions.push(
-          or(
-            ilike(schema.tickets.title, pattern),
-            ilike(schema.tickets.description, pattern),
-            ilike(schema.tickets.referenceId, pattern),
-            ilike(schema.tickets.ticketNumber, pattern),
-          ),
-        );
+        const pattern = query.search.trim();
+        where.OR = [
+          { title: { contains: pattern, mode: 'insensitive' } },
+          { description: { contains: pattern, mode: 'insensitive' } },
+          { referenceId: { contains: pattern, mode: 'insensitive' } },
+          { ticketNumber: { contains: pattern, mode: 'insensitive' } },
+        ];
       }
 
-      const rows = await this.dbService.db
-        .select({
-          id: schema.tickets.id,
-          referenceId: schema.tickets.referenceId,
-          ticketNumber: schema.tickets.ticketNumber,
-          title: schema.tickets.title,
-          description: schema.tickets.description,
-          requesterId: schema.tickets.requesterId,
-          requesterFirstName: schema.users.firstName,
-          requesterLastName: schema.users.lastName,
-          requesterEmail: schema.users.email,
-          assignedTechnicianId: schema.tickets.assignedTechnicianId,
-          departmentId: schema.tickets.departmentId,
-          departmentName: schema.departments.name,
-          ticketType: schema.tickets.ticketType,
-          impact: schema.tickets.impact,
-          urgency: schema.tickets.urgency,
-          priority: schema.tickets.priority,
-          priorityCode: schema.tickets.priorityCode,
-          category: schema.tickets.category,
-          subcategory: schema.tickets.subcategory,
-          status: schema.tickets.status,
-          source: schema.tickets.source,
-          dueDate: schema.tickets.dueDate,
-          firstResponseDueAt: schema.tickets.firstResponseDueAt,
-          resolutionDueAt: schema.tickets.resolutionDueAt,
-          slaHours: schema.tickets.slaHours,
-          slaStatus: schema.tickets.slaStatus,
-          slaBreached: schema.tickets.slaBreached,
-          firstResponseAt: schema.tickets.firstResponseAt,
-          resolvedAt: schema.tickets.resolvedAt,
-          closedAt: schema.tickets.closedAt,
-          reopenCount: schema.tickets.reopenCount,
-          createdAt: schema.tickets.createdAt,
-          updatedAt: schema.tickets.updatedAt,
-        })
-        .from(schema.tickets)
-        .leftJoin(schema.users, eq(schema.tickets.requesterId, schema.users.id))
-        .leftJoin(schema.departments, eq(schema.tickets.departmentId, schema.departments.id))
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(desc(schema.tickets.createdAt));
+      const rows = await this.prisma.ticket.findMany({
+        where,
+        include: {
+          requester: true,
+          department: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
 
       // Augment rows with live dynamic SLA status evaluation
       return rows.map((r) => {
         const liveSla = this.slaService.evaluateLiveSla(r);
         return {
           ...r,
-          requesterName: `${r.requesterFirstName || ''} ${r.requesterLastName || ''}`.trim() || 'Employee',
+          requesterFirstName: r.requester?.firstName,
+          requesterLastName: r.requester?.lastName,
+          requesterEmail: r.requester?.email,
+          requesterName: `${r.requester?.firstName || ''} ${r.requester?.lastName || ''}`.trim() || 'Employee',
+          departmentName: r.department?.name,
           slaStatus: liveSla.slaStatus,
           slaBreached: liveSla.slaBreached,
           remainingSeconds: liveSla.remainingSeconds,
