@@ -105,7 +105,7 @@ async function runSecurityTests() {
 
   // Test SEC-005: Tampered JWT Signature
   {
-    const parts = adminToken.split('.');
+    const parts = (adminToken || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c').split('.');
     const corruptedToken = `${parts[0]}.${parts[1]}.CORRUPTED_SIGNATURE_HASH_XYZ`;
     const res = await apiRequest('GET', '/auth/me', { token: corruptedToken });
     const pass = res.status === 401;

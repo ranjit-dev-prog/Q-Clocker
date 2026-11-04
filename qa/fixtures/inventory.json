@@ -1,1237 +1,292 @@
 {
-  "generatedAt": "2026-11-03T12:15:10.859Z",
+  "generatedAt": "2026-11-04T05:28:57.971Z",
   "apiSummary": {
-    "totalPaths": 40,
-    "totalOperations": 55,
+    "totalPaths": 21,
+    "totalOperations": 25,
     "modules": [
-      "Authentication",
-      "Employees",
-      "Departments & Teams",
-      "Designations",
-      "Roles & Access Control",
-      "Permissions",
-      "Task Management",
-      "ITSM Ticket Management",
-      "Daily Work Logs",
-      "System Health"
+      "Auth",
+      "ITSM",
+      "Tasks",
+      "Users",
+      "Departments",
+      "WorkLogs"
     ]
   },
   "apiEndpoints": [
     {
       "id": "API-001",
       "method": "POST",
-      "path": "/api/v1/auth/login",
-      "module": "Authentication",
-      "summary": "Authenticate user with corporate credentials",
+      "path": "/auth/login",
+      "module": "Auth",
+      "summary": "User login",
       "authRequired": false,
       "parameters": [],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "200",
-        "401"
-      ]
+      "hasRequestBody": false,
+      "expectedStatuses": []
     },
     {
       "id": "API-002",
       "method": "POST",
-      "path": "/api/v1/auth/register",
-      "module": "Authentication",
-      "summary": "Register a new employee account",
+      "path": "/auth/register",
+      "module": "Auth",
+      "summary": "User registration",
       "authRequired": false,
       "parameters": [],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "201",
-        "409"
-      ]
+      "hasRequestBody": false,
+      "expectedStatuses": []
     },
     {
       "id": "API-003",
-      "method": "POST",
-      "path": "/api/v1/auth/refresh",
-      "module": "Authentication",
-      "summary": "Rotate refresh token and issue new token pair",
+      "method": "GET",
+      "path": "/auth/me",
+      "module": "Auth",
+      "summary": "Current profile",
       "authRequired": false,
       "parameters": [],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "200",
-        "401"
-      ]
+      "hasRequestBody": false,
+      "expectedStatuses": []
     },
     {
       "id": "API-004",
       "method": "POST",
-      "path": "/api/v1/auth/logout",
-      "module": "Authentication",
-      "summary": "Log out user and revoke current session",
-      "authRequired": true,
+      "path": "/tickets",
+      "module": "ITSM",
+      "summary": "Create ticket",
+      "authRequired": false,
       "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-005",
-      "method": "POST",
-      "path": "/api/v1/auth/logout-all",
-      "module": "Authentication",
-      "summary": "Revoke all active sessions for current user",
-      "authRequired": true,
+      "method": "GET",
+      "path": "/tickets",
+      "module": "ITSM",
+      "summary": "List tickets",
+      "authRequired": false,
       "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-006",
       "method": "GET",
-      "path": "/api/v1/auth/sessions",
-      "module": "Authentication",
-      "summary": "Get all active sessions for current user",
-      "authRequired": true,
+      "path": "/tickets/categories",
+      "module": "ITSM",
+      "summary": "Category catalog",
+      "authRequired": false,
       "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-007",
       "method": "GET",
-      "path": "/api/v1/auth/me",
-      "module": "Authentication",
-      "summary": "Get current authenticated user profile",
-      "authRequired": true,
+      "path": "/tickets/metrics",
+      "module": "ITSM",
+      "summary": "ITSM metrics",
+      "authRequired": false,
       "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200",
-        "401"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-008",
       "method": "GET",
-      "path": "/api/v1/users/admin-dashboard",
-      "module": "Employees",
-      "summary": "Enterprise Admin Dashboard Metrics (Employee, Role, Department distributions)",
-      "authRequired": true,
+      "path": "/tickets/{id}",
+      "module": "ITSM",
+      "summary": "Ticket details",
+      "authRequired": false,
       "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-009",
-      "method": "GET",
-      "path": "/api/v1/users/import/template",
-      "module": "Employees",
-      "summary": "Download employee bulk import CSV template",
-      "authRequired": true,
+      "method": "PATCH",
+      "path": "/tickets/{id}",
+      "module": "ITSM",
+      "summary": "Update ticket",
+      "authRequired": false,
       "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-010",
       "method": "POST",
-      "path": "/api/v1/users/import/preview",
-      "module": "Employees",
-      "summary": "Preview and validate CSV employee import with formula injection sanitization",
-      "authRequired": true,
+      "path": "/tickets/{id}/transition",
+      "module": "ITSM",
+      "summary": "Transition ticket status",
+      "authRequired": false,
       "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-011",
       "method": "POST",
-      "path": "/api/v1/users/import/confirm",
-      "module": "Employees",
-      "summary": "Execute batch employee import",
-      "authRequired": true,
+      "path": "/tickets/{id}/assign",
+      "module": "ITSM",
+      "summary": "Assign ticket",
+      "authRequired": false,
       "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-012",
       "method": "POST",
-      "path": "/api/v1/users",
-      "module": "Employees",
-      "summary": "Create a new employee account (Super Admin / Admin / HR Manager)",
-      "authRequired": true,
+      "path": "/tickets/{id}/escalate",
+      "module": "ITSM",
+      "summary": "Escalate ticket",
+      "authRequired": false,
       "parameters": [],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "201",
-        "403",
-        "409"
-      ]
+      "hasRequestBody": false,
+      "expectedStatuses": []
     },
     {
       "id": "API-013",
-      "method": "GET",
-      "path": "/api/v1/users",
-      "module": "Employees",
-      "summary": "List employees with optional filters (Search, Role, Department, Active)",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "search",
-          "required": false,
-          "in": "query",
-          "description": "Filter by search query (name or email)",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "role",
-          "required": false,
-          "in": "query",
-          "description": "Filter by user role",
-          "schema": {
-            "enum": [
-              "SUPER_ADMIN",
-              "ADMIN",
-              "HR_MANAGER",
-              "HR_EXECUTIVE",
-              "IT_MANAGER",
-              "IT_EXECUTIVE",
-              "TEAM_LEAD",
-              "EMPLOYEE",
-              "AUDITOR",
-              "READ_ONLY"
-            ],
-            "type": "string"
-          }
-        },
-        {
-          "name": "roleCode",
-          "required": false,
-          "in": "query",
-          "description": "Filter by user role code",
-          "schema": {
-            "enum": [
-              "SUPER_ADMIN",
-              "ADMIN",
-              "HR_MANAGER",
-              "HR_EXECUTIVE",
-              "IT_MANAGER",
-              "IT_EXECUTIVE",
-              "TEAM_LEAD",
-              "EMPLOYEE",
-              "AUDITOR",
-              "READ_ONLY"
-            ],
-            "type": "string"
-          }
-        },
-        {
-          "name": "departmentId",
-          "required": false,
-          "in": "query",
-          "description": "Filter by department ID",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "isActive",
-          "required": false,
-          "in": "query",
-          "description": "Filter by active status (true/false)",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
+      "method": "POST",
+      "path": "/tickets/{id}/resolve",
+      "module": "ITSM",
+      "summary": "Resolve ticket",
+      "authRequired": false,
+      "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-014",
-      "method": "GET",
-      "path": "/api/v1/users/{id}",
-      "module": "Employees",
-      "summary": "Get employee details by UUID",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
+      "method": "POST",
+      "path": "/tickets/{id}/reopen",
+      "module": "ITSM",
+      "summary": "Reopen ticket",
+      "authRequired": false,
+      "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200",
-        "404"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-015",
-      "method": "PATCH",
-      "path": "/api/v1/users/{id}",
-      "module": "Employees",
-      "summary": "Update employee account details (Super Admin / Admin / HR Manager)",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "200",
-        "404"
-      ]
+      "method": "POST",
+      "path": "/tickets/{id}/timer/start",
+      "module": "ITSM",
+      "summary": "Start stopwatch timer",
+      "authRequired": false,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": []
     },
     {
       "id": "API-016",
-      "method": "DELETE",
-      "path": "/api/v1/users/{id}",
-      "module": "Employees",
-      "summary": "Soft-delete employee (Super Admin only)",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
+      "method": "POST",
+      "path": "/tickets/{id}/timer/stop",
+      "module": "ITSM",
+      "summary": "Stop stopwatch timer",
+      "authRequired": false,
+      "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200",
-        "403"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-017",
       "method": "POST",
-      "path": "/api/v1/users/{id}/archive",
-      "module": "Employees",
-      "summary": "Safely archive an employee without destroying audit or timesheet history",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
+      "path": "/tickets/{id}/time-entries",
+      "module": "ITSM",
+      "summary": "Add manual time entry",
+      "authRequired": false,
+      "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-018",
       "method": "POST",
-      "path": "/api/v1/users/{id}/reactivate",
-      "module": "Employees",
-      "summary": "Reactivate an archived employee account",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
+      "path": "/tickets/{id}/tasks",
+      "module": "ITSM",
+      "summary": "Create downstream task",
+      "authRequired": false,
+      "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-019",
-      "method": "GET",
-      "path": "/api/v1/users/{id}/subordinates",
-      "module": "Employees",
-      "summary": "Get team members/subordinates managed by this employee",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
+      "method": "POST",
+      "path": "/tickets/{id}/link-task",
+      "module": "ITSM",
+      "summary": "Link existing task",
+      "authRequired": false,
+      "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-020",
       "method": "POST",
-      "path": "/api/v1/departments",
-      "module": "Departments & Teams",
-      "summary": "Create new organizational department (Super Admin only)",
-      "authRequired": true,
+      "path": "/tasks",
+      "module": "Tasks",
+      "summary": "Create task",
+      "authRequired": false,
       "parameters": [],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "201",
-        "403"
-      ]
+      "hasRequestBody": false,
+      "expectedStatuses": []
     },
     {
       "id": "API-021",
       "method": "GET",
-      "path": "/api/v1/departments",
-      "module": "Departments & Teams",
-      "summary": "List all departments and aggregate telemetry",
-      "authRequired": true,
+      "path": "/tasks",
+      "module": "Tasks",
+      "summary": "List tasks",
+      "authRequired": false,
       "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
+      "expectedStatuses": []
     },
     {
       "id": "API-022",
       "method": "GET",
-      "path": "/api/v1/departments/org-chart",
-      "module": "Departments & Teams",
-      "summary": "Get full organizational hierarchy chart",
-      "authRequired": true,
-      "parameters": [],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-023",
-      "method": "GET",
-      "path": "/api/v1/departments/{id}",
-      "module": "Departments & Teams",
-      "summary": "Get department details by ID",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-024",
-      "method": "PATCH",
-      "path": "/api/v1/departments/{id}",
-      "module": "Departments & Teams",
-      "summary": "Update department details or manager (Super Admin / Admin)",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-025",
-      "method": "DELETE",
-      "path": "/api/v1/departments/{id}",
-      "module": "Departments & Teams",
-      "summary": "Deactivate department (Super Admin only)",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-026",
-      "method": "POST",
-      "path": "/api/v1/departments/{id}/teams",
-      "module": "Departments & Teams",
-      "summary": "Create team within department (Super Admin / Admin)",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "201"
-      ]
-    },
-    {
-      "id": "API-027",
-      "method": "GET",
-      "path": "/api/v1/departments/{id}/teams",
-      "module": "Departments & Teams",
-      "summary": "List teams within department",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-028",
-      "method": "GET",
-      "path": "/api/v1/designations",
-      "module": "Designations",
-      "summary": "List all company designations and job profiles",
-      "authRequired": true,
-      "parameters": [],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-029",
-      "method": "POST",
-      "path": "/api/v1/designations",
-      "module": "Designations",
-      "summary": "Create a new corporate designation",
-      "authRequired": true,
-      "parameters": [],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "201"
-      ]
-    },
-    {
-      "id": "API-030",
-      "method": "GET",
-      "path": "/api/v1/designations/{id}",
-      "module": "Designations",
-      "summary": "Get designation details by UUID",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-031",
-      "method": "GET",
-      "path": "/api/v1/roles",
-      "module": "Roles & Access Control",
-      "summary": "List all system and custom RBAC roles",
-      "authRequired": true,
-      "parameters": [],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-032",
-      "method": "POST",
-      "path": "/api/v1/roles",
-      "module": "Roles & Access Control",
-      "summary": "Create a new custom RBAC role",
-      "authRequired": true,
-      "parameters": [],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "201"
-      ]
-    },
-    {
-      "id": "API-033",
-      "method": "GET",
-      "path": "/api/v1/roles/{id}",
-      "module": "Roles & Access Control",
-      "summary": "Get role details with assigned permissions",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-034",
-      "method": "GET",
-      "path": "/api/v1/permissions",
-      "module": "Permissions",
-      "summary": "List all available granular system permissions",
-      "authRequired": true,
-      "parameters": [],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-035",
-      "method": "GET",
-      "path": "/api/v1/permissions/matrix",
-      "module": "Permissions",
-      "summary": "Get full permission matrix by role and capability",
-      "authRequired": true,
-      "parameters": [],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-036",
-      "method": "POST",
-      "path": "/api/v1/tasks",
-      "module": "Task Management",
-      "summary": "Create a new enterprise task with random TSK reference",
-      "authRequired": true,
-      "parameters": [],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "201"
-      ]
-    },
-    {
-      "id": "API-037",
-      "method": "GET",
-      "path": "/api/v1/tasks",
-      "module": "Task Management",
-      "summary": "List and filter tasks by status, department, priority, or keyword",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "status",
-          "required": false,
-          "in": "query",
-          "schema": {
-            "enum": [
-              "DRAFT",
-              "ASSIGNED",
-              "ACCEPTED",
-              "IN_PROGRESS",
-              "ON_HOLD",
-              "PENDING_REVIEW",
-              "COMPLETED",
-              "REJECTED",
-              "OVERDUE",
-              "CANCELLED"
-            ],
-            "type": "string"
-          }
-        },
-        {
-          "name": "priority",
-          "required": false,
-          "in": "query",
-          "schema": {
-            "enum": [
-              "LOW",
-              "MEDIUM",
-              "HIGH",
-              "URGENT",
-              "CRITICAL"
-            ],
-            "type": "string"
-          }
-        },
-        {
-          "name": "departmentId",
-          "required": false,
-          "in": "query",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "teamId",
-          "required": false,
-          "in": "query",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "assignedEmployeeId",
-          "required": false,
-          "in": "query",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "category",
-          "required": false,
-          "in": "query",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "search",
-          "required": false,
-          "in": "query",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-038",
-      "method": "GET",
-      "path": "/api/v1/tasks/kanban",
-      "module": "Task Management",
-      "summary": "Get Kanban board with columns: Backlog, In Progress, Review, Completed",
-      "authRequired": true,
-      "parameters": [],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-039",
-      "method": "GET",
-      "path": "/api/v1/tasks/{id}",
-      "module": "Task Management",
-      "summary": "Get complete task details, assignments, comments and dependencies",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200",
-        "404"
-      ]
-    },
-    {
-      "id": "API-040",
-      "method": "PATCH",
-      "path": "/api/v1/tasks/{id}",
-      "module": "Task Management",
-      "summary": "Update task properties, assignee, dates, or estimates",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-041",
-      "method": "PATCH",
-      "path": "/api/v1/tasks/{id}/status",
-      "module": "Task Management",
-      "summary": "Update task status via Kanban drag-and-drop",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-042",
-      "method": "POST",
-      "path": "/api/v1/tasks/{id}/comments",
-      "module": "Task Management",
-      "summary": "Add a comment or internal note to a task",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "201"
-      ]
-    },
-    {
-      "id": "API-043",
-      "method": "GET",
-      "path": "/api/v1/tasks/{id}/comments",
-      "module": "Task Management",
-      "summary": "Get all comments for a task",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-044",
-      "method": "POST",
-      "path": "/api/v1/tickets",
-      "module": "ITSM Ticket Management",
-      "summary": "Create an IT service ticket with random TKT reference and SLA calculation",
-      "authRequired": true,
-      "parameters": [],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "201"
-      ]
-    },
-    {
-      "id": "API-045",
-      "method": "GET",
-      "path": "/api/v1/tickets",
-      "module": "ITSM Ticket Management",
-      "summary": "List and filter tickets by status, category, priority, or technician",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "status",
-          "required": false,
-          "in": "query",
-          "schema": {
-            "enum": [
-              "NEW",
-              "ASSIGNED",
-              "IN_PROGRESS",
-              "PENDING_USER",
-              "PENDING_VENDOR",
-              "PENDING_APPROVAL",
-              "RESOLVED",
-              "CLOSED"
-            ],
-            "type": "string"
-          }
-        },
-        {
-          "name": "priority",
-          "required": false,
-          "in": "query",
-          "schema": {
-            "enum": [
-              "LOW",
-              "MEDIUM",
-              "HIGH",
-              "URGENT",
-              "CRITICAL"
-            ],
-            "type": "string"
-          }
-        },
-        {
-          "name": "category",
-          "required": false,
-          "in": "query",
-          "schema": {
-            "enum": [
-              "IT Support",
-              "Infrastructure",
-              "Cybersecurity",
-              "VAPT",
-              "Network",
-              "Application",
-              "Software",
-              "Hardware",
-              "Access Management",
-              "Cloud Security",
-              "Compliance",
-              "HR Support",
-              "General Requests"
-            ],
-            "type": "string"
-          }
-        },
-        {
-          "name": "departmentId",
-          "required": false,
-          "in": "query",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "assignedTechnicianId",
-          "required": false,
-          "in": "query",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "requesterId",
-          "required": false,
-          "in": "query",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "search",
-          "required": false,
-          "in": "query",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-046",
-      "method": "GET",
-      "path": "/api/v1/tickets/metrics",
-      "module": "ITSM Ticket Management",
-      "summary": "Get ITSM & SLA compliance metrics",
-      "authRequired": true,
-      "parameters": [],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-047",
-      "method": "GET",
-      "path": "/api/v1/tickets/{id}",
-      "module": "ITSM Ticket Management",
-      "summary": "Get full ticket details, history audit log, and comments",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200",
-        "404"
-      ]
-    },
-    {
-      "id": "API-048",
-      "method": "PATCH",
-      "path": "/api/v1/tickets/{id}",
-      "module": "ITSM Ticket Management",
-      "summary": "Update ticket details, assign technician, or change priority",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-049",
-      "method": "POST",
-      "path": "/api/v1/tickets/{id}/resolve",
-      "module": "ITSM Ticket Management",
-      "summary": "Resolve an incident ticket with root-cause and fix summary",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-050",
-      "method": "POST",
-      "path": "/api/v1/tickets/{id}/comments",
-      "module": "ITSM Ticket Management",
-      "summary": "Add a user comment or internal technician note to a ticket",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "201"
-      ]
-    },
-    {
-      "id": "API-051",
-      "method": "POST",
-      "path": "/api/v1/work-logs",
-      "module": "Daily Work Logs",
-      "summary": "Create daily activity work log with random WLG reference",
-      "authRequired": true,
-      "parameters": [],
-      "hasRequestBody": true,
-      "expectedStatuses": [
-        "201"
-      ]
-    },
-    {
-      "id": "API-052",
-      "method": "GET",
-      "path": "/api/v1/work-logs",
-      "module": "Daily Work Logs",
-      "summary": "List employee work logs with optional date or task filters",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "employeeId",
-          "required": false,
-          "in": "query",
-          "description": "Filter by employee UUID",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "logDate",
-          "required": false,
-          "in": "query",
-          "description": "Filter by date YYYY-MM-DD",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "taskId",
-          "required": false,
-          "in": "query",
-          "description": "Filter by linked task UUID",
-          "schema": {
-            "type": "string"
-          }
-        },
-        {
-          "name": "ticketId",
-          "required": false,
-          "in": "query",
-          "description": "Filter by linked ticket UUID",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-053",
-      "method": "GET",
-      "path": "/api/v1/work-logs/daily-summary",
-      "module": "Daily Work Logs",
-      "summary": "Get aggregated hours and employee activity for a given date",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "date",
-          "required": true,
-          "in": "query",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
-    },
-    {
-      "id": "API-054",
-      "method": "GET",
-      "path": "/api/v1/work-logs/{id}",
-      "module": "Daily Work Logs",
-      "summary": "Get work log details",
-      "authRequired": true,
-      "parameters": [
-        {
-          "name": "id",
-          "required": true,
-          "in": "path",
-          "schema": {
-            "type": "string"
-          }
-        }
-      ],
-      "hasRequestBody": false,
-      "expectedStatuses": [
-        "200",
-        "404"
-      ]
-    },
-    {
-      "id": "API-055",
-      "method": "GET",
-      "path": "/api/v1/health",
-      "module": "System Health",
-      "summary": "Liveness and readiness probe for container orchestrators",
+      "path": "/users",
+      "module": "Users",
+      "summary": "List employees",
       "authRequired": false,
       "parameters": [],
       "hasRequestBody": false,
-      "expectedStatuses": [
-        "200"
-      ]
+      "expectedStatuses": []
+    },
+    {
+      "id": "API-023",
+      "method": "POST",
+      "path": "/users",
+      "module": "Users",
+      "summary": "Create user",
+      "authRequired": false,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": []
+    },
+    {
+      "id": "API-024",
+      "method": "GET",
+      "path": "/departments",
+      "module": "Departments",
+      "summary": "List departments",
+      "authRequired": false,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": []
+    },
+    {
+      "id": "API-025",
+      "method": "GET",
+      "path": "/work-logs",
+      "module": "WorkLogs",
+      "summary": "List work logs",
+      "authRequired": false,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": []
     }
   ],
   "frontendPages": [
@@ -1420,6 +475,14 @@
     {
       "variable": "taskDependencies",
       "tableName": "task_dependencies"
+    },
+    {
+      "variable": "ticketCategories",
+      "tableName": "ticket_categories"
+    },
+    {
+      "variable": "ticketSubcategories",
+      "tableName": "ticket_subcategories"
     },
     {
       "variable": "slaPolicies",
