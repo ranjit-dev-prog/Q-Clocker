@@ -28,6 +28,7 @@ const lifecycle_module_1 = require("./modules/lifecycle/lifecycle.module");
 const health_module_1 = require("./modules/health/health.module");
 const dashboard_module_1 = require("./modules/dashboard/dashboard.module");
 const performance_module_1 = require("./modules/performance/performance.module");
+const database_explorer_module_1 = require("./modules/database-explorer/database-explorer.module");
 const transform_interceptor_1 = require("./common/interceptors/transform.interceptor");
 let AppModule = class AppModule {
 };
@@ -62,6 +63,7 @@ exports.AppModule = AppModule = __decorate([
             health_module_1.HealthModule,
             dashboard_module_1.DashboardModule,
             performance_module_1.PerformanceModule,
+            database_explorer_module_1.DatabaseExplorerModule,
         ],
         providers: [
             {

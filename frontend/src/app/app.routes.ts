@@ -146,6 +146,21 @@ export const routes: Routes = [
             (m) => m.SystemHealthComponent,
           ),
       },
+      {
+        path: 'admin/database',
+        canActivate: [roleGuard],
+        data: {
+          roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR', 'AUDITOR', 'IT_MANAGER'],
+        },
+        loadComponent: () =>
+          import('./features/admin/database-explorer/database-explorer.component').then(
+            (m) => m.DatabaseExplorerComponent,
+          ),
+      },
+      {
+        path: 'admin/drizzle',
+        redirectTo: 'admin/database',
+      },
     ],
   },
   {
