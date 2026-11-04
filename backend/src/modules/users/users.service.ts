@@ -396,63 +396,41 @@ export class UsersService {
           : Boolean(query.isActive)
         : undefined;
 
-    if (this.dbService.getConnectionStatus()) {
-      const conditions: any[] = [];
+    if (this.prisma.isConnected) {
+      const where: any = {};
 
       if (roleFilter) {
-        conditions.push(eq(schema.users.roleCode, roleFilter));
+        where.roleCode = roleFilter;
       }
       if (query.departmentId) {
-        conditions.push(eq(schema.users.departmentId, query.departmentId));
+        where.departmentId = query.departmentId;
       }
       if (activeFilter !== undefined) {
-        conditions.push(eq(schema.users.isActive, activeFilter));
+        where.isActive = activeFilter;
       }
       if (query.search) {
-        const pattern = `%${query.search.trim()}%`;
-        conditions.push(
-          or(
-            ilike(schema.users.firstName, pattern),
-            ilike(schema.users.lastName, pattern),
-            ilike(schema.users.email, pattern),
-            ilike(schema.users.referenceId, pattern),
-            ilike(schema.users.jobTitle, pattern),
-          ),
-        );
+        const pattern = query.search.trim();
+        where.OR = [
+          { firstName: { contains: pattern, mode: 'insensitive' } },
+          { lastName: { contains: pattern, mode: 'insensitive' } },
+          { email: { contains: pattern, mode: 'insensitive' } },
+          { referenceId: { contains: pattern, mode: 'insensitive' } },
+          { jobTitle: { contains: pattern, mode: 'insensitive' } },
+        ];
       }
 
-      const rows = await this.dbService.db
-        .select({
-          id: schema.users.id,
-          referenceId: schema.users.referenceId,
-          employeeCode: schema.users.employeeCode,
-          email: schema.users.email,
-          personalEmail: schema.users.personalEmail,
-          firstName: schema.users.firstName,
-          lastName: schema.users.lastName,
-          phone: schema.users.phone,
-          avatarUrl: schema.users.avatarUrl,
-          roleCode: schema.users.roleCode,
-          departmentId: schema.users.departmentId,
-          departmentName: schema.departments.name,
-          teamId: schema.users.teamId,
-          designationId: schema.users.designationId,
-          managerId: schema.users.managerId,
-          jobTitle: schema.users.jobTitle,
-          employmentType: schema.users.employmentType,
-          joiningDate: schema.users.joiningDate,
-          workLocation: schema.users.workLocation,
-          hasLoginAccount: schema.users.hasLoginAccount,
-          accountStatus: schema.users.accountStatus,
-          isActive: schema.users.isActive,
-          createdAt: schema.users.createdAt,
-        })
-        .from(schema.users)
-        .leftJoin(schema.departments, eq(schema.users.departmentId, schema.departments.id))
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(desc(schema.users.createdAt));
+      const rows = await this.prisma.user.findMany({
+        where,
+        include: {
+          department: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
 
-      return rows;
+      return rows.map((u) => ({
+        ...u,
+        departmentName: u.department?.name,
+      }));
     }
 
     return this.memoryUsers.filter((u) => {
@@ -473,40 +451,21 @@ export class UsersService {
   }
 
   async findOne(id: string) {
-    if (this.dbService.getConnectionStatus()) {
-      const [user] = await this.dbService.db
-        .select({
-          id: schema.users.id,
-          referenceId: schema.users.referenceId,
-          employeeCode: schema.users.employeeCode,
-          email: schema.users.email,
-          personalEmail: schema.users.personalEmail,
-          firstName: schema.users.firstName,
-          lastName: schema.users.lastName,
-          phone: schema.users.phone,
-          avatarUrl: schema.users.avatarUrl,
-          roleCode: schema.users.roleCode,
-          departmentId: schema.users.departmentId,
-          departmentName: schema.departments.name,
-          teamId: schema.users.teamId,
-          designationId: schema.users.designationId,
-          managerId: schema.users.managerId,
-          jobTitle: schema.users.jobTitle,
-          employmentType: schema.users.employmentType,
-          joiningDate: schema.users.joiningDate,
-          workLocation: schema.users.workLocation,
-          hasLoginAccount: schema.users.hasLoginAccount,
-          accountStatus: schema.users.accountStatus,
-          isActive: schema.users.isActive,
-          createdAt: schema.users.createdAt,
-        })
-        .from(schema.users)
-        .leftJoin(schema.departments, eq(schema.users.departmentId, schema.departments.id))
-        .where(or(eq(schema.users.id, id), eq(schema.users.referenceId, id)))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const user = await this.prisma.user.findFirst({
+        where: {
+          OR: [{ id }, { referenceId: id }],
+        },
+        include: {
+          department: true,
+        },
+      });
 
       if (!user) throw new NotFoundException(`Employee '${id}' not found`);
-      return user;
+      return {
+        ...user,
+        departmentName: user.department?.name,
+      };
     }
 
     const user = this.memoryUsers.find((u) => u.id === id || u.referenceId === id);
@@ -522,7 +481,7 @@ export class UsersService {
       throw new BadRequestException('An employee cannot report to themselves');
     }
 
-    if (this.dbService.getConnectionStatus()) {
+    if (this.prisma.isConnected) {
       const updateData: any = {
         updatedAt: new Date(),
       };
@@ -539,16 +498,16 @@ export class UsersService {
       if (dto.managerId !== undefined) updateData.managerId = dto.managerId;
       if (dto.jobTitle) updateData.jobTitle = dto.jobTitle.trim();
       if (dto.employmentType) updateData.employmentType = dto.employmentType;
-      if (dto.joiningDate) updateData.joiningDate = dto.joiningDate;
+      if (dto.joiningDate) updateData.joiningDate = new Date(dto.joiningDate);
       if (dto.workLocation) updateData.workLocation = dto.workLocation.trim();
       if (dto.hasLoginAccount !== undefined) updateData.hasLoginAccount = dto.hasLoginAccount;
       if (dto.accountStatus) updateData.accountStatus = dto.accountStatus;
       if (dto.isActive !== undefined) updateData.isActive = dto.isActive;
 
-      await this.dbService.db
-        .update(schema.users)
-        .set(updateData)
-        .where(eq(schema.users.id, existing.id));
+      await this.prisma.user.update({
+        where: { id: existing.id },
+        data: updateData,
+      });
 
       return this.findOne(existing.id);
     }
@@ -561,23 +520,23 @@ export class UsersService {
   async archive(id: string, actorUser?: any) {
     const existing = await this.findOne(id);
 
-    if (this.dbService.getConnectionStatus()) {
-      await this.dbService.db
-        .update(schema.users)
-        .set({
+    if (this.prisma.isConnected) {
+      await this.prisma.user.update({
+        where: { id: existing.id },
+        data: {
           isActive: false,
           accountStatus: AccountStatus.ARCHIVED,
           archivedAt: new Date(),
           archivedById: actorUser?.id || null,
           updatedAt: new Date(),
-        })
-        .where(eq(schema.users.id, existing.id));
+        },
+      });
 
       // Revoke all active sessions
-      await this.dbService.db
-        .update(schema.userSessions)
-        .set({ isRevoked: true, updatedAt: new Date() })
-        .where(eq(schema.userSessions.userId, existing.id));
+      await this.prisma.userSession.updateMany({
+        where: { userId: existing.id },
+        data: { isRevoked: true, updatedAt: new Date() },
+      });
 
       return { success: true, message: `Employee ${existing.referenceId} safely archived` };
     }
@@ -590,15 +549,15 @@ export class UsersService {
 
   async reactivate(id: string) {
     const existing = await this.findOne(id);
-    if (this.dbService.getConnectionStatus()) {
-      await this.dbService.db
-        .update(schema.users)
-        .set({
+    if (this.prisma.isConnected) {
+      await this.prisma.user.update({
+        where: { id: existing.id },
+        data: {
           isActive: true,
           accountStatus: AccountStatus.ACTIVE,
           updatedAt: new Date(),
-        })
-        .where(eq(schema.users.id, existing.id));
+        },
+      });
 
       return { success: true, message: `Employee ${existing.referenceId} reactivated` };
     }
@@ -614,11 +573,10 @@ export class UsersService {
   }
 
   async findSubordinates(managerId: string) {
-    if (this.dbService.getConnectionStatus()) {
-      return this.dbService.db
-        .select()
-        .from(schema.users)
-        .where(and(eq(schema.users.managerId, managerId), eq(schema.users.isActive, true)));
+    if (this.prisma.isConnected) {
+      return this.prisma.user.findMany({
+        where: { managerId, isActive: true },
+      });
     }
 
     return this.memoryUsers.filter((u) => u.managerId === managerId && u.isActive);

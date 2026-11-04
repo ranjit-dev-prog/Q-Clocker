@@ -1,8 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
-import * as schema from '../../database/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class RolesService {
@@ -82,11 +81,11 @@ export class RolesService {
   // In-memory custom roles storage
   private customRoles: any[] = [];
 
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll() {
-    if (this.dbService.getConnectionStatus()) {
-      const dbRoles = await this.dbService.db.select().from(schema.roles);
+    if (this.prisma.isConnected) {
+      const dbRoles = await this.prisma.role.findMany();
       if (dbRoles.length > 0) {
         return dbRoles.map((r) => ({
           ...r,
@@ -105,12 +104,12 @@ export class RolesService {
   }
 
   async findOne(id: string) {
-    if (this.dbService.getConnectionStatus()) {
-      const [role] = await this.dbService.db
-        .select()
-        .from(schema.roles)
-        .where(eq(schema.roles.id, id))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const role = await this.prisma.role.findFirst({
+        where: {
+          OR: [{ id }, { code: id }],
+        },
+      });
 
       if (role) {
         return {
@@ -137,26 +136,23 @@ export class RolesService {
   async create(dto: { name: string; code: string; description?: string; permissions?: string[] }) {
     const code = dto.code.toUpperCase().replace(/\s+/g, '_');
 
-    if (this.dbService.getConnectionStatus()) {
-      const existing = await this.dbService.db
-        .select()
-        .from(schema.roles)
-        .where(eq(schema.roles.code, code))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const existing = await this.prisma.role.findUnique({
+        where: { code },
+      });
 
-      if (existing.length > 0) {
+      if (existing) {
         throw new ConflictException(`Role with code '${code}' already exists`);
       }
 
-      const [newRole] = await this.dbService.db
-        .insert(schema.roles)
-        .values({
+      const newRole = await this.prisma.role.create({
+        data: {
           name: dto.name.trim(),
           code,
           description: dto.description?.trim() || null,
           isSystem: false,
-        })
-        .returning();
+        },
+      });
 
       return newRole;
     }
