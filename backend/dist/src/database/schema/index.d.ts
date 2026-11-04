@@ -7270,9 +7270,13 @@ export declare const usersRelations: import("drizzle-orm").Relations<"users", {
     department: import("drizzle-orm").One<"departments", false>;
     team: import("drizzle-orm").One<"teams", false>;
     manager: import("drizzle-orm").One<"users", false>;
+    managedDepartments: import("drizzle-orm").Many<"departments">;
+    ledTeams: import("drizzle-orm").Many<"teams">;
+    subordinates: import("drizzle-orm").Many<"users">;
     sessions: import("drizzle-orm").Many<"user_sessions">;
     assignedTasks: import("drizzle-orm").Many<"task_assignments">;
     createdTasks: import("drizzle-orm").Many<"tasks">;
+    reviewedTasks: import("drizzle-orm").Many<"tasks">;
     requestedTickets: import("drizzle-orm").Many<"tickets">;
     assignedTickets: import("drizzle-orm").Many<"tickets">;
     workLogs: import("drizzle-orm").Many<"work_logs">;
@@ -7298,6 +7302,7 @@ export declare const tasksRelations: import("drizzle-orm").Relations<"tasks", {
     comments: import("drizzle-orm").Many<"task_comments">;
     attachments: import("drizzle-orm").Many<"task_attachments">;
     dependencies: import("drizzle-orm").Many<"task_dependencies">;
+    dependents: import("drizzle-orm").Many<"task_dependencies">;
     timeEntries: import("drizzle-orm").Many<"task_time_entries">;
     workLogs: import("drizzle-orm").Many<"work_logs">;
 }>;
@@ -7313,6 +7318,10 @@ export declare const taskCommentsRelations: import("drizzle-orm").Relations<"tas
 export declare const taskAttachmentsRelations: import("drizzle-orm").Relations<"task_attachments", {
     task: import("drizzle-orm").One<"tasks", true>;
     uploader: import("drizzle-orm").One<"users", true>;
+}>;
+export declare const taskDependenciesRelations: import("drizzle-orm").Relations<"task_dependencies", {
+    task: import("drizzle-orm").One<"tasks", true>;
+    dependsOnTask: import("drizzle-orm").One<"tasks", true>;
 }>;
 export declare const ticketsRelations: import("drizzle-orm").Relations<"tickets", {
     requester: import("drizzle-orm").One<"users", true>;
@@ -7382,6 +7391,16 @@ export declare const performanceReviewsRelations: import("drizzle-orm").Relation
 }>;
 export declare const auditLogsRelations: import("drizzle-orm").Relations<"audit_logs", {
     user: import("drizzle-orm").One<"users", false>;
+}>;
+export declare const projectsRelations: import("drizzle-orm").Relations<"projects", {
+    tasks: import("drizzle-orm").Many<"tasks">;
+}>;
+export declare const assetsRelations: import("drizzle-orm").Relations<"assets", {
+    assignedTo: import("drizzle-orm").One<"users", false>;
+    department: import("drizzle-orm").One<"departments", false>;
+}>;
+export declare const slaPoliciesRelations: import("drizzle-orm").Relations<"sla_policies", {
+    tickets: import("drizzle-orm").Many<"tickets">;
 }>;
 export declare const payrollBatches: import("drizzle-orm/pg-core").PgTableWithColumns<{
     name: "payroll_batches";
@@ -8455,3 +8474,18 @@ export declare const appSettings: import("drizzle-orm/pg-core").PgTableWithColum
 }>;
 export type AppSetting = typeof appSettings.$inferSelect;
 export type NewAppSetting = typeof appSettings.$inferInsert;
+export declare const payrollBatchesRelations: import("drizzle-orm").Relations<"payroll_batches", {
+    processedBy: import("drizzle-orm").One<"users", false>;
+    payslips: import("drizzle-orm").Many<"payslips">;
+}>;
+export declare const payslipsRelations: import("drizzle-orm").Relations<"payslips", {
+    batch: import("drizzle-orm").One<"payroll_batches", false>;
+    employee: import("drizzle-orm").One<"users", true>;
+}>;
+export declare const taxDeclarationsRelations: import("drizzle-orm").Relations<"tax_declarations", {
+    employee: import("drizzle-orm").One<"users", true>;
+    verifiedBy: import("drizzle-orm").One<"users", false>;
+}>;
+export declare const lifecycleEventsRelations: import("drizzle-orm").Relations<"lifecycle_events", {
+    employee: import("drizzle-orm").One<"users", true>;
+}>;

@@ -808,9 +808,13 @@ export const usersRelations = relations(users, ({ one, many }) => ({
     references: [users.id],
     relationName: 'managerSubordinates',
   }),
+  managedDepartments: many(departments, { relationName: 'departmentManager' }),
+  ledTeams: many(teams, { relationName: 'teamLead' }),
+  subordinates: many(users, { relationName: 'managerSubordinates' }),
   sessions: many(userSessions),
   assignedTasks: many(taskAssignments),
   createdTasks: many(tasks, { relationName: 'taskCreator' }),
+  reviewedTasks: many(tasks, { relationName: 'taskReviewer' }),
   requestedTickets: many(tickets, { relationName: 'ticketRequester' }),
   assignedTickets: many(tickets, { relationName: 'ticketTechnician' }),
   workLogs: many(workLogs),
@@ -858,6 +862,7 @@ export const tasksRelations = relations(tasks, ({ one, many }) => ({
   comments: many(taskComments),
   attachments: many(taskAttachments),
   dependencies: many(taskDependencies, { relationName: 'primaryTask' }),
+  dependents: many(taskDependencies, { relationName: 'dependentTask' }),
   timeEntries: many(taskTimeEntries),
   workLogs: many(workLogs),
 }));
@@ -896,6 +901,19 @@ export const taskAttachmentsRelations = relations(taskAttachments, ({ one }) => 
   uploader: one(users, {
     fields: [taskAttachments.uploadedById],
     references: [users.id],
+  }),
+}));
+
+export const taskDependenciesRelations = relations(taskDependencies, ({ one }) => ({
+  task: one(tasks, {
+    fields: [taskDependencies.taskId],
+    references: [tasks.id],
+    relationName: 'primaryTask',
+  }),
+  dependsOnTask: one(tasks, {
+    fields: [taskDependencies.dependsOnTaskId],
+    references: [tasks.id],
+    relationName: 'dependentTask',
   }),
 }));
 
@@ -1087,6 +1105,25 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   }),
 }));
 
+export const projectsRelations = relations(projects, ({ many }) => ({
+  tasks: many(tasks),
+}));
+
+export const assetsRelations = relations(assets, ({ one }) => ({
+  assignedTo: one(users, {
+    fields: [assets.assignedToId],
+    references: [users.id],
+  }),
+  department: one(departments, {
+    fields: [assets.departmentId],
+    references: [departments.id],
+  }),
+}));
+
+export const slaPoliciesRelations = relations(slaPolicies, ({ many }) => ({
+  tickets: many(tickets),
+}));
+
 // =============================================================
 // 12. PAYROLL AUTOMATION & PAYSLIPS
 // =============================================================
@@ -1189,3 +1226,40 @@ export const appSettings = pgTable('app_settings', {
 
 export type AppSetting = typeof appSettings.$inferSelect;
 export type NewAppSetting = typeof appSettings.$inferInsert;
+
+export const payrollBatchesRelations = relations(payrollBatches, ({ one, many }) => ({
+  processedBy: one(users, {
+    fields: [payrollBatches.processedById],
+    references: [users.id],
+  }),
+  payslips: many(payslips),
+}));
+
+export const payslipsRelations = relations(payslips, ({ one }) => ({
+  batch: one(payrollBatches, {
+    fields: [payslips.batchId],
+    references: [payrollBatches.id],
+  }),
+  employee: one(users, {
+    fields: [payslips.employeeId],
+    references: [users.id],
+  }),
+}));
+
+export const taxDeclarationsRelations = relations(taxDeclarations, ({ one }) => ({
+  employee: one(users, {
+    fields: [taxDeclarations.employeeId],
+    references: [users.id],
+  }),
+  verifiedBy: one(users, {
+    fields: [taxDeclarations.verifiedById],
+    references: [users.id],
+  }),
+}));
+
+export const lifecycleEventsRelations = relations(lifecycleEvents, ({ one }) => ({
+  employee: one(users, {
+    fields: [lifecycleEvents.employeeId],
+    references: [users.id],
+  }),
+}));

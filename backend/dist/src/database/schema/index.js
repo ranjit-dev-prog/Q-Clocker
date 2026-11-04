@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.attendanceEventsRelations = exports.workLogsRelations = exports.ticketHistoryRelations = exports.ticketCommentsRelations = exports.ticketsRelations = exports.taskAttachmentsRelations = exports.taskCommentsRelations = exports.taskAssignmentsRelations = exports.tasksRelations = exports.userSessionsRelations = exports.usersRelations = exports.teamsRelations = exports.departmentsRelations = exports.rolePermissionsRelations = exports.permissionsRelations = exports.rolesRelations = exports.auditLogs = exports.performanceReviews = exports.notifications = exports.reminders = exports.followUps = exports.approvals = exports.timesheetEntries = exports.timesheets = exports.ticketTimeEntries = exports.taskTimeEntries = exports.workSessions = exports.attendanceEvents = exports.workLogs = exports.ticketHistory = exports.ticketComments = exports.tickets = exports.slaPolicies = exports.ticketSubcategories = exports.ticketCategories = exports.taskDependencies = exports.taskAttachments = exports.taskComments = exports.taskAssignments = exports.tasks = exports.assets = exports.projects = exports.userSessions = exports.users = exports.designations = exports.teams = exports.departments = exports.rolePermissions = exports.permissions = exports.roles = void 0;
-exports.appSettings = exports.lifecycleEvents = exports.taxDeclarations = exports.payslips = exports.payrollBatches = exports.auditLogsRelations = exports.performanceReviewsRelations = exports.notificationsRelations = exports.remindersRelations = exports.followUpsRelations = exports.approvalsRelations = exports.timesheetEntriesRelations = exports.timesheetsRelations = exports.ticketTimeEntriesRelations = exports.taskTimeEntriesRelations = exports.workSessionsRelations = void 0;
+exports.workLogsRelations = exports.ticketHistoryRelations = exports.ticketCommentsRelations = exports.ticketsRelations = exports.taskDependenciesRelations = exports.taskAttachmentsRelations = exports.taskCommentsRelations = exports.taskAssignmentsRelations = exports.tasksRelations = exports.userSessionsRelations = exports.usersRelations = exports.teamsRelations = exports.departmentsRelations = exports.rolePermissionsRelations = exports.permissionsRelations = exports.rolesRelations = exports.auditLogs = exports.performanceReviews = exports.notifications = exports.reminders = exports.followUps = exports.approvals = exports.timesheetEntries = exports.timesheets = exports.ticketTimeEntries = exports.taskTimeEntries = exports.workSessions = exports.attendanceEvents = exports.workLogs = exports.ticketHistory = exports.ticketComments = exports.tickets = exports.slaPolicies = exports.ticketSubcategories = exports.ticketCategories = exports.taskDependencies = exports.taskAttachments = exports.taskComments = exports.taskAssignments = exports.tasks = exports.assets = exports.projects = exports.userSessions = exports.users = exports.designations = exports.teams = exports.departments = exports.rolePermissions = exports.permissions = exports.roles = void 0;
+exports.lifecycleEventsRelations = exports.taxDeclarationsRelations = exports.payslipsRelations = exports.payrollBatchesRelations = exports.appSettings = exports.lifecycleEvents = exports.taxDeclarations = exports.payslips = exports.payrollBatches = exports.slaPoliciesRelations = exports.assetsRelations = exports.projectsRelations = exports.auditLogsRelations = exports.performanceReviewsRelations = exports.notificationsRelations = exports.remindersRelations = exports.followUpsRelations = exports.approvalsRelations = exports.timesheetEntriesRelations = exports.timesheetsRelations = exports.ticketTimeEntriesRelations = exports.taskTimeEntriesRelations = exports.workSessionsRelations = exports.attendanceEventsRelations = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 exports.roles = (0, pg_core_1.pgTable)('roles', {
@@ -604,9 +604,13 @@ exports.usersRelations = (0, drizzle_orm_1.relations)(exports.users, ({ one, man
         references: [exports.users.id],
         relationName: 'managerSubordinates',
     }),
+    managedDepartments: many(exports.departments, { relationName: 'departmentManager' }),
+    ledTeams: many(exports.teams, { relationName: 'teamLead' }),
+    subordinates: many(exports.users, { relationName: 'managerSubordinates' }),
     sessions: many(exports.userSessions),
     assignedTasks: many(exports.taskAssignments),
     createdTasks: many(exports.tasks, { relationName: 'taskCreator' }),
+    reviewedTasks: many(exports.tasks, { relationName: 'taskReviewer' }),
     requestedTickets: many(exports.tickets, { relationName: 'ticketRequester' }),
     assignedTickets: many(exports.tickets, { relationName: 'ticketTechnician' }),
     workLogs: many(exports.workLogs),
@@ -652,6 +656,7 @@ exports.tasksRelations = (0, drizzle_orm_1.relations)(exports.tasks, ({ one, man
     comments: many(exports.taskComments),
     attachments: many(exports.taskAttachments),
     dependencies: many(exports.taskDependencies, { relationName: 'primaryTask' }),
+    dependents: many(exports.taskDependencies, { relationName: 'dependentTask' }),
     timeEntries: many(exports.taskTimeEntries),
     workLogs: many(exports.workLogs),
 }));
@@ -687,6 +692,18 @@ exports.taskAttachmentsRelations = (0, drizzle_orm_1.relations)(exports.taskAtta
     uploader: one(exports.users, {
         fields: [exports.taskAttachments.uploadedById],
         references: [exports.users.id],
+    }),
+}));
+exports.taskDependenciesRelations = (0, drizzle_orm_1.relations)(exports.taskDependencies, ({ one }) => ({
+    task: one(exports.tasks, {
+        fields: [exports.taskDependencies.taskId],
+        references: [exports.tasks.id],
+        relationName: 'primaryTask',
+    }),
+    dependsOnTask: one(exports.tasks, {
+        fields: [exports.taskDependencies.dependsOnTaskId],
+        references: [exports.tasks.id],
+        relationName: 'dependentTask',
     }),
 }));
 exports.ticketsRelations = (0, drizzle_orm_1.relations)(exports.tickets, ({ one, many }) => ({
@@ -861,6 +878,22 @@ exports.auditLogsRelations = (0, drizzle_orm_1.relations)(exports.auditLogs, ({ 
         references: [exports.users.id],
     }),
 }));
+exports.projectsRelations = (0, drizzle_orm_1.relations)(exports.projects, ({ many }) => ({
+    tasks: many(exports.tasks),
+}));
+exports.assetsRelations = (0, drizzle_orm_1.relations)(exports.assets, ({ one }) => ({
+    assignedTo: one(exports.users, {
+        fields: [exports.assets.assignedToId],
+        references: [exports.users.id],
+    }),
+    department: one(exports.departments, {
+        fields: [exports.assets.departmentId],
+        references: [exports.departments.id],
+    }),
+}));
+exports.slaPoliciesRelations = (0, drizzle_orm_1.relations)(exports.slaPolicies, ({ many }) => ({
+    tickets: many(exports.tickets),
+}));
 exports.payrollBatches = (0, pg_core_1.pgTable)('payroll_batches', {
     id: (0, pg_core_1.uuid)('id').defaultRandom().primaryKey(),
     batchNumber: (0, pg_core_1.varchar)('batch_number', { length: 30 }).notNull().unique(),
@@ -936,4 +969,37 @@ exports.appSettings = (0, pg_core_1.pgTable)('app_settings', {
     updatedById: (0, pg_core_1.uuid)('updated_by_id').references(() => exports.users.id, { onDelete: 'set null' }),
     updatedAt: (0, pg_core_1.timestamp)('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
+exports.payrollBatchesRelations = (0, drizzle_orm_1.relations)(exports.payrollBatches, ({ one, many }) => ({
+    processedBy: one(exports.users, {
+        fields: [exports.payrollBatches.processedById],
+        references: [exports.users.id],
+    }),
+    payslips: many(exports.payslips),
+}));
+exports.payslipsRelations = (0, drizzle_orm_1.relations)(exports.payslips, ({ one }) => ({
+    batch: one(exports.payrollBatches, {
+        fields: [exports.payslips.batchId],
+        references: [exports.payrollBatches.id],
+    }),
+    employee: one(exports.users, {
+        fields: [exports.payslips.employeeId],
+        references: [exports.users.id],
+    }),
+}));
+exports.taxDeclarationsRelations = (0, drizzle_orm_1.relations)(exports.taxDeclarations, ({ one }) => ({
+    employee: one(exports.users, {
+        fields: [exports.taxDeclarations.employeeId],
+        references: [exports.users.id],
+    }),
+    verifiedBy: one(exports.users, {
+        fields: [exports.taxDeclarations.verifiedById],
+        references: [exports.users.id],
+    }),
+}));
+exports.lifecycleEventsRelations = (0, drizzle_orm_1.relations)(exports.lifecycleEvents, ({ one }) => ({
+    employee: one(exports.users, {
+        fields: [exports.lifecycleEvents.employeeId],
+        references: [exports.users.id],
+    }),
+}));
 //# sourceMappingURL=index.js.map
