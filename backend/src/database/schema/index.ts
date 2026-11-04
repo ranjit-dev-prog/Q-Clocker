@@ -1086,3 +1086,106 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// =============================================================
+// 12. PAYROLL AUTOMATION & PAYSLIPS
+// =============================================================
+
+export const payrollBatches = pgTable('payroll_batches', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  batchNumber: varchar('batch_number', { length: 30 }).notNull().unique(),
+  month: integer('month').notNull(),
+  year: integer('year').notNull(),
+  totalDisbursed: numeric('total_disbursed', { precision: 12, scale: 2 }).default('0.00').notNull(),
+  employeeCount: integer('employee_count').default(0).notNull(),
+  status: varchar('status', { length: 30 }).default('PROCESSED').notNull(),
+  processedById: uuid('processed_by_id').references(() => users.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type PayrollBatch = typeof payrollBatches.$inferSelect;
+export type NewPayrollBatch = typeof payrollBatches.$inferInsert;
+
+export const payslips = pgTable('payslips', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  referenceId: varchar('reference_id', { length: 30 }).notNull().unique(),
+  batchId: uuid('batch_id').references(() => payrollBatches.id, { onDelete: 'cascade' }),
+  employeeId: uuid('employee_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  month: integer('month').notNull(),
+  year: integer('year').notNull(),
+  basicPay: numeric('basic_pay', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  hra: numeric('hra', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  allowances: numeric('allowances', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  overtimePay: numeric('overtime_pay', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  grossEarnings: numeric('gross_earnings', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  taxDeduction: numeric('tax_deduction', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  pfDeduction: numeric('pf_deduction', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  insurance: numeric('insurance', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  unpaidLeaveDeductions: numeric('unpaid_leave_deductions', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  totalDeductions: numeric('total_deductions', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  netSalary: numeric('net_salary', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  pdfUrl: text('pdf_url'),
+  isEncrypted: boolean('is_encrypted').default(true).notNull(),
+  status: varchar('status', { length: 30 }).default('GENERATED').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type Payslip = typeof payslips.$inferSelect;
+export type NewPayslip = typeof payslips.$inferInsert;
+
+export const taxDeclarations = pgTable('tax_declarations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  employeeId: uuid('employee_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  financialYear: varchar('financial_year', { length: 15 }).notNull(),
+  regime: varchar('regime', { length: 20 }).default('NEW').notNull(),
+  section80c: numeric('section_80c', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  section80d: numeric('section_80d', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  hraRentPaid: numeric('hra_rent_paid', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  homeLoanInterest: numeric('home_loan_interest', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  otherExemptions: numeric('other_exemptions', { precision: 10, scale: 2 }).default('0.00').notNull(),
+  status: varchar('status', { length: 30 }).default('SUBMITTED').notNull(),
+  verifiedById: uuid('verified_by_id').references(() => users.id, { onDelete: 'set null' }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type TaxDeclaration = typeof taxDeclarations.$inferSelect;
+export type NewTaxDeclaration = typeof taxDeclarations.$inferInsert;
+
+// =============================================================
+// 13. WORKFORCE LIFECYCLE EVENTS & REMINDERS
+// =============================================================
+
+export const lifecycleEvents = pgTable('lifecycle_events', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  employeeId: uuid('employee_id')
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  eventType: varchar('event_type', { length: 50 }).notNull(),
+  eventDate: date('event_date').notNull(),
+  title: varchar('title', { length: 150 }).notNull(),
+  description: text('description'),
+  urgency: varchar('urgency', { length: 20 }).default('UPCOMING').notNull(),
+  actionTaken: boolean('action_taken').default(false).notNull(),
+  congratulationsCount: integer('congratulations_count').default(0).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type LifecycleEvent = typeof lifecycleEvents.$inferSelect;
+export type NewLifecycleEvent = typeof lifecycleEvents.$inferInsert;
+
+export const appSettings = pgTable('app_settings', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  key: varchar('key', { length: 100 }).notNull().unique(),
+  value: text('value').notNull(),
+  category: varchar('category', { length: 50 }).default('GENERAL').notNull(),
+  description: text('description'),
+  updatedById: uuid('updated_by_id').references(() => users.id, { onDelete: 'set null' }),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+export type AppSetting = typeof appSettings.$inferSelect;
+export type NewAppSetting = typeof appSettings.$inferInsert;
