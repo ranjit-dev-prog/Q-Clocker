@@ -45,3 +45,4 @@ export class CreateTaskFromTicketDto {
   @IsOptional()
   estimatedHours?: number;
 }
+

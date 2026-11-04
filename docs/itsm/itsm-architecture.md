@@ -125,3 +125,4 @@ erDiagram
 - Enables technicians to spin off dedicated remediation tasks from an active incident (`POST /tickets/:id/tasks`).
 - Enables technicians to link existing tasks (`POST /tickets/:id/link-task`).
 - Maintains complete operational independence: resolving an incident does not prematurely cancel tasks, and completing a task does not close an incident without verification.
+

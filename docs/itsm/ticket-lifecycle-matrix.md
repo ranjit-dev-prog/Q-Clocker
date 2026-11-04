@@ -85,3 +85,4 @@ A ticket **cannot** transition to `REOPENED` unless:
 2. `reopenCount` is automatically incremented.
 3. `reopenedAt` timestamp is stamped.
 4. `resolvedAt` and `resolutionNotes` are cleared to reflect active investigation status.
+

@@ -56,3 +56,4 @@ When transitioning back to active work (`IN_PROGRESS`):
 - $\text{slaPausedAt} = \text{null}$
 - $\text{resolutionDueAt} \leftarrow \text{resolutionDueAt} + (\Delta t_{\text{pause}} \times 1000)$
 - $\text{slaStatus} = \text{WITHIN\_SLA}$
+

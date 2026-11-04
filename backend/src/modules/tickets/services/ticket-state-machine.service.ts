@@ -140,3 +140,4 @@ export class TicketStateMachineService {
     return this.validTransitions[currentStatus] || [];
   }
 }
+

@@ -52,3 +52,4 @@ When an incident requires complex infrastructure remediation:
 ### 3.2 Replying & Confirming
 - When the technician requests clarification (`PENDING_USER`), post a comment to automatically resume the ticket.
 - Once marked `RESOLVED`, review the resolution notes. If the problem recurs, click **Reopen Ticket** within 72 hours with a short explanation.
+
