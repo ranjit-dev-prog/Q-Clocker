@@ -102,7 +102,7 @@ export declare class AuthService {
         success: boolean;
         message: string;
     }>;
-    adminResetPassword(userId: string, dto: AdminResetPasswordDto): Promise<{
+    adminResetPassword(userId: string, dto?: AdminResetPasswordDto): Promise<{
         success: boolean;
         temporaryPassword: string;
         requirePasswordChange: boolean;

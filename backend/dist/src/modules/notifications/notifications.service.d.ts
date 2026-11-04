@@ -36,4 +36,13 @@ export declare class NotificationsService {
         entityType?: 'TICKET' | 'TASK' | 'WORK_LOG' | 'SYSTEM';
         entityId?: string | null;
     }): Promise<NotificationItem>;
+    createNotification(data: {
+        userId: string;
+        title: string;
+        message: string;
+        type?: any;
+        entityType?: any;
+        entityId?: string | null;
+        link?: string;
+    }): Promise<NotificationItem>;
 }

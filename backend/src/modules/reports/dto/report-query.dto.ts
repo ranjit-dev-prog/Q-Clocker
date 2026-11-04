@@ -27,3 +27,4 @@ export class ReportQueryDto {
   @IsOptional()
   format?: 'json' | 'xlsx' | 'csv';
 }
+

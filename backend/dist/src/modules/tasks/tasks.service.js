@@ -18,9 +18,6 @@ const common_1 = require("@nestjs/common");
 const database_service_1 = require("../../database/database.service");
 const schema = require("../../database/schema");
 const drizzle_orm_1 = require("drizzle-orm");
-const update_task_dto_1 = require("./dto/update-task.dto");
-const task_query_dto_1 = require("./dto/task-query.dto");
-const task_comment_dto_1 = require("./dto/task-comment.dto");
 const reference_id_util_1 = require("../../common/utils/reference-id.util");
 const enums_1 = require("../../common/enums");
 const notifications_service_1 = require("../notifications/notifications.service");
@@ -243,16 +240,314 @@ let TasksService = TasksService_1 = class TasksService {
                 userId: assigneeId,
                 title: 'Task Assigned',
                 message: `You were assigned as lead to task ${newTask.referenceId}: "${newTask.title}"`,
-                type: 'TASK_ASSIGNED',
+                type: 'TASK',
                 link: '/tasks',
             });
         }
-        createdAt: new Date(),
-            updatedAt;
-        new Date(),
-        ;
+        this.demoTasks.unshift(newTask);
+        return newTask;
     }
-    ;
+    async findAll(query, user) {
+        if (this.dbService.getConnectionStatus()) {
+            const conditions = [];
+            if (query.status) {
+                conditions.push((0, drizzle_orm_1.eq)(schema.tasks.status, query.status));
+            }
+            if (query.priority) {
+                conditions.push((0, drizzle_orm_1.eq)(schema.tasks.priority, query.priority));
+            }
+            if (query.departmentId) {
+                conditions.push((0, drizzle_orm_1.eq)(schema.tasks.departmentId, query.departmentId));
+            }
+            if (query.teamId) {
+                conditions.push((0, drizzle_orm_1.eq)(schema.tasks.teamId, query.teamId));
+            }
+            if (query.category) {
+                conditions.push((0, drizzle_orm_1.eq)(schema.tasks.category, query.category));
+            }
+            if (query.search) {
+                const searchPattern = `%${query.search.trim()}%`;
+                conditions.push((0, drizzle_orm_1.or)((0, drizzle_orm_1.ilike)(schema.tasks.title, searchPattern), (0, drizzle_orm_1.ilike)(schema.tasks.referenceId, searchPattern), (0, drizzle_orm_1.ilike)(schema.tasks.description, searchPattern)));
+            }
+            if (user.role === enums_1.UserRole.EMPLOYEE) {
+            }
+            const rows = await this.dbService.db
+                .select({
+                id: schema.tasks.id,
+                referenceId: schema.tasks.referenceId,
+                taskNumber: schema.tasks.taskNumber,
+                title: schema.tasks.title,
+                description: schema.tasks.description,
+                priority: schema.tasks.priority,
+                category: schema.tasks.category,
+                status: schema.tasks.status,
+                completionPercentage: schema.tasks.completionPercentage,
+                startDate: schema.tasks.startDate,
+                dueDate: schema.tasks.dueDate,
+                estimatedHours: schema.tasks.estimatedHours,
+                actualHours: schema.tasks.actualHours,
+                createdById: schema.tasks.createdById,
+                reviewedById: schema.tasks.reviewedById,
+                departmentId: schema.tasks.departmentId,
+                teamId: schema.tasks.teamId,
+                createdAt: schema.tasks.createdAt,
+                updatedAt: schema.tasks.updatedAt,
+            })
+                .from(schema.tasks)
+                .where(conditions.length > 0 ? (0, drizzle_orm_1.and)(...conditions) : undefined)
+                .orderBy((0, drizzle_orm_1.desc)(schema.tasks.createdAt));
+            const now = new Date();
+            return rows.map((t) => ({
+                ...t,
+                isOverdue: t.status !== enums_1.TaskStatus.COMPLETED &&
+                    t.status !== enums_1.TaskStatus.CANCELLED &&
+                    new Date(t.dueDate) < now,
+            }));
+        }
+        const now = new Date();
+        return this.demoTasks
+            .filter((t) => {
+            if (query.status && t.status !== query.status)
+                return false;
+            if (query.priority && t.priority !== query.priority)
+                return false;
+            if (query.departmentId && t.departmentId !== query.departmentId)
+                return false;
+            if (query.search) {
+                const q = query.search.toLowerCase();
+                return (t.title.toLowerCase().includes(q) ||
+                    t.referenceId.toLowerCase().includes(q) ||
+                    t.description?.toLowerCase().includes(q));
+            }
+            return true;
+        })
+            .map((t) => ({
+            ...t,
+            isOverdue: t.status !== enums_1.TaskStatus.COMPLETED &&
+                t.status !== enums_1.TaskStatus.CANCELLED &&
+                new Date(t.dueDate) < now,
+        }));
+    }
+    async findById(id) {
+        if (this.dbService.getConnectionStatus()) {
+            const [task] = await this.dbService.db
+                .select()
+                .from(schema.tasks)
+                .where((0, drizzle_orm_1.or)((0, drizzle_orm_1.eq)(schema.tasks.id, id), (0, drizzle_orm_1.eq)(schema.tasks.referenceId, id)))
+                .limit(1);
+            if (!task) {
+                throw new common_1.NotFoundException(`Task with ID or Reference '${id}' not found`);
+            }
+            const assignments = await this.dbService.db
+                .select({
+                id: schema.taskAssignments.id,
+                employeeId: schema.taskAssignments.employeeId,
+                assignedById: schema.taskAssignments.assignedById,
+                assignedAt: schema.taskAssignments.assignedAt,
+                employeeFirstName: schema.users.firstName,
+                employeeLastName: schema.users.lastName,
+                employeeEmail: schema.users.email,
+            })
+                .from(schema.taskAssignments)
+                .leftJoin(schema.users, (0, drizzle_orm_1.eq)(schema.taskAssignments.employeeId, schema.users.id))
+                .where((0, drizzle_orm_1.eq)(schema.taskAssignments.taskId, task.id));
+            const comments = await this.dbService.db
+                .select({
+                id: schema.taskComments.id,
+                comment: schema.taskComments.comment,
+                isInternal: schema.taskComments.isInternal,
+                createdAt: schema.taskComments.createdAt,
+                authorFirstName: schema.users.firstName,
+                authorLastName: schema.users.lastName,
+                authorRole: schema.users.roleCode,
+            })
+                .from(schema.taskComments)
+                .leftJoin(schema.users, (0, drizzle_orm_1.eq)(schema.taskComments.userId, schema.users.id))
+                .where((0, drizzle_orm_1.eq)(schema.taskComments.taskId, task.id))
+                .orderBy((0, drizzle_orm_1.desc)(schema.taskComments.createdAt));
+            const dependencies = await this.dbService.db
+                .select()
+                .from(schema.taskDependencies)
+                .where((0, drizzle_orm_1.eq)(schema.taskDependencies.taskId, task.id));
+            const now = new Date();
+            return {
+                ...task,
+                isOverdue: task.status !== enums_1.TaskStatus.COMPLETED &&
+                    task.status !== enums_1.TaskStatus.CANCELLED &&
+                    new Date(task.dueDate) < now,
+                assignments,
+                comments,
+                dependencies,
+            };
+        }
+        const task = this.demoTasks.find((t) => t.id === id || t.referenceId === id);
+        if (!task) {
+            throw new common_1.NotFoundException(`Task with ID or Reference '${id}' not found`);
+        }
+        const comments = this.demoComments.filter((c) => c.taskId === task.id);
+        return {
+            ...task,
+            isOverdue: task.status !== enums_1.TaskStatus.COMPLETED &&
+                task.status !== enums_1.TaskStatus.CANCELLED &&
+                new Date(task.dueDate) < new Date(),
+            assignments: [
+                {
+                    employeeId: task.assignedEmployeeId,
+                    employeeFirstName: task.assignedEmployeeName?.split(' ')[0] || 'David',
+                    employeeLastName: task.assignedEmployeeName?.split(' ')[1] || 'Ross',
+                },
+            ],
+            comments,
+            dependencies: [],
+        };
+    }
+    async update(id, updateTaskDto, user) {
+        if (this.dbService.getConnectionStatus()) {
+            const [existing] = await this.dbService.db
+                .select()
+                .from(schema.tasks)
+                .where((0, drizzle_orm_1.or)((0, drizzle_orm_1.eq)(schema.tasks.id, id), (0, drizzle_orm_1.eq)(schema.tasks.referenceId, id)))
+                .limit(1);
+            if (!existing) {
+                throw new common_1.NotFoundException(`Task with ID '${id}' not found`);
+            }
+            const updateData = {
+                updatedAt: new Date(),
+            };
+            if (updateTaskDto.title)
+                updateData.title = updateTaskDto.title.trim();
+            if (updateTaskDto.description !== undefined)
+                updateData.description = updateTaskDto.description;
+            if (updateTaskDto.priority)
+                updateData.priority = updateTaskDto.priority;
+            if (updateTaskDto.category)
+                updateData.category = updateTaskDto.category;
+            if (updateTaskDto.status)
+                updateData.status = updateTaskDto.status;
+            if (updateTaskDto.completionPercentage !== undefined)
+                updateData.completionPercentage = updateTaskDto.completionPercentage;
+            if (updateTaskDto.estimatedHours !== undefined)
+                updateData.estimatedHours = updateTaskDto.estimatedHours.toFixed(2);
+            if (updateTaskDto.actualHours !== undefined)
+                updateData.actualHours = updateTaskDto.actualHours.toFixed(2);
+            if (updateTaskDto.startDate)
+                updateData.startDate = new Date(updateTaskDto.startDate);
+            if (updateTaskDto.dueDate)
+                updateData.dueDate = new Date(updateTaskDto.dueDate);
+            if (updateTaskDto.reviewerId)
+                updateData.reviewedById = updateTaskDto.reviewerId;
+            if (updateTaskDto.reviewFeedback) {
+                updateData.reviewFeedback = updateTaskDto.reviewFeedback;
+                updateData.reviewedAt = new Date();
+            }
+            if (updateTaskDto.status === enums_1.TaskStatus.COMPLETED) {
+                updateData.completedAt = new Date();
+                updateData.completionPercentage = 100;
+            }
+            await this.dbService.db
+                .update(schema.tasks)
+                .set(updateData)
+                .where((0, drizzle_orm_1.eq)(schema.tasks.id, existing.id));
+            if (updateTaskDto.assignedEmployeeId) {
+                await this.dbService.db.insert(schema.taskAssignments).values({
+                    taskId: existing.id,
+                    employeeId: updateTaskDto.assignedEmployeeId,
+                    assignedById: user.id,
+                });
+            }
+            return this.findById(existing.id);
+        }
+        const task = this.demoTasks.find((t) => t.id === id || t.referenceId === id);
+        if (!task) {
+            throw new common_1.NotFoundException(`Task with ID '${id}' not found`);
+        }
+        Object.assign(task, {
+            ...updateTaskDto,
+            updatedAt: new Date(),
+        });
+        if (updateTaskDto.status === enums_1.TaskStatus.COMPLETED) {
+            task.completedAt = new Date();
+            task.completionPercentage = 100;
+        }
+        return task;
+    }
+    async updateStatus(id, dto, user) {
+        return this.update(id, {
+            status: dto.status,
+            completionPercentage: dto.completionPercentage,
+            actualHours: dto.actualHours,
+            reviewFeedback: dto.feedback,
+        }, user);
+    }
+    async addComment(id, dto, user) {
+        const task = await this.findById(id);
+        if (this.dbService.getConnectionStatus()) {
+            const [newComment] = await this.dbService.db
+                .insert(schema.taskComments)
+                .values({
+                taskId: task.id,
+                userId: user.id,
+                comment: dto.comment.trim(),
+                isInternal: dto.isInternal || false,
+            })
+                .returning();
+            return newComment;
+        }
+        const comment = {
+            id: crypto.randomUUID(),
+            taskId: task.id,
+            userId: user.id,
+            userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+            comment: dto.comment.trim(),
+            isInternal: dto.isInternal || false,
+            createdAt: new Date(),
+        };
+        this.demoComments.unshift(comment);
+        return comment;
+    }
+    async getComments(id) {
+        const task = await this.findById(id);
+        if (this.dbService.getConnectionStatus()) {
+            return this.dbService.db
+                .select({
+                id: schema.taskComments.id,
+                comment: schema.taskComments.comment,
+                isInternal: schema.taskComments.isInternal,
+                createdAt: schema.taskComments.createdAt,
+                authorFirstName: schema.users.firstName,
+                authorLastName: schema.users.lastName,
+                authorRole: schema.users.roleCode,
+            })
+                .from(schema.taskComments)
+                .leftJoin(schema.users, (0, drizzle_orm_1.eq)(schema.taskComments.userId, schema.users.id))
+                .where((0, drizzle_orm_1.eq)(schema.taskComments.taskId, task.id))
+                .orderBy((0, drizzle_orm_1.desc)(schema.taskComments.createdAt));
+        }
+        return this.demoComments.filter((c) => c.taskId === task.id);
+    }
+    async getKanbanBoard(user) {
+        const allTasks = await this.findAll({}, user);
+        const backlog = allTasks.filter((t) => t.status === enums_1.TaskStatus.DRAFT ||
+            t.status === enums_1.TaskStatus.ASSIGNED ||
+            t.status === enums_1.TaskStatus.ACCEPTED);
+        const inProgress = allTasks.filter((t) => t.status === enums_1.TaskStatus.IN_PROGRESS || t.status === enums_1.TaskStatus.ON_HOLD);
+        const review = allTasks.filter((t) => t.status === enums_1.TaskStatus.PENDING_REVIEW);
+        const completed = allTasks.filter((t) => t.status === enums_1.TaskStatus.COMPLETED);
+        return {
+            backlog,
+            inProgress,
+            review,
+            completed,
+            stats: {
+                total: allTasks.length,
+                backlogCount: backlog.length,
+                inProgressCount: inProgress.length,
+                reviewCount: review.length,
+                completedCount: completed.length,
+                overdueCount: allTasks.filter((t) => t.isOverdue).length,
+            },
+        };
+    }
 };
 exports.TasksService = TasksService;
 exports.TasksService = TasksService = TasksService_1 = __decorate([
@@ -261,321 +556,4 @@ exports.TasksService = TasksService = TasksService_1 = __decorate([
     __metadata("design:paramtypes", [database_service_1.DatabaseService,
         notifications_service_1.NotificationsService])
 ], TasksService);
-this.demoTasks.unshift(newTask);
-return newTask;
-async;
-findAll(query, task_query_dto_1.TaskQueryDto, user, any);
-{
-    if (this.dbService.getConnectionStatus()) {
-        const conditions = [];
-        if (query.status) {
-            conditions.push((0, drizzle_orm_1.eq)(schema.tasks.status, query.status));
-        }
-        if (query.priority) {
-            conditions.push((0, drizzle_orm_1.eq)(schema.tasks.priority, query.priority));
-        }
-        if (query.departmentId) {
-            conditions.push((0, drizzle_orm_1.eq)(schema.tasks.departmentId, query.departmentId));
-        }
-        if (query.teamId) {
-            conditions.push((0, drizzle_orm_1.eq)(schema.tasks.teamId, query.teamId));
-        }
-        if (query.category) {
-            conditions.push((0, drizzle_orm_1.eq)(schema.tasks.category, query.category));
-        }
-        if (query.search) {
-            const searchPattern = `%${query.search.trim()}%`;
-            conditions.push((0, drizzle_orm_1.or)((0, drizzle_orm_1.ilike)(schema.tasks.title, searchPattern), (0, drizzle_orm_1.ilike)(schema.tasks.referenceId, searchPattern), (0, drizzle_orm_1.ilike)(schema.tasks.description, searchPattern)));
-        }
-        if (user.role === enums_1.UserRole.EMPLOYEE) {
-        }
-        const rows = await this.dbService.db
-            .select({
-            id: schema.tasks.id,
-            referenceId: schema.tasks.referenceId,
-            taskNumber: schema.tasks.taskNumber,
-            title: schema.tasks.title,
-            description: schema.tasks.description,
-            priority: schema.tasks.priority,
-            category: schema.tasks.category,
-            status: schema.tasks.status,
-            completionPercentage: schema.tasks.completionPercentage,
-            startDate: schema.tasks.startDate,
-            dueDate: schema.tasks.dueDate,
-            estimatedHours: schema.tasks.estimatedHours,
-            actualHours: schema.tasks.actualHours,
-            createdById: schema.tasks.createdById,
-            reviewedById: schema.tasks.reviewedById,
-            departmentId: schema.tasks.departmentId,
-            teamId: schema.tasks.teamId,
-            createdAt: schema.tasks.createdAt,
-            updatedAt: schema.tasks.updatedAt,
-        })
-            .from(schema.tasks)
-            .where(conditions.length > 0 ? (0, drizzle_orm_1.and)(...conditions) : undefined)
-            .orderBy((0, drizzle_orm_1.desc)(schema.tasks.createdAt));
-        const now = new Date();
-        return rows.map((t) => ({
-            ...t,
-            isOverdue: t.status !== enums_1.TaskStatus.COMPLETED &&
-                t.status !== enums_1.TaskStatus.CANCELLED &&
-                new Date(t.dueDate) < now,
-        }));
-    }
-    const now = new Date();
-    return this.demoTasks
-        .filter((t) => {
-        if (query.status && t.status !== query.status)
-            return false;
-        if (query.priority && t.priority !== query.priority)
-            return false;
-        if (query.departmentId && t.departmentId !== query.departmentId)
-            return false;
-        if (query.search) {
-            const q = query.search.toLowerCase();
-            return (t.title.toLowerCase().includes(q) ||
-                t.referenceId.toLowerCase().includes(q) ||
-                t.description?.toLowerCase().includes(q));
-        }
-        return true;
-    })
-        .map((t) => ({
-        ...t,
-        isOverdue: t.status !== enums_1.TaskStatus.COMPLETED &&
-            t.status !== enums_1.TaskStatus.CANCELLED &&
-            new Date(t.dueDate) < now,
-    }));
-}
-async;
-findById(id, string);
-{
-    if (this.dbService.getConnectionStatus()) {
-        const [task] = await this.dbService.db
-            .select()
-            .from(schema.tasks)
-            .where((0, drizzle_orm_1.or)((0, drizzle_orm_1.eq)(schema.tasks.id, id), (0, drizzle_orm_1.eq)(schema.tasks.referenceId, id)))
-            .limit(1);
-        if (!task) {
-            throw new common_1.NotFoundException(`Task with ID or Reference '${id}' not found`);
-        }
-        const assignments = await this.dbService.db
-            .select({
-            id: schema.taskAssignments.id,
-            employeeId: schema.taskAssignments.employeeId,
-            assignedById: schema.taskAssignments.assignedById,
-            assignedAt: schema.taskAssignments.assignedAt,
-            employeeFirstName: schema.users.firstName,
-            employeeLastName: schema.users.lastName,
-            employeeEmail: schema.users.email,
-        })
-            .from(schema.taskAssignments)
-            .leftJoin(schema.users, (0, drizzle_orm_1.eq)(schema.taskAssignments.employeeId, schema.users.id))
-            .where((0, drizzle_orm_1.eq)(schema.taskAssignments.taskId, task.id));
-        const comments = await this.dbService.db
-            .select({
-            id: schema.taskComments.id,
-            comment: schema.taskComments.comment,
-            isInternal: schema.taskComments.isInternal,
-            createdAt: schema.taskComments.createdAt,
-            authorFirstName: schema.users.firstName,
-            authorLastName: schema.users.lastName,
-            authorRole: schema.users.roleCode,
-        })
-            .from(schema.taskComments)
-            .leftJoin(schema.users, (0, drizzle_orm_1.eq)(schema.taskComments.userId, schema.users.id))
-            .where((0, drizzle_orm_1.eq)(schema.taskComments.taskId, task.id))
-            .orderBy((0, drizzle_orm_1.desc)(schema.taskComments.createdAt));
-        const dependencies = await this.dbService.db
-            .select()
-            .from(schema.taskDependencies)
-            .where((0, drizzle_orm_1.eq)(schema.taskDependencies.taskId, task.id));
-        const now = new Date();
-        return {
-            ...task,
-            isOverdue: task.status !== enums_1.TaskStatus.COMPLETED &&
-                task.status !== enums_1.TaskStatus.CANCELLED &&
-                new Date(task.dueDate) < now,
-            assignments,
-            comments,
-            dependencies,
-        };
-    }
-    const task = this.demoTasks.find((t) => t.id === id || t.referenceId === id);
-    if (!task) {
-        throw new common_1.NotFoundException(`Task with ID or Reference '${id}' not found`);
-    }
-    const comments = this.demoComments.filter((c) => c.taskId === task.id);
-    return {
-        ...task,
-        isOverdue: task.status !== enums_1.TaskStatus.COMPLETED &&
-            task.status !== enums_1.TaskStatus.CANCELLED &&
-            new Date(task.dueDate) < new Date(),
-        assignments: [
-            {
-                employeeId: task.assignedEmployeeId,
-                employeeFirstName: task.assignedEmployeeName?.split(' ')[0] || 'David',
-                employeeLastName: task.assignedEmployeeName?.split(' ')[1] || 'Ross',
-            },
-        ],
-        comments,
-        dependencies: [],
-    };
-}
-async;
-update(id, string, updateTaskDto, update_task_dto_1.UpdateTaskDto, user, any);
-{
-    if (this.dbService.getConnectionStatus()) {
-        const [existing] = await this.dbService.db
-            .select()
-            .from(schema.tasks)
-            .where((0, drizzle_orm_1.or)((0, drizzle_orm_1.eq)(schema.tasks.id, id), (0, drizzle_orm_1.eq)(schema.tasks.referenceId, id)))
-            .limit(1);
-        if (!existing) {
-            throw new common_1.NotFoundException(`Task with ID '${id}' not found`);
-        }
-        const updateData = {
-            updatedAt: new Date(),
-        };
-        if (updateTaskDto.title)
-            updateData.title = updateTaskDto.title.trim();
-        if (updateTaskDto.description !== undefined)
-            updateData.description = updateTaskDto.description;
-        if (updateTaskDto.priority)
-            updateData.priority = updateTaskDto.priority;
-        if (updateTaskDto.category)
-            updateData.category = updateTaskDto.category;
-        if (updateTaskDto.status)
-            updateData.status = updateTaskDto.status;
-        if (updateTaskDto.completionPercentage !== undefined)
-            updateData.completionPercentage = updateTaskDto.completionPercentage;
-        if (updateTaskDto.estimatedHours !== undefined)
-            updateData.estimatedHours = updateTaskDto.estimatedHours.toFixed(2);
-        if (updateTaskDto.actualHours !== undefined)
-            updateData.actualHours = updateTaskDto.actualHours.toFixed(2);
-        if (updateTaskDto.startDate)
-            updateData.startDate = new Date(updateTaskDto.startDate);
-        if (updateTaskDto.dueDate)
-            updateData.dueDate = new Date(updateTaskDto.dueDate);
-        if (updateTaskDto.reviewerId)
-            updateData.reviewedById = updateTaskDto.reviewerId;
-        if (updateTaskDto.reviewFeedback) {
-            updateData.reviewFeedback = updateTaskDto.reviewFeedback;
-            updateData.reviewedAt = new Date();
-        }
-        if (updateTaskDto.status === enums_1.TaskStatus.COMPLETED) {
-            updateData.completedAt = new Date();
-            updateData.completionPercentage = 100;
-        }
-        await this.dbService.db
-            .update(schema.tasks)
-            .set(updateData)
-            .where((0, drizzle_orm_1.eq)(schema.tasks.id, existing.id));
-        if (updateTaskDto.assignedEmployeeId) {
-            await this.dbService.db.insert(schema.taskAssignments).values({
-                taskId: existing.id,
-                employeeId: updateTaskDto.assignedEmployeeId,
-                assignedById: user.id,
-            });
-        }
-        return this.findById(existing.id);
-    }
-    const task = this.demoTasks.find((t) => t.id === id || t.referenceId === id);
-    if (!task) {
-        throw new common_1.NotFoundException(`Task with ID '${id}' not found`);
-    }
-    Object.assign(task, {
-        ...updateTaskDto,
-        updatedAt: new Date(),
-    });
-    if (updateTaskDto.status === enums_1.TaskStatus.COMPLETED) {
-        task.completedAt = new Date();
-        task.completionPercentage = 100;
-    }
-    return task;
-}
-async;
-updateStatus(id, string, dto, update_task_dto_1.UpdateTaskStatusDto, user, any);
-{
-    return this.update(id, {
-        status: dto.status,
-        completionPercentage: dto.completionPercentage,
-        actualHours: dto.actualHours,
-        reviewFeedback: dto.feedback,
-    }, user);
-}
-async;
-addComment(id, string, dto, task_comment_dto_1.CreateTaskCommentDto, user, any);
-{
-    const task = await this.findById(id);
-    if (this.dbService.getConnectionStatus()) {
-        const [newComment] = await this.dbService.db
-            .insert(schema.taskComments)
-            .values({
-            taskId: task.id,
-            userId: user.id,
-            comment: dto.comment.trim(),
-            isInternal: dto.isInternal || false,
-        })
-            .returning();
-        return newComment;
-    }
-    const comment = {
-        id: crypto.randomUUID(),
-        taskId: task.id,
-        userId: user.id,
-        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
-        comment: dto.comment.trim(),
-        isInternal: dto.isInternal || false,
-        createdAt: new Date(),
-    };
-    this.demoComments.unshift(comment);
-    return comment;
-}
-async;
-getComments(id, string);
-{
-    const task = await this.findById(id);
-    if (this.dbService.getConnectionStatus()) {
-        return this.dbService.db
-            .select({
-            id: schema.taskComments.id,
-            comment: schema.taskComments.comment,
-            isInternal: schema.taskComments.isInternal,
-            createdAt: schema.taskComments.createdAt,
-            authorFirstName: schema.users.firstName,
-            authorLastName: schema.users.lastName,
-            authorRole: schema.users.roleCode,
-        })
-            .from(schema.taskComments)
-            .leftJoin(schema.users, (0, drizzle_orm_1.eq)(schema.taskComments.userId, schema.users.id))
-            .where((0, drizzle_orm_1.eq)(schema.taskComments.taskId, task.id))
-            .orderBy((0, drizzle_orm_1.desc)(schema.taskComments.createdAt));
-    }
-    return this.demoComments.filter((c) => c.taskId === task.id);
-}
-async;
-getKanbanBoard(user, any);
-{
-    const allTasks = await this.findAll({}, user);
-    const backlog = allTasks.filter((t) => t.status === enums_1.TaskStatus.DRAFT ||
-        t.status === enums_1.TaskStatus.ASSIGNED ||
-        t.status === enums_1.TaskStatus.ACCEPTED);
-    const inProgress = allTasks.filter((t) => t.status === enums_1.TaskStatus.IN_PROGRESS || t.status === enums_1.TaskStatus.ON_HOLD);
-    const review = allTasks.filter((t) => t.status === enums_1.TaskStatus.PENDING_REVIEW);
-    const completed = allTasks.filter((t) => t.status === enums_1.TaskStatus.COMPLETED);
-    return {
-        backlog,
-        inProgress,
-        review,
-        completed,
-        stats: {
-            total: allTasks.length,
-            backlogCount: backlog.length,
-            inProgressCount: inProgress.length,
-            reviewCount: review.length,
-            completedCount: completed.length,
-            overdueCount: allTasks.filter((t) => t.isOverdue).length,
-        },
-    };
-}
 //# sourceMappingURL=tasks.service.js.map

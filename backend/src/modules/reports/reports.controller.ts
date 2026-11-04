@@ -108,3 +108,4 @@ export class ReportsController {
     return res.end(buffer);
   }
 }
+

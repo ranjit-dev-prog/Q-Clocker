@@ -195,6 +195,16 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
         this.memoryNotifications.unshift(item);
         return item;
     }
+    async createNotification(data) {
+        return this.create({
+            userId: data.userId,
+            title: data.title,
+            message: data.message,
+            type: (['INFO', 'SUCCESS', 'WARNING', 'URGENT', 'TICKET', 'TASK', 'SYSTEM'].includes(data.type) ? data.type : 'INFO'),
+            entityType: data.entityType,
+            entityId: data.entityId,
+        });
+    }
 };
 exports.NotificationsService = NotificationsService;
 exports.NotificationsService = NotificationsService = NotificationsService_1 = __decorate([

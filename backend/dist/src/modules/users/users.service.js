@@ -927,7 +927,7 @@ EMP006,Priya,Nair,priya.nair@qclocker.io,Software Engineering,Full-Stack Softwar
                 report.insertedUsers.push({
                     id: created.id,
                     email: created.email,
-                    employeeCode: created.employeeCode,
+                    employeeCode: created.employeeCode || employeeCode,
                     temporaryPassword: tempPass,
                 });
             }

@@ -206,7 +206,7 @@ interface SecurityQuestion {
                 </div>
                 <div class="flex items-center gap-2 text-xs" [ngClass]="policy().hasSpecial ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'">
                   <span class="material-icons text-sm">{{ policy().hasSpecial ? 'check_circle' : 'radio_button_unchecked' }}</span>
-                  <span>At least one special character (!@#$%^&*...)</span>
+                  <span>At least one special character (!&#64;#$%^&*...)</span>
                 </div>
                 <div class="flex items-center gap-2 text-xs" [ngClass]="policy().matchesConfirm ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'">
                   <span class="material-icons text-sm">{{ policy().matchesConfirm ? 'check_circle' : 'radio_button_unchecked' }}</span>
@@ -384,3 +384,4 @@ export class ResetPasswordComponent implements OnInit {
     });
   }
 }
+

@@ -970,7 +970,7 @@ export class AuthService {
     return {
       success: true,
       temporaryPassword: tempPassword,
-      requirePasswordChange: dto.requirePasswordChange ?? true,
+      requirePasswordChange: dto?.requirePasswordChange ?? true,
       message: 'Temporary password generated successfully and all existing sessions terminated.',
     };
   }

@@ -898,7 +898,7 @@ EMP006,Priya,Nair,priya.nair@qclocker.io,Software Engineering,Full-Stack Softwar
       }
     } else {
       const workbook = new ExcelJS.Workbook();
-      await workbook.xlsx.load(file.buffer);
+      await workbook.xlsx.load(file.buffer as any);
       const sheet = workbook.getWorksheet(1) || workbook.worksheets[0];
       if (!sheet || sheet.rowCount < 2) {
         throw new BadRequestException('Workbook must contain at least one data row');
@@ -1023,7 +1023,7 @@ EMP006,Priya,Nair,priya.nair@qclocker.io,Software Engineering,Full-Stack Softwar
         report.insertedUsers.push({
           id: created.id,
           email: created.email,
-          employeeCode: created.employeeCode,
+          employeeCode: created.employeeCode || employeeCode,
           temporaryPassword: tempPass,
         });
       } catch (err: any) {

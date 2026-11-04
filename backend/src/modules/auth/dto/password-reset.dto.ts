@@ -57,3 +57,4 @@ export class AdminResetPasswordDto {
   @IsOptional()
   requirePasswordChange?: boolean;
 }
+

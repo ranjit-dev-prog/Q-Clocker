@@ -395,3 +395,4 @@ export class BulkUploadComponent {
     navigator.clipboard.writeText(text);
   }
 }
+
