@@ -4,9 +4,7 @@ import {
   ConflictException,
   Logger,
 } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
-import * as schema from '../../database/schema';
-import { eq, desc } from 'drizzle-orm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { CreateTeamDto } from './dto/create-team.dto';
@@ -101,6 +99,15 @@ export class DepartmentsService {
     },
     {
       id: '20000000-0000-0000-0000-000000000002',
+      departmentId: '10000000-0000-0000-0000-000000000002',
+      name: 'Frontend Design Systems',
+      description: 'Angular architecture, responsive dashboards, and microfrontends',
+      leadId: null,
+      leadName: 'Unassigned',
+      isActive: true,
+    },
+    {
+      id: '20000000-0000-0000-0000-000000000003',
       departmentId: '10000000-0000-0000-0000-000000000001',
       name: 'Helpdesk & Security Operations',
       description: 'Tier 1/2 IT Support, endpoint security, and access control',
@@ -110,33 +117,30 @@ export class DepartmentsService {
     },
   ];
 
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateDepartmentDto) {
     const code = dto.code.toUpperCase().trim();
 
-    if (this.dbService.getConnectionStatus()) {
-      const existing = await this.dbService.db
-        .select()
-        .from(schema.departments)
-        .where(eq(schema.departments.code, code))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const existing = await this.prisma.department.findUnique({
+        where: { code },
+      });
 
-      if (existing.length > 0) {
+      if (existing) {
         throw new ConflictException(`Department code '${code}' already exists`);
       }
 
-      const [newDept] = await this.dbService.db
-        .insert(schema.departments)
-        .values({
+      const newDept = await this.prisma.department.create({
+        data: {
           referenceId: generateReferenceId('DEP'),
           name: dto.name.trim(),
           code,
           description: dto.description,
           managerId: dto.managerId || null,
           isActive: true,
-        })
-        .returning();
+        },
+      });
 
       return newDept;
     }
@@ -165,22 +169,21 @@ export class DepartmentsService {
   }
 
   async findAll() {
-    if (this.dbService.getConnectionStatus()) {
-      return this.dbService.db
-        .select()
-        .from(schema.departments)
-        .orderBy(desc(schema.departments.createdAt));
+    if (this.prisma.isConnected) {
+      return this.prisma.department.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
     }
     return this.memoryDepts;
   }
 
   async findOne(id: string) {
-    if (this.dbService.getConnectionStatus()) {
-      const [dept] = await this.dbService.db
-        .select()
-        .from(schema.departments)
-        .where(eq(schema.departments.id, id))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const dept = await this.prisma.department.findFirst({
+        where: {
+          OR: [{ id }, { referenceId: id }, { code: id }],
+        },
+      });
 
       if (!dept) throw new NotFoundException('Department not found');
       return dept;
@@ -192,26 +195,25 @@ export class DepartmentsService {
   }
 
   async update(id: string, dto: UpdateDepartmentDto) {
-    if (this.dbService.getConnectionStatus()) {
-      const [existing] = await this.dbService.db
-        .select()
-        .from(schema.departments)
-        .where(eq(schema.departments.id, id))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const existing = await this.prisma.department.findFirst({
+        where: {
+          OR: [{ id }, { referenceId: id }],
+        },
+      });
 
       if (!existing) throw new NotFoundException('Department not found');
 
-      const [updated] = await this.dbService.db
-        .update(schema.departments)
-        .set({
+      const updated = await this.prisma.department.update({
+        where: { id: existing.id },
+        data: {
           name: dto.name || existing.name,
           description: dto.description !== undefined ? dto.description : existing.description,
           managerId: dto.managerId !== undefined ? dto.managerId : existing.managerId,
           isActive: dto.isActive !== undefined ? dto.isActive : existing.isActive,
           updatedAt: new Date(),
-        })
-        .where(eq(schema.departments.id, id))
-        .returning();
+        },
+      });
 
       return updated;
     }
@@ -227,14 +229,18 @@ export class DepartmentsService {
   }
 
   async remove(id: string) {
-    if (this.dbService.getConnectionStatus()) {
-      const [dept] = await this.dbService.db
-        .update(schema.departments)
-        .set({ isActive: false, updatedAt: new Date() })
-        .where(eq(schema.departments.id, id))
-        .returning();
+    if (this.prisma.isConnected) {
+      const existing = await this.prisma.department.findFirst({
+        where: { OR: [{ id }, { referenceId: id }] },
+      });
 
-      if (!dept) throw new NotFoundException('Department not found');
+      if (!existing) throw new NotFoundException('Department not found');
+
+      await this.prisma.department.update({
+        where: { id: existing.id },
+        data: { isActive: false, updatedAt: new Date() },
+      });
+
       return { message: 'Department deactivated successfully' };
     }
 
@@ -249,18 +255,17 @@ export class DepartmentsService {
   async createTeam(departmentId: string, dto: CreateTeamDto) {
     await this.findOne(departmentId);
 
-    if (this.dbService.getConnectionStatus()) {
-      const [newTeam] = await this.dbService.db
-        .insert(schema.teams)
-        .values({
+    if (this.prisma.isConnected) {
+      const newTeam = await this.prisma.team.create({
+        data: {
           referenceId: generateReferenceId('TEM'),
           departmentId,
           name: dto.name,
           leadId: dto.leadId || null,
           description: dto.description || null,
           isActive: true,
-        })
-        .returning();
+        },
+      });
 
       return newTeam;
     }
@@ -280,11 +285,10 @@ export class DepartmentsService {
   }
 
   async findTeams(departmentId: string) {
-    if (this.dbService.getConnectionStatus()) {
-      return this.dbService.db
-        .select()
-        .from(schema.teams)
-        .where(eq(schema.teams.departmentId, departmentId));
+    if (this.prisma.isConnected) {
+      return this.prisma.team.findMany({
+        where: { departmentId },
+      });
     }
 
     return this.memoryTeams.filter((t) => t.departmentId === departmentId);
@@ -300,7 +304,7 @@ export class DepartmentsService {
           name: dept.name,
           code: dept.code,
           referenceId: dept.referenceId,
-          head: dept.managerName || 'Unassigned Head',
+          head: (dept as any).managerName || 'Unassigned Head',
           teams: teams.map((t) => ({
             id: t.id,
             name: t.name,

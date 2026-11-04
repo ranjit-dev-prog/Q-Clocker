@@ -5,9 +5,7 @@ import {
   Logger,
   Optional,
 } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
-import * as schema from '../../database/schema';
-import { eq, desc, and, or, ilike, inArray } from 'drizzle-orm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { UpdateTaskDto, UpdateTaskStatusDto } from './dto/update-task.dto';
 import { TaskQueryDto } from './dto/task-query.dto';
@@ -141,7 +139,7 @@ export class TasksService {
   ];
 
   constructor(
-    private readonly dbService: DatabaseService,
+    private readonly prisma: PrismaService,
     @Optional() private readonly notificationsService?: NotificationsService,
   ) {}
 
@@ -150,10 +148,9 @@ export class TasksService {
     const taskNumber = referenceId;
     const assigneeId = createTaskDto.assignedEmployeeId || createTaskDto.leadAssigneeId || null;
 
-    if (this.dbService.getConnectionStatus()) {
-      const [newTask] = await this.dbService.db
-        .insert(schema.tasks)
-        .values({
+    if (this.prisma.isConnected) {
+      const newTask = await this.prisma.task.create({
+        data: {
           referenceId,
           taskNumber,
           title: createTaskDto.title.trim(),
@@ -165,21 +162,23 @@ export class TasksService {
           category: createTaskDto.category || 'General',
           startDate: new Date(createTaskDto.startDate),
           dueDate: new Date(createTaskDto.dueDate),
-          estimatedHours: createTaskDto.estimatedHours ? createTaskDto.estimatedHours.toFixed(2) : '0.00',
-          actualHours: '0.00',
+          estimatedHours: createTaskDto.estimatedHours ? createTaskDto.estimatedHours : 0,
+          actualHours: 0,
           status: createTaskDto.status || TaskStatus.ASSIGNED,
           completionPercentage: 0,
           createdById: user.id,
           reviewedById: createTaskDto.reviewerId || null,
-        })
-        .returning();
+        },
+      });
 
       // If assigned employee specified, record assignment
       if (assigneeId) {
-        await this.dbService.db.insert(schema.taskAssignments).values({
-          taskId: newTask.id,
-          employeeId: assigneeId,
-          assignedById: user.id,
+        await this.prisma.taskAssignment.create({
+          data: {
+            taskId: newTask.id,
+            employeeId: assigneeId,
+            assignedById: user.id,
+          },
         });
 
         if (this.notificationsService) {
@@ -208,10 +207,11 @@ export class TasksService {
 
       // If prerequisite dependency specified
       if (createTaskDto.dependsOnTaskId) {
-        await this.dbService.db.insert(schema.taskDependencies).values({
-          taskId: newTask.id,
-          dependsOnTaskId: createTaskDto.dependsOnTaskId,
-          dependencyType: 'BLOCKS',
+        await this.prisma.taskDependency.create({
+          data: {
+            taskId: newTask.id,
+            dependsOnTaskId: createTaskDto.dependsOnTaskId,
+          },
         });
       }
 
@@ -260,66 +260,37 @@ export class TasksService {
   }
 
   async findAll(query: TaskQueryDto, user: any) {
-    if (this.dbService.getConnectionStatus()) {
-      const conditions: any[] = [];
+    if (this.prisma.isConnected) {
+      const where: any = {};
 
       if (query.status) {
-        conditions.push(eq(schema.tasks.status, query.status));
+        where.status = query.status;
       }
       if (query.priority) {
-        conditions.push(eq(schema.tasks.priority, query.priority));
+        where.priority = query.priority;
       }
       if (query.departmentId) {
-        conditions.push(eq(schema.tasks.departmentId, query.departmentId));
+        where.departmentId = query.departmentId;
       }
       if (query.teamId) {
-        conditions.push(eq(schema.tasks.teamId, query.teamId));
+        where.teamId = query.teamId;
       }
       if (query.category) {
-        conditions.push(eq(schema.tasks.category, query.category));
+        where.category = query.category;
       }
       if (query.search) {
-        const searchPattern = `%${query.search.trim()}%`;
-        conditions.push(
-          or(
-            ilike(schema.tasks.title, searchPattern),
-            ilike(schema.tasks.referenceId, searchPattern),
-            ilike(schema.tasks.description, searchPattern),
-          ),
-        );
+        const pattern = query.search.trim();
+        where.OR = [
+          { title: { contains: pattern, mode: 'insensitive' } },
+          { referenceId: { contains: pattern, mode: 'insensitive' } },
+          { description: { contains: pattern, mode: 'insensitive' } },
+        ];
       }
 
-      // Restrict standard employees to their department or assigned tasks
-      if (user.role === UserRole.EMPLOYEE) {
-        // Can see tasks where they are creator or assigned
-        // For simplicity allow department or assignment
-      }
-
-      const rows = await this.dbService.db
-        .select({
-          id: schema.tasks.id,
-          referenceId: schema.tasks.referenceId,
-          taskNumber: schema.tasks.taskNumber,
-          title: schema.tasks.title,
-          description: schema.tasks.description,
-          priority: schema.tasks.priority,
-          category: schema.tasks.category,
-          status: schema.tasks.status,
-          completionPercentage: schema.tasks.completionPercentage,
-          startDate: schema.tasks.startDate,
-          dueDate: schema.tasks.dueDate,
-          estimatedHours: schema.tasks.estimatedHours,
-          actualHours: schema.tasks.actualHours,
-          createdById: schema.tasks.createdById,
-          reviewedById: schema.tasks.reviewedById,
-          departmentId: schema.tasks.departmentId,
-          teamId: schema.tasks.teamId,
-          createdAt: schema.tasks.createdAt,
-          updatedAt: schema.tasks.updatedAt,
-        })
-        .from(schema.tasks)
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(desc(schema.tasks.createdAt));
+      const rows = await this.prisma.task.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+      });
 
       // Calculate overdue flag dynamically
       const now = new Date();
@@ -328,6 +299,7 @@ export class TasksService {
         isOverdue:
           t.status !== TaskStatus.COMPLETED &&
           t.status !== TaskStatus.CANCELLED &&
+          t.dueDate &&
           new Date(t.dueDate) < now,
       }));
     }
@@ -359,53 +331,46 @@ export class TasksService {
   }
 
   async findById(id: string) {
-    if (this.dbService.getConnectionStatus()) {
-      const [task] = await this.dbService.db
-        .select()
-        .from(schema.tasks)
-        .where(or(eq(schema.tasks.id, id), eq(schema.tasks.referenceId, id)))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const task = await this.prisma.task.findFirst({
+        where: {
+          OR: [{ id }, { referenceId: id }],
+        },
+        include: {
+          assignments: {
+            include: { employee: true },
+          },
+          comments: {
+            include: { author: true },
+            orderBy: { createdAt: 'desc' },
+          },
+          dependencies: true,
+        },
+      });
 
       if (!task) {
         throw new NotFoundException(`Task with ID or Reference '${id}' not found`);
       }
 
-      // Fetch assignments
-      const assignments = await this.dbService.db
-        .select({
-          id: schema.taskAssignments.id,
-          employeeId: schema.taskAssignments.employeeId,
-          assignedById: schema.taskAssignments.assignedById,
-          assignedAt: schema.taskAssignments.assignedAt,
-          employeeFirstName: schema.users.firstName,
-          employeeLastName: schema.users.lastName,
-          employeeEmail: schema.users.email,
-        })
-        .from(schema.taskAssignments)
-        .leftJoin(schema.users, eq(schema.taskAssignments.employeeId, schema.users.id))
-        .where(eq(schema.taskAssignments.taskId, task.id));
+      const assignments = task.assignments.map((a) => ({
+        id: a.id,
+        employeeId: a.employeeId,
+        assignedById: a.assignedById,
+        assignedAt: a.assignedAt,
+        employeeFirstName: a.employee?.firstName,
+        employeeLastName: a.employee?.lastName,
+        employeeEmail: a.employee?.email,
+      }));
 
-      // Fetch comments
-      const comments = await this.dbService.db
-        .select({
-          id: schema.taskComments.id,
-          comment: schema.taskComments.comment,
-          isInternal: schema.taskComments.isInternal,
-          createdAt: schema.taskComments.createdAt,
-          authorFirstName: schema.users.firstName,
-          authorLastName: schema.users.lastName,
-          authorRole: schema.users.roleCode,
-        })
-        .from(schema.taskComments)
-        .leftJoin(schema.users, eq(schema.taskComments.userId, schema.users.id))
-        .where(eq(schema.taskComments.taskId, task.id))
-        .orderBy(desc(schema.taskComments.createdAt));
-
-      // Fetch dependencies
-      const dependencies = await this.dbService.db
-        .select()
-        .from(schema.taskDependencies)
-        .where(eq(schema.taskDependencies.taskId, task.id));
+      const comments = task.comments.map((c) => ({
+        id: c.id,
+        comment: c.comment,
+        isInternal: false,
+        createdAt: c.createdAt,
+        authorFirstName: c.author?.firstName,
+        authorLastName: c.author?.lastName,
+        authorRole: c.author?.roleCode,
+      }));
 
       const now = new Date();
       return {
@@ -413,10 +378,11 @@ export class TasksService {
         isOverdue:
           task.status !== TaskStatus.COMPLETED &&
           task.status !== TaskStatus.CANCELLED &&
+          task.dueDate &&
           new Date(task.dueDate) < now,
         assignments,
         comments,
-        dependencies,
+        dependencies: task.dependencies,
       };
     }
 
@@ -445,12 +411,10 @@ export class TasksService {
   }
 
   async update(id: string, updateTaskDto: UpdateTaskDto, user: any) {
-    if (this.dbService.getConnectionStatus()) {
-      const [existing] = await this.dbService.db
-        .select()
-        .from(schema.tasks)
-        .where(or(eq(schema.tasks.id, id), eq(schema.tasks.referenceId, id)))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const existing = await this.prisma.task.findFirst({
+        where: { OR: [{ id }, { referenceId: id }] },
+      });
 
       if (!existing) {
         throw new NotFoundException(`Task with ID '${id}' not found`);
@@ -468,9 +432,9 @@ export class TasksService {
       if (updateTaskDto.completionPercentage !== undefined)
         updateData.completionPercentage = updateTaskDto.completionPercentage;
       if (updateTaskDto.estimatedHours !== undefined)
-        updateData.estimatedHours = updateTaskDto.estimatedHours.toFixed(2);
+        updateData.estimatedHours = updateTaskDto.estimatedHours;
       if (updateTaskDto.actualHours !== undefined)
-        updateData.actualHours = updateTaskDto.actualHours.toFixed(2);
+        updateData.actualHours = updateTaskDto.actualHours;
       if (updateTaskDto.startDate) updateData.startDate = new Date(updateTaskDto.startDate);
       if (updateTaskDto.dueDate) updateData.dueDate = new Date(updateTaskDto.dueDate);
       if (updateTaskDto.reviewerId) updateData.reviewedById = updateTaskDto.reviewerId;
@@ -484,17 +448,28 @@ export class TasksService {
         updateData.completionPercentage = 100;
       }
 
-      await this.dbService.db
-        .update(schema.tasks)
-        .set(updateData)
-        .where(eq(schema.tasks.id, existing.id));
+      await this.prisma.task.update({
+        where: { id: existing.id },
+        data: updateData,
+      });
 
       if (updateTaskDto.assignedEmployeeId) {
-        // Upsert assignment
-        await this.dbService.db.insert(schema.taskAssignments).values({
-          taskId: existing.id,
-          employeeId: updateTaskDto.assignedEmployeeId,
-          assignedById: user.id,
+        await this.prisma.taskAssignment.upsert({
+          where: {
+            taskId_employeeId: {
+              taskId: existing.id,
+              employeeId: updateTaskDto.assignedEmployeeId,
+            },
+          },
+          update: {
+            assignedById: user.id,
+            assignedAt: new Date(),
+          },
+          create: {
+            taskId: existing.id,
+            employeeId: updateTaskDto.assignedEmployeeId,
+            assignedById: user.id,
+          },
         });
       }
 
@@ -538,16 +513,14 @@ export class TasksService {
   async addComment(id: string, dto: CreateTaskCommentDto, user: any) {
     const task = await this.findById(id);
 
-    if (this.dbService.getConnectionStatus()) {
-      const [newComment] = await this.dbService.db
-        .insert(schema.taskComments)
-        .values({
+    if (this.prisma.isConnected) {
+      const newComment = await this.prisma.taskComment.create({
+        data: {
           taskId: task.id,
           userId: user.id,
           comment: dto.comment.trim(),
-          isInternal: dto.isInternal || false,
-        })
-        .returning();
+        },
+      });
 
       return newComment;
     }
@@ -567,21 +540,22 @@ export class TasksService {
 
   async getComments(id: string) {
     const task = await this.findById(id);
-    if (this.dbService.getConnectionStatus()) {
-      return this.dbService.db
-        .select({
-          id: schema.taskComments.id,
-          comment: schema.taskComments.comment,
-          isInternal: schema.taskComments.isInternal,
-          createdAt: schema.taskComments.createdAt,
-          authorFirstName: schema.users.firstName,
-          authorLastName: schema.users.lastName,
-          authorRole: schema.users.roleCode,
-        })
-        .from(schema.taskComments)
-        .leftJoin(schema.users, eq(schema.taskComments.userId, schema.users.id))
-        .where(eq(schema.taskComments.taskId, task.id))
-        .orderBy(desc(schema.taskComments.createdAt));
+    if (this.prisma.isConnected) {
+      const comments = await this.prisma.taskComment.findMany({
+        where: { taskId: task.id },
+        include: { author: true },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return comments.map((c) => ({
+        id: c.id,
+        comment: c.comment,
+        isInternal: false,
+        createdAt: c.createdAt,
+        authorFirstName: c.author?.firstName,
+        authorLastName: c.author?.lastName,
+        authorRole: c.author?.roleCode,
+      }));
     }
 
     return this.demoComments.filter((c) => c.taskId === task.id);

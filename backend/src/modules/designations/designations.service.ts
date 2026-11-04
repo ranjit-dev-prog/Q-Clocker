@@ -1,9 +1,8 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
-import * as schema from '../../database/schema';
-import { eq } from 'drizzle-orm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateDesignationDto } from './dto/create-designation.dto';
 import { generateReferenceId } from '../../common/utils/reference-id.util';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class DesignationsService {
@@ -50,22 +49,24 @@ export class DesignationsService {
     },
   ];
 
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll() {
-    if (this.dbService.getConnectionStatus()) {
-      return this.dbService.db.select().from(schema.designations);
+    if (this.prisma.isConnected) {
+      return this.prisma.designation.findMany({
+        orderBy: { createdAt: 'desc' },
+      });
     }
     return this.demoDesignations;
   }
 
   async findOne(id: string) {
-    if (this.dbService.getConnectionStatus()) {
-      const [des] = await this.dbService.db
-        .select()
-        .from(schema.designations)
-        .where(eq(schema.designations.id, id))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const des = await this.prisma.designation.findFirst({
+        where: {
+          OR: [{ id }, { referenceId: id }, { code: id }],
+        },
+      });
 
       if (!des) throw new NotFoundException(`Designation '${id}' not found`);
       return des;
@@ -80,28 +81,25 @@ export class DesignationsService {
     const code = dto.code.toUpperCase().trim();
     const referenceId = generateReferenceId('DSG');
 
-    if (this.dbService.getConnectionStatus()) {
-      const existing = await this.dbService.db
-        .select()
-        .from(schema.designations)
-        .where(eq(schema.designations.code, code))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const existing = await this.prisma.designation.findUnique({
+        where: { code },
+      });
 
-      if (existing.length > 0) {
+      if (existing) {
         throw new ConflictException(`Designation with code '${code}' already exists`);
       }
 
-      const [newDes] = await this.dbService.db
-        .insert(schema.designations)
-        .values({
+      const newDes = await this.prisma.designation.create({
+        data: {
           referenceId,
           name: dto.name.trim(),
           code,
           departmentId: dto.departmentId || null,
           description: dto.description?.trim() || null,
           isActive: dto.isActive !== false,
-        })
-        .returning();
+        },
+      });
 
       return newDes;
     }
@@ -125,4 +123,3 @@ export class DesignationsService {
     return newDes;
   }
 }
-
