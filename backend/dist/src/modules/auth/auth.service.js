@@ -605,29 +605,29 @@ let AuthService = AuthService_1 = class AuthService {
             catch (err) {
             }
         }
+        const normalizedEmail = (email || '').toLowerCase().trim();
         if (!foundUser) {
-            const demo = this.demoAccounts.find((d) => d.email.toLowerCase() === email);
+            const demo = this.demoAccounts.find((d) => d.email.toLowerCase() === normalizedEmail ||
+                `${d.firstName}.${d.lastName}@qclocker.io`.toLowerCase() === normalizedEmail);
             if (demo)
                 foundUser = demo;
         }
         const resetToken = crypto.randomBytes(32).toString('hex');
-        if (foundUser) {
-            this.passwordResetTokens.set(resetToken, {
-                userId: foundUser.id,
-                email: foundUser.email,
-                token: resetToken,
-                expiresAt: Date.now() + 15 * 60 * 1000,
-                securityQuestions: {
-                    question1: 'What is your primary corporate employee reference ID?',
-                    answer1: (foundUser.referenceId || 'EMP001').toLowerCase().trim(),
-                    question2: 'What is your assigned enterprise department code?',
-                    answer2: 'it',
-                },
-                recoveryCode: 'q-clocker-recovery-key',
-                verified: false,
-            });
-            this.logger.log(`Password reset initiated for ${email}. Token valid for 15 minutes.`);
-        }
+        this.passwordResetTokens.set(resetToken, {
+            userId: foundUser ? foundUser.id : crypto.randomUUID(),
+            email: normalizedEmail,
+            token: resetToken,
+            expiresAt: Date.now() + 15 * 60 * 1000,
+            securityQuestions: {
+                question1: 'What is your primary corporate employee reference ID?',
+                answer1: (foundUser?.referenceId || 'EMP001').toLowerCase().trim(),
+                question2: 'What is your assigned enterprise department code?',
+                answer2: 'it',
+            },
+            recoveryCode: 'qc-recovery-emergency-key-2026',
+            verified: false,
+        });
+        this.logger.log(`Password reset initiated for ${normalizedEmail}. Token valid for 15 minutes.`);
         return {
             success: true,
             message: 'If an account exists with this corporate email address, password recovery instructions have been dispatched.',

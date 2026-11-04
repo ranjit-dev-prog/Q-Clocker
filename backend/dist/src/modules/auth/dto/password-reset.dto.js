@@ -27,6 +27,8 @@ class VerifyChallengeDto {
     answer1;
     answer2;
     recoveryCode;
+    recoveryPassphrase;
+    answers;
 }
 exports.VerifyChallengeDto = VerifyChallengeDto;
 __decorate([
@@ -53,6 +55,17 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], VerifyChallengeDto.prototype, "recoveryCode", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Personal recovery passphrase fallback alias' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], VerifyChallengeDto.prototype, "recoveryPassphrase", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Security question answers array' }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Array)
+], VerifyChallengeDto.prototype, "answers", void 0);
 class ResetPasswordDto {
     token;
     newPassword;

@@ -28,6 +28,15 @@ export class VerifyChallengeDto {
   @IsString()
   @IsOptional()
   recoveryCode?: string;
+
+  @ApiPropertyOptional({ description: 'Personal recovery passphrase fallback alias' })
+  @IsString()
+  @IsOptional()
+  recoveryPassphrase?: string;
+
+  @ApiPropertyOptional({ description: 'Security question answers array' })
+  @IsOptional()
+  answers?: Array<{ questionId: string; answer: string }>;
 }
 
 export class ResetPasswordDto {
