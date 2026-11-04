@@ -346,6 +346,16 @@ export class TicketsService {
         newValue: `Created ticket ${newTicket.referenceId} with Priority ${priorityCode}`,
       });
 
+      if (createTicketDto.assignedTechnicianId && this.notificationsService) {
+        this.notificationsService.createNotification({
+          userId: createTicketDto.assignedTechnicianId,
+          title: 'Ticket Assigned',
+          message: `You were assigned to ticket ${newTicket.referenceId}: "${newTicket.title}"`,
+          type: 'TICKET_ASSIGNED',
+          link: '/tickets',
+        });
+      }
+
       return this.findById(newTicket.id, user);
     }
 
@@ -401,6 +411,16 @@ export class TicketsService {
       changedAt: new Date(),
       changedByName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
     });
+
+    if (createTicketDto.assignedTechnicianId && this.notificationsService) {
+      this.notificationsService.createNotification({
+        userId: createTicketDto.assignedTechnicianId,
+        title: 'Ticket Assigned',
+        message: `You were assigned to ticket ${memoryTicket.referenceId}: "${memoryTicket.title}"`,
+        type: 'TICKET_ASSIGNED',
+        link: '/tickets',
+      });
+    }
 
     return memoryTicket;
   }

@@ -53,6 +53,15 @@ export class CreateTaskDto {
   @IsOptional()
   assignedEmployeeId?: string;
 
+  @ApiPropertyOptional({ description: 'Lead Assignee Employee UUID' })
+  @IsUUID()
+  @IsOptional()
+  leadAssigneeId?: string;
+
+  @ApiPropertyOptional({ description: 'Collaborator Employee UUIDs', type: [String] })
+  @IsOptional()
+  collaboratorIds?: string[];
+
   @ApiPropertyOptional({ description: 'Reviewer Employee UUID' })
   @IsUUID()
   @IsOptional()

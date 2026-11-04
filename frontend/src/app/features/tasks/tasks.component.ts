@@ -9,6 +9,7 @@ import {
 } from '@angular/cdk/drag-drop';
 import { TaskService, TaskItem, CreateTaskPayload } from '../../core/services/task.service';
 import { AuthService } from '../../core/services/auth.service';
+import { EmployeeService } from '../../core/services/employee.service';
 
 @Component({
   selector: 'app-tasks',
@@ -446,6 +447,20 @@ import { AuthService } from '../../core/services/auth.service';
                 class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
               />
             </div>
+
+            <div>
+              <label for="task-lead-assignee" class="block font-semibold text-slate-700 dark:text-slate-300 mb-1">Lead Assignee</label>
+              <select
+                id="task-lead-assignee"
+                [(ngModel)]="newLeadAssigneeId"
+                class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white"
+              >
+                <option value="">Self / Unassigned</option>
+                <option *ngFor="let emp of employeeService.employees()" [value]="emp.id">
+                  {{ emp.firstName }} {{ emp.lastName }} ({{ emp.roleCode }})
+                </option>
+              </select>
+            </div>
           </div>
 
           <div class="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
@@ -543,6 +558,7 @@ import { AuthService } from '../../core/services/auth.service';
 export class TasksComponent implements OnInit {
   taskService = inject(TaskService);
   authService = inject(AuthService);
+  employeeService = inject(EmployeeService);
 
   activeView = signal<'kanban' | 'list'>('kanban');
   showCreateModal = signal<boolean>(false);
@@ -564,6 +580,7 @@ export class TasksComponent implements OnInit {
   newTaskStartDate = new Date().toISOString().substring(0, 10);
   newTaskDueDate = new Date(Date.now() + 3 * 24 * 3600 * 1000).toISOString().substring(0, 10);
   newTaskEstHours = 4;
+  newLeadAssigneeId = '';
   newCommentText = '';
 
   ngOnInit() {
@@ -624,6 +641,7 @@ export class TasksComponent implements OnInit {
       startDate: new Date(this.newTaskStartDate).toISOString(),
       dueDate: new Date(this.newTaskDueDate).toISOString(),
       estimatedHours: this.newTaskEstHours,
+      assignedEmployeeId: this.newLeadAssigneeId || undefined,
       status: 'ASSIGNED',
     };
 

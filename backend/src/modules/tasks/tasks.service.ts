@@ -148,6 +148,7 @@ export class TasksService {
   async create(createTaskDto: CreateTaskDto, user: any) {
     const referenceId = generateReferenceId('TSK');
     const taskNumber = referenceId;
+    const assigneeId = createTaskDto.assignedEmployeeId || createTaskDto.leadAssigneeId || null;
 
     if (this.dbService.getConnectionStatus()) {
       const [newTask] = await this.dbService.db
@@ -174,12 +175,35 @@ export class TasksService {
         .returning();
 
       // If assigned employee specified, record assignment
-      if (createTaskDto.assignedEmployeeId) {
+      if (assigneeId) {
         await this.dbService.db.insert(schema.taskAssignments).values({
           taskId: newTask.id,
-          employeeId: createTaskDto.assignedEmployeeId,
+          employeeId: assigneeId,
           assignedById: user.id,
         });
+
+        if (this.notificationsService) {
+          this.notificationsService.createNotification({
+            userId: assigneeId,
+            title: 'Task Assigned',
+            message: `You were assigned as lead to task ${newTask.referenceId}: "${newTask.title}"`,
+            type: 'TASK_ASSIGNED',
+            link: '/tasks',
+          });
+        }
+      }
+
+      // If collaborators specified
+      if (createTaskDto.collaboratorIds && createTaskDto.collaboratorIds.length > 0 && this.notificationsService) {
+        for (const colId of createTaskDto.collaboratorIds) {
+          this.notificationsService.createNotification({
+            userId: colId,
+            title: 'Task Collaboration',
+            message: `You were added as a collaborator to task ${newTask.referenceId}: "${newTask.title}"`,
+            type: 'TASK_ASSIGNED',
+            link: '/tasks',
+          });
+        }
       }
 
       // If prerequisite dependency specified
@@ -215,9 +239,22 @@ export class TasksService {
       createdById: user.id,
       createdByName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'Admin User',
       reviewedById: createTaskDto.reviewerId || null,
-      assignedEmployeeId: createTaskDto.assignedEmployeeId || user.id,
-      assignedEmployeeName: createTaskDto.assignedEmployeeId ? 'Assigned Employee' : 'Self',
+      assignedEmployeeId: assigneeId || user.id,
+      assignedEmployeeName: assigneeId ? 'Assigned Employee' : 'Self',
       departmentName: 'Operations',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    if (assigneeId && this.notificationsService) {
+      this.notificationsService.createNotification({
+        userId: assigneeId,
+        title: 'Task Assigned',
+        message: `You were assigned as lead to task ${newTask.referenceId}: "${newTask.title}"`,
+        type: 'TASK_ASSIGNED',
+        link: '/tasks',
+      });
+    }
       createdAt: new Date(),
       updatedAt: new Date(),
     };
