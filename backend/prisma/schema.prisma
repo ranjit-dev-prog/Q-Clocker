@@ -1,0 +1,850 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// =============================================================
+// 1. ROLES & GRANULAR PERMISSIONS
+// =============================================================
+
+model Role {
+  id              String           @id @default(uuid()) @db.Uuid
+  code            String           @unique @db.VarChar(50)
+  name            String           @db.VarChar(100)
+  description     String?          @db.Text
+  isSystem        Boolean          @default(true) @map("is_system")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  users           User[]
+  rolePermissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id              String           @id @default(uuid()) @db.Uuid
+  code            String           @unique @db.VarChar(100)
+  name            String           @db.VarChar(150)
+  module          String           @db.VarChar(50)
+  description     String?          @db.Text
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  rolePermissions RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  id           String     @id @default(uuid()) @db.Uuid
+  roleId       String     @map("role_id") @db.Uuid
+  permissionId String     @map("permission_id") @db.Uuid
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@unique([roleId, permissionId], map: "uq_role_permission")
+  @@map("role_permissions")
+}
+
+// =============================================================
+// 2. DEPARTMENTS, TEAMS & DESIGNATIONS
+// =============================================================
+
+model Department {
+  id           String        @id @default(uuid()) @db.Uuid
+  referenceId  String        @unique @map("reference_id") @db.VarChar(20)
+  name         String        @unique @db.VarChar(100)
+  code         String        @unique @db.VarChar(20)
+  description  String?       @db.Text
+  managerId    String?       @map("manager_id") @db.Uuid
+  isActive     Boolean       @default(true) @map("is_active")
+  createdAt    DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime      @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  manager      User?         @relation("DepartmentManager", fields: [managerId], references: [id], onDelete: SetNull)
+  teams        Team[]
+  designations Designation[]
+  users        User[]        @relation("UserDepartment")
+  projects     Project[]
+  assets       Asset[]
+  tasks        Task[]
+  tickets      Ticket[]
+
+  @@map("departments")
+}
+
+model Team {
+  id           String     @id @default(uuid()) @db.Uuid
+  referenceId  String     @unique @map("reference_id") @db.VarChar(20)
+  name         String     @db.VarChar(100)
+  departmentId String     @map("department_id") @db.Uuid
+  leadId       String?    @map("lead_id") @db.Uuid
+  description  String?    @db.Text
+  isActive     Boolean    @default(true) @map("is_active")
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  lead         User?      @relation("TeamLead", fields: [leadId], references: [id], onDelete: SetNull)
+  users        User[]     @relation("UserTeam")
+  tasks        Task[]
+  tickets      Ticket[]   @relation("TicketAssignedTeam")
+
+  @@map("teams")
+}
+
+model Designation {
+  id           String      @id @default(uuid()) @db.Uuid
+  referenceId  String      @unique @map("reference_id") @db.VarChar(20)
+  name         String      @db.VarChar(100)
+  code         String      @unique @db.VarChar(50)
+  departmentId String?     @map("department_id") @db.Uuid
+  description  String?     @db.Text
+  isActive     Boolean     @default(true) @map("is_active")
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  users        User[]
+
+  @@map("designations")
+}
+
+// =============================================================
+// 3. USERS, EMPLOYEES & SESSIONS
+// =============================================================
+
+model User {
+  id                       String              @id @default(uuid()) @db.Uuid
+  referenceId              String              @unique @map("reference_id") @db.VarChar(20)
+  employeeCode             String?             @unique @map("employee_code") @db.VarChar(50)
+  email                    String              @unique @db.VarChar(255)
+  personalEmail            String?             @map("personal_email") @db.VarChar(255)
+  passwordHash             String              @map("password_hash") @db.VarChar(255)
+  firstName                String              @map("first_name") @db.VarChar(100)
+  lastName                 String              @map("last_name") @db.VarChar(100)
+  phone                    String?             @db.VarChar(30)
+  avatarUrl                String?             @map("avatar_url") @db.Text
+  roleId                   String              @map("role_id") @db.Uuid
+  roleCode                 String              @default("EMPLOYEE") @map("role_code") @db.VarChar(50)
+  departmentId             String?             @map("department_id") @db.Uuid
+  teamId                   String?             @map("team_id") @db.Uuid
+  designationId            String?             @map("designation_id") @db.Uuid
+  managerId                String?             @map("manager_id") @db.Uuid
+  jobTitle                 String?             @map("job_title") @db.VarChar(100)
+  employmentType           String              @default("FULL_TIME") @map("employment_type") @db.VarChar(50)
+  joiningDate              DateTime?           @map("joining_date") @db.Date
+  workLocation             String              @default("Headquarters") @map("work_location") @db.VarChar(100)
+  hasLoginAccount          Boolean             @default(true) @map("has_login_account")
+  accountStatus            String              @default("ACTIVE") @map("account_status") @db.VarChar(30)
+  invitationToken          String?             @map("invitation_token") @db.VarChar(255)
+  invitationTokenExpiresAt DateTime?           @map("invitation_token_expires_at") @db.Timestamptz
+  isActive                 Boolean             @default(true) @map("is_active")
+  lastLoginAt              DateTime?           @map("last_login_at") @db.Timestamptz
+  createdAt                DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt                DateTime            @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt                DateTime?           @map("deleted_at") @db.Timestamptz
+  archivedAt               DateTime?           @map("archived_at") @db.Timestamptz
+  archivedById             String?             @map("archived_by_id") @db.Uuid
+
+  role                     Role                @relation(fields: [roleId], references: [id])
+  department               Department?         @relation("UserDepartment", fields: [departmentId], references: [id], onDelete: SetNull)
+  team                     Team?               @relation("UserTeam", fields: [teamId], references: [id], onDelete: SetNull)
+  designation              Designation?        @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  manager                  User?               @relation("UserManager", fields: [managerId], references: [id], onDelete: SetNull)
+  subordinates             User[]              @relation("UserManager")
+  managedDepartments       Department[]        @relation("DepartmentManager")
+  ledTeams                 Team[]              @relation("TeamLead")
+  ledProjects              Project[]           @relation("ProjectLead")
+  assignedAssets           Asset[]             @relation("AssetAssignedUser")
+  sessions                 UserSession[]
+  createdTasks             Task[]              @relation("TaskCreator")
+  reviewedTasks            Task[]              @relation("TaskReviewer")
+  taskAssignments          TaskAssignment[]    @relation("AssignedEmployee")
+  assignedTasksBy          TaskAssignment[]    @relation("AssignedByUser")
+  taskComments             TaskComment[]
+  taskAttachments          TaskAttachment[]
+  requestedTickets         Ticket[]            @relation("TicketRequester")
+  assignedTickets          Ticket[]            @relation("TicketTechnician")
+  ticketComments           TicketComment[]
+  ticketHistory            TicketHistory[]
+  workLogs                 WorkLog[]           @relation("WorkLogEmployee")
+  verifiedWorkLogs         WorkLog[]           @relation("WorkLogVerifier")
+  attendanceEvents         AttendanceEvent[]   @relation("AttendanceEmployee")
+  verifiedAttendances      AttendanceEvent[]   @relation("AttendanceVerifier")
+  workSessions             WorkSession[]
+  taskTimeEntries          TaskTimeEntry[]
+  ticketTimeEntries        TicketTimeEntry[]
+  timesheets               Timesheet[]         @relation("TimesheetEmployee")
+  approvedTimesheets       Timesheet[]         @relation("TimesheetApprover")
+  requestedApprovals       Approval[]          @relation("ApprovalRequester")
+  assignedApprovals        Approval[]          @relation("ApprovalApprover")
+  ownedFollowUps           FollowUp[]          @relation("FollowUpOwner")
+  assignedFollowUps        FollowUp[]          @relation("FollowUpAssignedTo")
+  reminders                Reminder[]
+  notifications            Notification[]
+  performanceReviews       PerformanceReview[] @relation("ReviewEmployee")
+  conductedReviews         PerformanceReview[] @relation("ReviewReviewer")
+  auditLogs                AuditLog[]
+  processedPayrollBatches  PayrollBatch[]      @relation("BatchProcessor")
+  payslips                 Payslip[]
+  taxDeclarations          TaxDeclaration[]    @relation("TaxDeclarationEmployee")
+  verifiedTaxDeclarations  TaxDeclaration[]    @relation("TaxDeclarationVerifier")
+  lifecycleEvents          LifecycleEvent[]
+  updatedAppSettings       AppSetting[]
+
+  @@map("users")
+}
+
+model UserSession {
+  id               String   @id @default(uuid()) @db.Uuid
+  referenceId      String   @unique @map("reference_id") @db.VarChar(20)
+  userId           String   @map("user_id") @db.Uuid
+  refreshTokenHash String   @map("refresh_token_hash") @db.VarChar(255)
+  userAgent        String?  @map("user_agent") @db.Text
+  ipAddress        String?  @map("ip_address") @db.VarChar(50)
+  isRevoked        Boolean  @default(false) @map("is_revoked")
+  expiresAt        DateTime @map("expires_at") @db.Timestamptz
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_sessions")
+}
+
+// =============================================================
+// 4. PROJECTS & ASSETS
+// =============================================================
+
+model Project {
+  id           String      @id @default(uuid()) @db.Uuid
+  referenceId  String      @unique @map("reference_id") @db.VarChar(20)
+  name         String      @db.VarChar(150)
+  code         String      @unique @db.VarChar(50)
+  description  String?     @db.Text
+  departmentId String?     @map("department_id") @db.Uuid
+  leadId       String?     @map("lead_id") @db.Uuid
+  status       String      @default("ACTIVE") @db.VarChar(30)
+  startDate    DateTime?   @map("start_date") @db.Date
+  endDate      DateTime?   @map("end_date") @db.Date
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  lead         User?       @relation("ProjectLead", fields: [leadId], references: [id], onDelete: SetNull)
+  tasks        Task[]
+
+  @@map("projects")
+}
+
+model Asset {
+  id           String      @id @default(uuid()) @db.Uuid
+  referenceId  String      @unique @map("reference_id") @db.VarChar(20)
+  name         String      @db.VarChar(150)
+  assetTag     String      @unique @map("asset_tag") @db.VarChar(50)
+  category     String      @db.VarChar(50)
+  status       String      @default("AVAILABLE") @db.VarChar(30)
+  assignedToId String?     @map("assigned_to_id") @db.Uuid
+  departmentId String?     @map("department_id") @db.Uuid
+  details      String?     @db.Text
+  createdAt    DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime    @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  assignedTo   User?       @relation("AssetAssignedUser", fields: [assignedToId], references: [id], onDelete: SetNull)
+  department   Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+
+  @@map("assets")
+}
+
+// =============================================================
+// 5. TASKS & WORK MANAGEMENT
+// =============================================================
+
+model Task {
+  id                   String           @id @default(uuid()) @db.Uuid
+  referenceId          String           @unique @map("reference_id") @db.VarChar(20)
+  taskNumber           String           @unique @map("task_number") @db.VarChar(50)
+  title                String           @db.VarChar(255)
+  description          String?          @db.Text
+  departmentId         String?          @map("department_id") @db.Uuid
+  teamId               String?          @map("team_id") @db.Uuid
+  projectId            String?          @map("project_id") @db.Uuid
+  priority             String           @default("MEDIUM") @db.VarChar(20)
+  category             String           @default("GENERAL") @db.VarChar(50)
+  startDate            DateTime?        @map("start_date") @db.Timestamptz
+  dueDate              DateTime?        @map("due_date") @db.Timestamptz
+  estimatedHours       Decimal?         @default(0) @map("estimated_hours") @db.Decimal(5, 2)
+  actualHours          Decimal?         @default(0) @map("actual_hours") @db.Decimal(5, 2)
+  status               String           @default("YET_TO_START") @db.VarChar(30)
+  completionPercentage Int              @default(0) @map("completion_percentage")
+  createdById          String           @map("created_by_id") @db.Uuid
+  reviewedById         String?          @map("reviewed_by_id") @db.Uuid
+  reviewFeedback       String?          @map("review_feedback") @db.Text
+  reviewedAt           DateTime?        @map("reviewed_at") @db.Timestamptz
+  completedAt          DateTime?        @map("completed_at") @db.Timestamptz
+  createdAt            DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+  deletedAt            DateTime?        @map("deleted_at") @db.Timestamptz
+
+  department           Department?      @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  team                 Team?            @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  project              Project?         @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  creator              User             @relation("TaskCreator", fields: [createdById], references: [id])
+  reviewer             User?            @relation("TaskReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  assignments          TaskAssignment[]
+  comments             TaskComment[]
+  attachments          TaskAttachment[]
+  dependencies         TaskDependency[] @relation("PrimaryTask")
+  dependents           TaskDependency[] @relation("DependentTask")
+  timeEntries          TaskTimeEntry[]
+  workLogs             WorkLog[]
+  timesheetEntries     TimesheetEntry[]
+
+  @@map("tasks")
+}
+
+model TaskAssignment {
+  id           String   @id @default(uuid()) @db.Uuid
+  taskId       String   @map("task_id") @db.Uuid
+  employeeId   String   @map("employee_id") @db.Uuid
+  assignedById String   @map("assigned_by_id") @db.Uuid
+  assignedAt   DateTime @default(now()) @map("assigned_at") @db.Timestamptz
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  employee     User     @relation("AssignedEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  assignedBy   User     @relation("AssignedByUser", fields: [assignedById], references: [id])
+
+  @@unique([taskId, employeeId])
+  @@map("task_assignments")
+}
+
+model TaskComment {
+  id        String   @id @default(uuid()) @db.Uuid
+  taskId    String   @map("task_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  comment   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  task      Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("task_comments")
+}
+
+model TaskAttachment {
+  id           String   @id @default(uuid()) @db.Uuid
+  taskId       String   @map("task_id") @db.Uuid
+  uploadedById String   @map("uploaded_by_id") @db.Uuid
+  fileName     String   @map("file_name") @db.VarChar(255)
+  fileUrl      String   @map("file_url") @db.Text
+  fileSize     Int?     @map("file_size")
+  fileType     String?  @map("file_type") @db.VarChar(100)
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  uploader     User     @relation(fields: [uploadedById], references: [id])
+
+  @@map("task_attachments")
+}
+
+model TaskDependency {
+  id              String   @id @default(uuid()) @db.Uuid
+  taskId          String   @map("task_id") @db.Uuid
+  dependsOnTaskId String   @map("depends_on_task_id") @db.Uuid
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  task            Task     @relation("PrimaryTask", fields: [taskId], references: [id], onDelete: Cascade)
+  dependsOnTask   Task     @relation("DependentTask", fields: [dependsOnTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, dependsOnTaskId])
+  @@map("task_dependencies")
+}
+
+// =============================================================
+// 6. HELPDESK & IT SERVICE TICKETS
+// =============================================================
+
+model TicketCategory {
+  id            String              @id @default(uuid()) @db.Uuid
+  name          String              @unique @db.VarChar(100)
+  code          String              @unique @db.VarChar(50)
+  description   String?             @db.Text
+  isActive      Boolean             @default(true) @map("is_active")
+  createdAt     DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  subcategories TicketSubcategory[]
+  tickets       Ticket[]
+
+  @@map("ticket_categories")
+}
+
+model TicketSubcategory {
+  id          String         @id @default(uuid()) @db.Uuid
+  categoryId  String         @map("category_id") @db.Uuid
+  name        String         @db.VarChar(100)
+  code        String         @unique @db.VarChar(50)
+  description String?        @db.Text
+  isActive    Boolean        @default(true) @map("is_active")
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  category    TicketCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  tickets     Ticket[]
+
+  @@map("ticket_subcategories")
+}
+
+model SlaPolicy {
+  id                    String   @id @default(uuid()) @db.Uuid
+  name                  String   @unique @db.VarChar(100)
+  priority              String   @unique @db.VarChar(20)
+  responseTargetMinutes Int      @map("response_target_minutes")
+  resolveTargetMinutes  Int      @map("resolve_target_minutes")
+  businessHoursOnly     Boolean  @default(true) @map("business_hours_only")
+  description           String?  @db.Text
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz
+  tickets               Ticket[]
+
+  @@map("sla_policies")
+}
+
+model Ticket {
+  id                      String            @id @default(uuid()) @db.Uuid
+  referenceId             String            @unique @map("reference_id") @db.VarChar(20)
+  ticketNumber            String            @unique @map("ticket_number") @db.VarChar(50)
+  title                   String            @db.VarChar(255)
+  description             String            @db.Text
+  ticketType              String            @default("Incident") @map("ticket_type") @db.VarChar(50)
+  categoryId              String?           @map("category_id") @db.Uuid
+  subcategoryId           String?           @map("subcategory_id") @db.Uuid
+  priority                String            @default("MEDIUM") @db.VarChar(20)
+  priorityCode            String            @default("P3") @map("priority_code") @db.VarChar(10)
+  impact                  String            @default("MEDIUM") @db.VarChar(20)
+  urgency                 String            @default("MEDIUM") @db.VarChar(20)
+  status                  String            @default("OPEN") @db.VarChar(30)
+  requesterId             String            @map("requester_id") @db.Uuid
+  assignedTechnicianId    String?           @map("assigned_technician_id") @db.Uuid
+  assignedTeamId          String?           @map("assigned_team_id") @db.Uuid
+  departmentId            String?           @map("department_id") @db.Uuid
+  slaPolicyId             String?           @map("sla_policy_id") @db.Uuid
+  source                  String            @default("PORTAL") @db.VarChar(30)
+  resolutionSummary       String?           @map("resolution_summary") @db.Text
+  rootCause               String?           @map("root_cause") @db.Text
+  resolutionCategory      String?           @map("resolution_category") @db.VarChar(100)
+  slaStatus               String            @default("WITHIN_SLA") @map("sla_status") @db.VarChar(30)
+  slaPausedAt             DateTime?         @map("sla_paused_at") @db.Timestamptz
+  slaPauseDurationSeconds Int               @default(0) @map("sla_pause_duration_seconds")
+  firstResponseDueAt      DateTime?         @map("first_response_due_at") @db.Timestamptz
+  resolutionDueAt         DateTime?         @map("resolution_due_at") @db.Timestamptz
+  firstResponseAt         DateTime?         @map("first_response_at") @db.Timestamptz
+  resolvedAt              DateTime?         @map("resolved_at") @db.Timestamptz
+  closedAt                DateTime?         @map("closed_at") @db.Timestamptz
+  reopenedAt              DateTime?         @map("reopened_at") @db.Timestamptz
+  reopenCount             Int               @default(0) @map("reopen_count")
+  escalatedAt             DateTime?         @map("escalated_at") @db.Timestamptz
+  escalationReason        String?           @map("escalation_reason") @db.Text
+  escalatedToRole         String?           @map("escalated_to_role") @db.VarChar(50)
+  satisfactionRating      Int?              @map("satisfaction_rating")
+  feedback                String?           @db.Text
+  createdAt               DateTime          @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt               DateTime          @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  category                TicketCategory?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategory             TicketSubcategory? @relation(fields: [subcategoryId], references: [id], onDelete: SetNull)
+  requester               User              @relation("TicketRequester", fields: [requesterId], references: [id])
+  assignedTechnician      User?             @relation("TicketTechnician", fields: [assignedTechnicianId], references: [id], onDelete: SetNull)
+  assignedTeam            Team?             @relation("TicketAssignedTeam", fields: [assignedTeamId], references: [id], onDelete: SetNull)
+  department              Department?       @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  slaPolicy               SlaPolicy?        @relation(fields: [slaPolicyId], references: [id], onDelete: SetNull)
+  comments                TicketComment[]
+  history                 TicketHistory[]
+  timeEntries             TicketTimeEntry[]
+  workLogs                WorkLog[]
+  timesheetEntries        TimesheetEntry[]
+
+  @@map("tickets")
+}
+
+model TicketComment {
+  id         String   @id @default(uuid()) @db.Uuid
+  ticketId   String   @map("ticket_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  comment    String   @db.Text
+  isInternal Boolean  @default(false) @map("is_internal")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  ticket     Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("ticket_comments")
+}
+
+model TicketHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  ticketId  String   @map("ticket_id") @db.Uuid
+  changedBy String   @map("changed_by") @db.Uuid
+  field     String   @db.VarChar(50)
+  oldValue  String?  @map("old_value") @db.Text
+  newValue  String?  @map("new_value") @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  author    User     @relation(fields: [changedBy], references: [id], onDelete: Cascade)
+
+  @@map("ticket_history")
+}
+
+// =============================================================
+// 7. WORK LOGS & TIME TRACKING
+// =============================================================
+
+model WorkLog {
+  id                 String     @id @default(uuid()) @db.Uuid
+  referenceId        String     @unique @map("reference_id") @db.VarChar(20)
+  employeeId         String     @map("employee_id") @db.Uuid
+  taskId             String?    @map("task_id") @db.Uuid
+  ticketId           String?    @map("ticket_id") @db.Uuid
+  logDate            DateTime   @map("log_date") @db.Date
+  hoursSpent         Decimal    @map("hours_spent") @db.Decimal(5, 2)
+  billingType        String     @default("REGULAR") @map("billing_type") @db.VarChar(30)
+  workDescription    String     @map("work_description") @db.Text
+  verifiedById       String?    @map("verified_by_id") @db.Uuid
+  verificationStatus String     @default("PENDING") @map("verification_status") @db.VarChar(30)
+  rejectionReason    String?    @map("rejection_reason") @db.Text
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime   @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  employee           User       @relation("WorkLogEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  task               Task?      @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  ticket             Ticket?    @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+  verifier           User?      @relation("WorkLogVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  @@map("work_logs")
+}
+
+model AttendanceEvent {
+  id                  String   @id @default(uuid()) @db.Uuid
+  referenceId         String   @unique @map("reference_id") @db.VarChar(20)
+  employeeId          String   @map("employee_id") @db.Uuid
+  eventType           String   @map("event_type") @db.VarChar(30)
+  eventTimestamp      DateTime @map("event_timestamp") @db.Timestamptz
+  source              String   @default("PORTAL") @db.VarChar(50)
+  ipAddress           String?  @map("ip_address") @db.VarChar(50)
+  locationCoordinates String?  @map("location_coordinates") @db.VarChar(100)
+  verifiedById        String?  @map("verified_by_id") @db.Uuid
+  status              String   @default("VALID") @db.VarChar(30)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  employee            User     @relation("AttendanceEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  verifier            User?    @relation("AttendanceVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  @@map("attendance_events")
+}
+
+model WorkSession {
+  id                   String    @id @default(uuid()) @db.Uuid
+  referenceId          String    @unique @map("reference_id") @db.VarChar(20)
+  employeeId           String    @map("employee_id") @db.Uuid
+  sessionDate          DateTime  @map("session_date") @db.Date
+  checkIn              DateTime  @map("check_in") @db.Timestamptz
+  checkOut             DateTime? @map("check_out") @db.Timestamptz
+  totalDurationMinutes Int?      @default(0) @map("total_duration_minutes")
+  breakDurationMinutes Int?      @default(0) @map("break_duration_minutes")
+  netWorkMinutes       Int?      @default(0) @map("net_work_minutes")
+  status               String    @default("IN_PROGRESS") @db.VarChar(30)
+  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  employee             User      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("work_sessions")
+}
+
+model TaskTimeEntry {
+  id              String    @id @default(uuid()) @db.Uuid
+  employeeId      String    @map("employee_id") @db.Uuid
+  taskId          String    @map("task_id") @db.Uuid
+  startTime       DateTime  @map("start_time") @db.Timestamptz
+  endTime         DateTime? @map("end_time") @db.Timestamptz
+  durationSeconds Int       @default(0) @map("duration_seconds")
+  isRunning       Boolean   @default(false) @map("is_running")
+  description     String?   @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  employee        User      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  task            Task      @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_time_entries")
+}
+
+model TicketTimeEntry {
+  id              String    @id @default(uuid()) @db.Uuid
+  employeeId      String    @map("employee_id") @db.Uuid
+  ticketId        String    @map("ticket_id") @db.Uuid
+  startTime       DateTime  @map("start_time") @db.Timestamptz
+  endTime         DateTime? @map("end_time") @db.Timestamptz
+  durationSeconds Int       @default(0) @map("duration_seconds")
+  isRunning       Boolean   @default(false) @map("is_running")
+  description     String?   @db.Text
+  createdAt       DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  employee        User      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  ticket          Ticket    @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  @@map("ticket_time_entries")
+}
+
+model Timesheet {
+  id               String           @id @default(uuid()) @db.Uuid
+  referenceId      String           @unique @map("reference_id") @db.VarChar(20)
+  employeeId       String           @map("employee_id") @db.Uuid
+  periodType       String           @default("WEEKLY") @map("period_type") @db.VarChar(20)
+  startDate        DateTime         @map("start_date") @db.Date
+  endDate          DateTime         @map("end_date") @db.Date
+  totalHours       Decimal          @default(0) @map("total_hours") @db.Decimal(5, 2)
+  billableHours    Decimal          @default(0) @map("billable_hours") @db.Decimal(5, 2)
+  nonBillableHours Decimal          @default(0) @map("non_billable_hours") @db.Decimal(5, 2)
+  status           String           @default("DRAFT") @db.VarChar(30)
+  approvedById     String?          @map("approved_by_id") @db.Uuid
+  approvedAt       DateTime?        @map("approved_at") @db.Timestamptz
+  rejectionReason  String?          @map("rejection_reason") @db.Text
+  submittedAt      DateTime?        @map("submitted_at") @db.Timestamptz
+  createdAt        DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  employee         User             @relation("TimesheetEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  approver         User?            @relation("TimesheetApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+  entries          TimesheetEntry[]
+
+  @@map("timesheets")
+}
+
+model TimesheetEntry {
+  id          String    @id @default(uuid()) @db.Uuid
+  timesheetId String    @map("timesheet_id") @db.Uuid
+  entryDate   DateTime  @map("entry_date") @db.Date
+  taskId      String?   @map("task_id") @db.Uuid
+  ticketId    String?   @map("ticket_id") @db.Uuid
+  hours       Decimal   @db.Decimal(4, 2)
+  isBillable  Boolean   @default(true) @map("is_billable")
+  description String?   @db.Text
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  timesheet   Timesheet @relation(fields: [timesheetId], references: [id], onDelete: Cascade)
+  task        Task?     @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  ticket      Ticket?   @relation(fields: [ticketId], references: [id], onDelete: SetNull)
+
+  @@map("timesheet_entries")
+}
+
+// =============================================================
+// 8. APPROVALS, FOLLOW-UPS & REMINDERS
+// =============================================================
+
+model Approval {
+  id            String    @id @default(uuid()) @db.Uuid
+  referenceId   String    @unique @map("reference_id") @db.VarChar(20)
+  entityType    String    @map("entity_type") @db.VarChar(50)
+  entityId      String    @map("entity_id") @db.Uuid
+  requestedById String    @map("requested_by_id") @db.Uuid
+  approverId    String?   @map("approver_id") @db.Uuid
+  status        String    @default("PENDING") @db.VarChar(30)
+  comments      String?   @db.Text
+  decidedAt     DateTime? @map("decided_at") @db.Timestamptz
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  requester     User      @relation("ApprovalRequester", fields: [requestedById], references: [id], onDelete: Cascade)
+  approver      User?     @relation("ApprovalApprover", fields: [approverId], references: [id], onDelete: SetNull)
+
+  @@map("approvals")
+}
+
+model FollowUp {
+  id               String    @id @default(uuid()) @db.Uuid
+  referenceId      String    @unique @map("reference_id") @db.VarChar(20)
+  entityType       String    @map("entity_type") @db.VarChar(50)
+  entityId         String    @map("entity_id") @db.Uuid
+  ownerId          String    @map("owner_id") @db.Uuid
+  assignedToId     String?   @map("assigned_to_id") @db.Uuid
+  followUpDate     DateTime  @map("follow_up_date") @db.Date
+  followUpTime     String?   @map("follow_up_time") @db.VarChar(10)
+  expectedResponse String?   @map("expected_response") @db.Text
+  notes            String?   @db.Text
+  status           String    @default("PENDING") @db.VarChar(30)
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  owner            User      @relation("FollowUpOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  assignedTo       User?     @relation("FollowUpAssignedTo", fields: [assignedToId], references: [id], onDelete: SetNull)
+
+  @@map("follow_ups")
+}
+
+model Reminder {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  title      String    @db.VarChar(255)
+  message    String    @db.Text
+  remindAt   DateTime  @map("remind_at") @db.Timestamptz
+  entityType String?   @map("entity_type") @db.VarChar(50)
+  entityId   String?   @map("entity_id") @db.Uuid
+  channel    String    @default("IN_APP") @db.VarChar(30)
+  isSent     Boolean   @default(false) @map("is_sent")
+  sentAt     DateTime? @map("sent_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("reminders")
+}
+
+// =============================================================
+// 9. NOTIFICATIONS & AUDIT
+// =============================================================
+
+model Notification {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  title      String    @db.VarChar(255)
+  message    String    @db.Text
+  type       String    @db.VarChar(50)
+  entityType String?   @map("entity_type") @db.VarChar(50)
+  entityId   String?   @map("entity_id") @db.Uuid
+  isRead     Boolean   @default(false) @map("is_read")
+  readAt     DateTime? @map("read_at") @db.Timestamptz
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model PerformanceReview {
+  id                 String   @id @default(uuid()) @db.Uuid
+  employeeId         String   @map("employee_id") @db.Uuid
+  reviewerId         String   @map("reviewer_id") @db.Uuid
+  reviewPeriod       String   @map("review_period") @db.VarChar(30)
+  periodStart        DateTime @map("period_start") @db.Date
+  periodEnd          DateTime @map("period_end") @db.Date
+  score              Decimal  @db.Decimal(5, 2)
+  complexityRating   Decimal? @default(0) @map("complexity_rating") @db.Decimal(3, 2)
+  qualityRating      Decimal? @default(0) @map("quality_rating") @db.Decimal(3, 2)
+  timelinessRating   Decimal? @default(0) @map("timeliness_rating") @db.Decimal(3, 2)
+  managerRating      Decimal? @default(0) @map("manager_rating") @db.Decimal(3, 2)
+  taskCompletionRate Decimal? @default(0) @map("task_completion_rate") @db.Decimal(5, 2)
+  reopenedPenalty    Decimal? @default(0) @map("reopened_penalty") @db.Decimal(5, 2)
+  feedback           String?  @db.Text
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  employee           User     @relation("ReviewEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  reviewer           User     @relation("ReviewReviewer", fields: [reviewerId], references: [id])
+
+  @@map("performance_reviews")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
+  action     String   @db.VarChar(100)
+  entityType String   @map("entity_type") @db.VarChar(100)
+  entityId   String?  @map("entity_id") @db.Uuid
+  details    String?  @db.Text
+  ipAddress  String?  @map("ip_address") @db.VarChar(50)
+  userAgent  String?  @map("user_agent") @db.Text
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("audit_logs")
+}
+
+// =============================================================
+// 10. PAYROLL, LIFECYCLE & APP SETTINGS
+// =============================================================
+
+model PayrollBatch {
+  id             String    @id @default(uuid()) @db.Uuid
+  batchNumber    String    @unique @map("batch_number") @db.VarChar(30)
+  month          Int
+  year           Int
+  totalDisbursed Decimal   @default(0) @map("total_disbursed") @db.Decimal(12, 2)
+  employeeCount  Int       @default(0) @map("employee_count")
+  status         String    @default("PROCESSED") @db.VarChar(30)
+  processedById  String?   @map("processed_by_id") @db.Uuid
+  createdAt      DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  processedBy    User?     @relation("BatchProcessor", fields: [processedById], references: [id], onDelete: SetNull)
+  payslips       Payslip[]
+
+  @@map("payroll_batches")
+}
+
+model Payslip {
+  id                    String        @id @default(uuid()) @db.Uuid
+  referenceId           String        @unique @map("reference_id") @db.VarChar(30)
+  batchId               String?       @map("batch_id") @db.Uuid
+  employeeId            String        @map("employee_id") @db.Uuid
+  month                 Int
+  year                  Int
+  basicPay              Decimal       @default(0) @map("basic_pay") @db.Decimal(10, 2)
+  hra                   Decimal       @default(0) @map("hra") @db.Decimal(10, 2)
+  allowances            Decimal       @default(0) @map("allowances") @db.Decimal(10, 2)
+  overtimePay           Decimal       @default(0) @map("overtime_pay") @db.Decimal(10, 2)
+  grossEarnings         Decimal       @default(0) @map("gross_earnings") @db.Decimal(10, 2)
+  taxDeduction          Decimal       @default(0) @map("tax_deduction") @db.Decimal(10, 2)
+  pfDeduction           Decimal       @default(0) @map("pf_deduction") @db.Decimal(10, 2)
+  insurance             Decimal       @default(0) @map("insurance") @db.Decimal(10, 2)
+  unpaidLeaveDeductions Decimal       @default(0) @map("unpaid_leave_deductions") @db.Decimal(10, 2)
+  totalDeductions       Decimal       @default(0) @map("total_deductions") @db.Decimal(10, 2)
+  netSalary             Decimal       @default(0) @map("net_salary") @db.Decimal(10, 2)
+  pdfUrl                String?       @map("pdf_url") @db.Text
+  isEncrypted           Boolean       @default(true) @map("is_encrypted")
+  status                String        @default("GENERATED") @db.VarChar(30)
+  createdAt             DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  batch                 PayrollBatch? @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  employee              User          @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("payslips")
+}
+
+model TaxDeclaration {
+  id               String   @id @default(uuid()) @db.Uuid
+  employeeId       String   @map("employee_id") @db.Uuid
+  financialYear    String   @map("financial_year") @db.VarChar(15)
+  regime           String   @default("NEW") @db.VarChar(20)
+  section80c       Decimal  @default(0) @map("section_80c") @db.Decimal(10, 2)
+  section80d       Decimal  @default(0) @map("section_80d") @db.Decimal(10, 2)
+  hraRentPaid      Decimal  @default(0) @map("hra_rent_paid") @db.Decimal(10, 2)
+  homeLoanInterest Decimal  @default(0) @map("home_loan_interest") @db.Decimal(10, 2)
+  otherExemptions  Decimal  @default(0) @map("other_exemptions") @db.Decimal(10, 2)
+  status           String   @default("SUBMITTED") @db.VarChar(30)
+  verifiedById     String?  @map("verified_by_id") @db.Uuid
+  updatedAt        DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  employee         User     @relation("TaxDeclarationEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  verifiedBy       User?    @relation("TaxDeclarationVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  @@map("tax_declarations")
+}
+
+model LifecycleEvent {
+  id                   String   @id @default(uuid()) @db.Uuid
+  employeeId           String   @map("employee_id") @db.Uuid
+  eventType            String   @map("event_type") @db.VarChar(50)
+  eventDate            DateTime @map("event_date") @db.Date
+  title                String   @db.VarChar(150)
+  description          String?  @db.Text
+  urgency              String   @default("UPCOMING") @db.VarChar(20)
+  actionTaken          Boolean  @default(false) @map("action_taken")
+  congratulationsCount Int      @default(0) @map("congratulations_count")
+  createdAt            DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  employee             User     @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("lifecycle_events")
+}
+
+model AppSetting {
+  id          String   @id @default(uuid()) @db.Uuid
+  key         String   @unique @db.VarChar(100)
+  value       String   @db.Text
+  category    String   @default("GENERAL") @db.VarChar(50)
+  description String?  @db.Text
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  updatedBy   User?    @relation(fields: [updatedById], references: [id], onDelete: SetNull)
+
+  @@map("app_settings")
+}
