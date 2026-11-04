@@ -11,3 +11,4 @@ import { TicketsModule } from '../tickets/tickets.module';
   exports: [PerformanceService],
 })
 export class PerformanceModule {}
+

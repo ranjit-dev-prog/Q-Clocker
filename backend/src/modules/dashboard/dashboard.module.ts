@@ -20,3 +20,4 @@ import { WorkLogsModule } from '../work-logs/work-logs.module';
   exports: [DashboardService],
 })
 export class DashboardModule {}
+
