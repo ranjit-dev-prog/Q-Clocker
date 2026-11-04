@@ -342,42 +342,36 @@ export class AuthService {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    if (this.dbService.getConnectionStatus()) {
-      const existing = await this.dbService.db
-        .select()
-        .from(schema.users)
-        .where(eq(schema.users.email, normalizedEmail))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const existing = await this.prisma.user.findFirst({
+        where: { email: normalizedEmail },
+      });
 
-      if (existing.length > 0) {
+      if (existing) {
         throw new ConflictException('An employee account with this email already exists');
       }
 
       const targetRoleCode = roleCode || UserRole.EMPLOYEE;
-      let [role] = await this.dbService.db
-        .select()
-        .from(schema.roles)
-        .where(eq(schema.roles.code, targetRoleCode))
-        .limit(1);
+      let role = await this.prisma.role.findUnique({
+        where: { code: targetRoleCode },
+      });
 
       if (!role) {
-        [role] = await this.dbService.db
-          .insert(schema.roles)
-          .values({
+        role = await this.prisma.role.create({
+          data: {
             code: targetRoleCode,
             name: targetRoleCode.replace('_', ' '),
             description: 'Application Role',
             isSystem: true,
-          })
-          .returning();
+          },
+        });
       }
 
       const passwordHash = await bcrypt.hash(password, 10);
       const referenceId = generateReferenceId('EMP');
 
-      const [newUser] = await this.dbService.db
-        .insert(schema.users)
-        .values({
+      const newUser = await this.prisma.user.create({
+        data: {
           referenceId,
           email: normalizedEmail,
           passwordHash,
@@ -390,8 +384,8 @@ export class AuthService {
           teamId: teamId || null,
           jobTitle: jobTitle || 'Team Member',
           isActive: true,
-        })
-        .returning();
+        },
+      });
 
       return await this.generateAuthResponse(
         {
