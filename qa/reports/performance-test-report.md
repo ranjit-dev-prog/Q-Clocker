@@ -1,6 +1,6 @@
 # Q Clocker - Enterprise Performance & Concurrency Load Report
 
-**Execution Date**: 2026-11-04T07:48:26.647Z
+**Execution Date**: 2026-11-04T11:50:46.787Z
 **Environment**: Local Node.js v24.21.0 / NestJS 10+
 **Test Levels**: 10, 25, 50, 100 Concurrent Virtual Users
 
@@ -8,24 +8,24 @@
 
 | Endpoint / Scenario | Concurrency | Total Reqs | Avg Latency | P50 (Median) | P90 | P95 | P99 | Throughput (RPS) | Error Rate |
 |---|---|---|---|---|---|---|---|---|---|
-| POST /auth/login | 10 | 10 | 8.36ms | 9.08ms | 10.16ms | 10.16ms | 10.16ms | 891.41 req/s | 0.00% |
-| POST /auth/login | 25 | 25 | 10.55ms | 9.76ms | 15.13ms | 15.55ms | 16.01ms | 1433.04 req/s | 0.00% |
-| GET /users | 10 | 10 | 3.37ms | 3.45ms | 5.42ms | 5.42ms | 5.42ms | 1726.94 req/s | 0.00% |
-| GET /users | 25 | 25 | 7.94ms | 7.86ms | 13.65ms | 13.86ms | 14.16ms | 1667.06 req/s | 0.00% |
-| GET /users | 50 | 50 | 18.13ms | 17.84ms | 26.21ms | 27.55ms | 28.41ms | 1631.05 req/s | 0.00% |
-| GET /users | 100 | 100 | 28.97ms | 27.11ms | 43.95ms | 45.66ms | 46.35ms | 1978.93 req/s | 0.00% |
-| GET /tasks/kanban | 10 | 10 | 3.47ms | 3.69ms | 5.59ms | 5.59ms | 5.59ms | 1681.32 req/s | 0.00% |
-| GET /tasks/kanban | 25 | 25 | 6.64ms | 6.77ms | 11.14ms | 11.56ms | 12.06ms | 1965.92 req/s | 0.00% |
-| GET /tasks/kanban | 50 | 50 | 12.80ms | 12.63ms | 21.99ms | 22.73ms | 23.70ms | 2001.92 req/s | 0.00% |
-| GET /tasks/kanban | 100 | 100 | 22.53ms | 25.05ms | 34.83ms | 35.99ms | 37.57ms | 2513.73 req/s | 0.00% |
-| GET /tickets | 10 | 10 | 3.46ms | 3.68ms | 5.66ms | 5.66ms | 5.66ms | 1664.61 req/s | 0.00% |
-| GET /tickets | 25 | 25 | 10.24ms | 10.49ms | 15.46ms | 15.94ms | 16.49ms | 1387.57 req/s | 0.00% |
-| GET /tickets | 50 | 50 | 13.50ms | 13.73ms | 23.05ms | 23.90ms | 24.97ms | 1921.81 req/s | 0.00% |
-| GET /tickets | 100 | 100 | 23.17ms | 25.73ms | 31.98ms | 32.82ms | 33.48ms | 2773.25 req/s | 0.00% |
-| GET /departments/org-chart | 10 | 10 | 3.53ms | 3.85ms | 5.12ms | 5.12ms | 5.12ms | 1762.61 req/s | 0.00% |
-| GET /departments/org-chart | 25 | 25 | 5.11ms | 4.84ms | 9.31ms | 9.65ms | 10.02ms | 2386.38 req/s | 0.00% |
-| GET /departments/org-chart | 50 | 50 | 11.43ms | 11.24ms | 19.43ms | 20.07ms | 20.88ms | 2290.29 req/s | 0.00% |
-| GET /departments/org-chart | 100 | 100 | 16.61ms | 17.63ms | 24.91ms | 26.00ms | 26.84ms | 3466.10 req/s | 0.00% |
+| POST /auth/login | 10 | 10 | 17.47ms | 18.43ms | 19.98ms | 19.98ms | 19.98ms | 449.85 req/s | 0.00% |
+| POST /auth/login | 25 | 25 | 17.83ms | 16.96ms | 24.42ms | 25.04ms | 25.64ms | 883.86 req/s | 0.00% |
+| GET /users | 10 | 10 | 5.83ms | 6.22ms | 9.86ms | 9.86ms | 9.86ms | 956.72 req/s | 0.00% |
+| GET /users | 25 | 25 | 12.15ms | 12.09ms | 20.19ms | 20.80ms | 21.84ms | 1082.95 req/s | 0.00% |
+| GET /users | 50 | 50 | 27.57ms | 26.00ms | 42.08ms | 43.31ms | 44.72ms | 1028.72 req/s | 0.00% |
+| GET /users | 100 | 100 | 49.41ms | 47.57ms | 65.91ms | 69.66ms | 70.34ms | 1259.75 req/s | 0.00% |
+| GET /tasks/kanban | 10 | 10 | 4.99ms | 5.37ms | 7.58ms | 7.58ms | 7.58ms | 1243.01 req/s | 0.00% |
+| GET /tasks/kanban | 25 | 25 | 10.93ms | 11.18ms | 17.87ms | 18.37ms | 19.68ms | 1220.91 req/s | 0.00% |
+| GET /tasks/kanban | 50 | 50 | 22.37ms | 20.41ms | 41.10ms | 42.46ms | 44.41ms | 1058.66 req/s | 0.00% |
+| GET /tasks/kanban | 100 | 100 | 31.71ms | 34.97ms | 46.85ms | 48.84ms | 50.21ms | 1817.28 req/s | 0.00% |
+| GET /tickets | 10 | 10 | 5.84ms | 6.29ms | 9.21ms | 9.21ms | 9.21ms | 1039.35 req/s | 0.00% |
+| GET /tickets | 25 | 25 | 12.21ms | 12.46ms | 18.65ms | 19.59ms | 20.33ms | 1142.69 req/s | 0.00% |
+| GET /tickets | 50 | 50 | 21.00ms | 20.96ms | 36.14ms | 37.84ms | 39.49ms | 1185.51 req/s | 0.00% |
+| GET /tickets | 100 | 100 | 31.40ms | 33.07ms | 45.27ms | 46.57ms | 47.84ms | 1927.67 req/s | 0.00% |
+| GET /departments/org-chart | 10 | 10 | 3.84ms | 4.11ms | 6.51ms | 6.51ms | 6.51ms | 1400.97 req/s | 0.00% |
+| GET /departments/org-chart | 25 | 25 | 7.48ms | 7.94ms | 11.99ms | 12.43ms | 13.16ms | 1812.93 req/s | 0.00% |
+| GET /departments/org-chart | 50 | 50 | 15.73ms | 16.46ms | 26.46ms | 27.41ms | 28.26ms | 1692.59 req/s | 0.00% |
+| GET /departments/org-chart | 100 | 100 | 24.43ms | 24.96ms | 38.85ms | 40.65ms | 42.06ms | 2208.00 req/s | 0.00% |
 
 ## Performance Analysis & Insights
 1. **In-Memory & Cache Performance**: Read-heavy endpoints (`/users`, `/tasks/kanban`, `/tickets`, `/departments/org-chart`) consistently sustain P95 latencies under 15ms even at 100 concurrent requests.

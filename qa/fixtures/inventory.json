@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-11-04T07:48:26.085Z",
+  "generatedAt": "2026-11-04T11:50:45.926Z",
   "apiSummary": {
-    "totalPaths": 68,
-    "totalOperations": 84,
+    "totalPaths": 82,
+    "totalOperations": 99,
     "modules": [
       "Authentication",
       "Employees",
@@ -15,7 +15,11 @@
       "ITSM Ticket Management",
       "Daily Work Logs",
       "Reports & Analytics",
-      "System Health"
+      "Payroll & Compensation",
+      "Workforce Lifecycle & Compliance",
+      "System Health",
+      "Dashboard & Business Intelligence",
+      "Performance & Appraisals"
     ]
   },
   "apiEndpoints": [
@@ -2010,10 +2014,259 @@
     {
       "id": "API-084",
       "method": "GET",
+      "path": "/api/v1/payroll/template",
+      "module": "Payroll & Compensation",
+      "summary": "Download bulk payroll Excel (.xlsx) ingestion template",
+      "authRequired": true,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-085",
+      "method": "POST",
+      "path": "/api/v1/payroll/upload-batch",
+      "module": "Payroll & Compensation",
+      "summary": "Upload and process bulk payroll batch spreadsheet",
+      "authRequired": true,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-086",
+      "method": "GET",
+      "path": "/api/v1/payroll/batches",
+      "module": "Payroll & Compensation",
+      "summary": "List historical payroll processing batches",
+      "authRequired": true,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-087",
+      "method": "GET",
+      "path": "/api/v1/payroll/my-payslips",
+      "module": "Payroll & Compensation",
+      "summary": "List payslips for the authenticated employee",
+      "authRequired": true,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-088",
+      "method": "GET",
+      "path": "/api/v1/payroll/payslips/{id}/download",
+      "module": "Payroll & Compensation",
+      "summary": "Download cryptographically signed PDF payslip",
+      "authRequired": true,
+      "parameters": [
+        {
+          "name": "id",
+          "required": true,
+          "in": "path",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-089",
+      "method": "GET",
+      "path": "/api/v1/payroll/tax-declaration",
+      "module": "Payroll & Compensation",
+      "summary": "Get employee active tax-saving declarations",
+      "authRequired": true,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-090",
+      "method": "POST",
+      "path": "/api/v1/payroll/tax-declaration",
+      "module": "Payroll & Compensation",
+      "summary": "Submit employee annual tax-saving declarations",
+      "authRequired": true,
+      "parameters": [],
+      "hasRequestBody": true,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-091",
+      "method": "GET",
+      "path": "/api/v1/lifecycle/celebrations",
+      "module": "Workforce Lifecycle & Compliance",
+      "summary": "Get corporate celebrations feed (Birthdays, Milestones, Anniversaries)",
+      "authRequired": true,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-092",
+      "method": "POST",
+      "path": "/api/v1/lifecycle/events/{id}/congratulate",
+      "module": "Workforce Lifecycle & Compliance",
+      "summary": "Send 1-click peer congratulations on a work anniversary or birthday",
+      "authRequired": true,
+      "parameters": [
+        {
+          "name": "id",
+          "required": true,
+          "in": "path",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-093",
+      "method": "GET",
+      "path": "/api/v1/lifecycle/reminders",
+      "module": "Workforce Lifecycle & Compliance",
+      "summary": "Dedicated HR Reminders Console (Probation, Contract, Document Expiry)",
+      "authRequired": true,
+      "parameters": [
+        {
+          "name": "urgency",
+          "required": true,
+          "in": "query",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-094",
+      "method": "POST",
+      "path": "/api/v1/lifecycle/reminders/{id}/notify",
+      "module": "Workforce Lifecycle & Compliance",
+      "summary": "Dispatch urgent push notification reminder to employee and manager",
+      "authRequired": true,
+      "parameters": [
+        {
+          "name": "id",
+          "required": true,
+          "in": "path",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-095",
+      "method": "POST",
+      "path": "/api/v1/lifecycle/reminders/{id}/extend-probation",
+      "module": "Workforce Lifecycle & Compliance",
+      "summary": "Extend employee probation period with mandatory audit reason",
+      "authRequired": true,
+      "parameters": [
+        {
+          "name": "id",
+          "required": true,
+          "in": "path",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": true,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-096",
+      "method": "POST",
+      "path": "/api/v1/lifecycle/reminders/{id}/resolve",
+      "module": "Workforce Lifecycle & Compliance",
+      "summary": "Mark compliance/probation reminder as resolved",
+      "authRequired": true,
+      "parameters": [
+        {
+          "name": "id",
+          "required": true,
+          "in": "path",
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-097",
+      "method": "GET",
       "path": "/api/v1/health",
       "module": "System Health",
-      "summary": "Liveness and readiness probe for container orchestrators",
+      "summary": "Comprehensive System Health, Services & Database Telemetry",
       "authRequired": false,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-098",
+      "method": "GET",
+      "path": "/api/v1/dashboard/summary",
+      "module": "Dashboard & Business Intelligence",
+      "summary": "Get role-adaptive, database-calculated dashboard telemetry and metrics",
+      "authRequired": true,
+      "parameters": [],
+      "hasRequestBody": false,
+      "expectedStatuses": [
+        "200"
+      ]
+    },
+    {
+      "id": "API-099",
+      "method": "GET",
+      "path": "/api/v1/performance/me",
+      "module": "Performance & Appraisals",
+      "summary": "Get authenticated employee performance review and metrics",
+      "authRequired": true,
       "parameters": [],
       "hasRequestBody": false,
       "expectedStatuses": [
@@ -2283,6 +2536,26 @@
     {
       "variable": "auditLogs",
       "tableName": "audit_logs"
+    },
+    {
+      "variable": "payrollBatches",
+      "tableName": "payroll_batches"
+    },
+    {
+      "variable": "payslips",
+      "tableName": "payslips"
+    },
+    {
+      "variable": "taxDeclarations",
+      "tableName": "tax_declarations"
+    },
+    {
+      "variable": "lifecycleEvents",
+      "tableName": "lifecycle_events"
+    },
+    {
+      "variable": "appSettings",
+      "tableName": "app_settings"
     }
   ]
 }
