@@ -97,8 +97,7 @@ import { NotificationService, NotificationItem } from '../core/services/notifica
               <div
                 *ngFor="let n of notificationService.notifications().slice(0, 5)"
                 (click)="onNotificationClick(n)"
-                [class.bg-slate-50]="!n.isRead"
-                [class.dark:bg-slate-800/40]="!n.isRead"
+                [ngClass]="!n.isRead ? 'bg-slate-50 dark:bg-slate-800/40' : ''"
                 class="p-3 hover:bg-slate-100/60 dark:hover:bg-slate-800/80 transition cursor-pointer flex items-start gap-3"
               >
                 <div

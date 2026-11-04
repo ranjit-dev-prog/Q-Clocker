@@ -105,13 +105,6 @@ import { NotificationService, NotificationItem } from '../../core/services/notif
           class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800"
         >
           <span>{{ tab.label }}</span>
-          <span
-            *ngIf="tab.count !== undefined"
-            class="px-1.5 py-0.2 rounded-full text-[10px]"
-            [ngClass]="activeTab() === tab.key ? 'bg-primary-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'"
-          >
-            {{ tab.count }}
-          </span>
         </button>
       </div>
 
@@ -120,8 +113,7 @@ import { NotificationService, NotificationItem } from '../../core/services/notif
         <div
           *ngFor="let n of filteredNotifications()"
           class="p-4 sm:p-5 flex items-start gap-4 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition group"
-          [class.bg-slate-50]="!n.isRead"
-          [class.dark:bg-slate-800/20]="!n.isRead"
+          [ngClass]="!n.isRead ? 'bg-slate-50 dark:bg-slate-800/20' : ''"
         >
           <div
             [ngClass]="getNotificationIconBg(n.type)"

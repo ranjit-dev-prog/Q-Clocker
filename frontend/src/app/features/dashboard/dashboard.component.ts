@@ -77,7 +77,7 @@ import { DepartmentService } from '../../core/services/department.service';
               {{ ticketService.metrics()?.openTickets ?? 4 }} Open
             </span>
             <span class="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded">
-              {{ ticketService.metrics()?.criticalTickets ?? 1 }} P1 Critical
+              {{ ticketService.metrics()?.p1CriticalCount ?? 1 }} P1 Critical
             </span>
           </div>
           <div class="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
@@ -93,14 +93,14 @@ import { DepartmentService } from '../../core/services/department.service';
           </div>
           <div class="mt-3 flex items-baseline gap-2">
             <span class="text-2xl font-bold text-emerald-600">
-              {{ ticketService.metrics()?.slaComplianceRate ?? 98.2 }}%
+              {{ ticketService.metrics()?.slaComplianceRate ?? '98.2' }}%
             </span>
             <span class="text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">
               Target: >95%
             </span>
           </div>
           <div class="mt-3 text-[11px] text-slate-400">
-            Avg resolution: {{ ticketService.metrics()?.averageResolutionHours ?? 3.4 }}h
+            Avg resolution: {{ ticketService.metrics()?.avgResolutionTimeHours ?? 3.4 }}h
           </div>
         </div>
 
