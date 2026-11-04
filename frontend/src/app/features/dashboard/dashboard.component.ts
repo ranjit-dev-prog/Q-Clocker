@@ -247,7 +247,7 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
               <div class="text-[10px] font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400">{{ dept.code }}</div>
               <div class="text-xs font-bold text-slate-900 dark:text-white mt-0.5 truncate">{{ dept.name }}</div>
               <div class="text-lg font-black text-slate-800 dark:text-slate-200 mt-1">
-                {{ dept.employeeCount || 3 }} <span class="text-[10px] font-normal text-slate-400">members</span>
+                {{ dept.memberCount || 3 }} <span class="text-[10px] font-normal text-slate-400">members</span>
               </div>
             </div>
           </div>

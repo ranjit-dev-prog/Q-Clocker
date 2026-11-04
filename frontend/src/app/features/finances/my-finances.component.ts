@@ -230,7 +230,7 @@ import { AuthService } from '../../core/services/auth.service';
                 <label
                   (click)="taxDecl.regime = 'NEW'"
                   [class.border-emerald-600]="taxDecl.regime === 'NEW'"
-                  [class.bg-emerald-50/30]="taxDecl.regime === 'NEW'"
+                  [class.bg-emerald-50]="taxDecl.regime === 'NEW'"
                   class="cursor-pointer border-2 rounded-xl p-4 flex items-start gap-3 transition"
                 >
                   <input type="radio" name="regime" value="NEW" [checked]="taxDecl.regime === 'NEW'" class="mt-1" />
@@ -243,7 +243,7 @@ import { AuthService } from '../../core/services/auth.service';
                 <label
                   (click)="taxDecl.regime = 'OLD'"
                   [class.border-emerald-600]="taxDecl.regime === 'OLD'"
-                  [class.bg-emerald-50/30]="taxDecl.regime === 'OLD'"
+                  [class.bg-emerald-50]="taxDecl.regime === 'OLD'"
                   class="cursor-pointer border-2 rounded-xl p-4 flex items-start gap-3 transition"
                 >
                   <input type="radio" name="regime" value="OLD" [checked]="taxDecl.regime === 'OLD'" class="mt-1" />
