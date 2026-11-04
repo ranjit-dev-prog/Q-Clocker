@@ -70,3 +70,4 @@ export class RoleService {
     return this.http.patch<any>(`${this.apiUrl}/users/${userId}`, { roleCode });
   }
 }
+
