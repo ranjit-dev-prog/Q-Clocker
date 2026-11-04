@@ -908,12 +908,12 @@ export class AuthService {
     const salt = await bcrypt.genSalt(10);
     const newHash = await bcrypt.hash(dto.newPassword, salt);
 
-    if (this.dbService.getConnectionStatus()) {
+    if (this.prisma.isConnected) {
       try {
-        await this.dbService.db
-          .update(schema.users)
-          .set({ passwordHash: newHash, updatedAt: new Date() })
-          .where(eq(schema.users.id, item.userId));
+        await this.prisma.user.update({
+          where: { id: item.userId },
+          data: { passwordHash: newHash, updatedAt: new Date() },
+        });
       } catch (err) {
         this.logger.warn(`Failed updating DB password: ${(err as Error).message}`);
       }
@@ -952,12 +952,12 @@ export class AuthService {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(tempPassword, salt);
 
-    if (this.dbService.getConnectionStatus()) {
+    if (this.prisma.isConnected) {
       try {
-        await this.dbService.db
-          .update(schema.users)
-          .set({ passwordHash, updatedAt: new Date() })
-          .where(eq(schema.users.id, userId));
+        await this.prisma.user.update({
+          where: { id: userId },
+          data: { passwordHash, updatedAt: new Date() },
+        });
       } catch (err) {
         this.logger.warn(`DB update password error: ${(err as Error).message}`);
       }
