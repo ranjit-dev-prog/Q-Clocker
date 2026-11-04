@@ -568,18 +568,18 @@ export class AuthService {
   }
 
   async logout(userId: string, refreshToken?: string) {
-    if (this.dbService.getConnectionStatus()) {
+    if (this.prisma.isConnected) {
       if (refreshToken) {
         const tokenHash = crypto.createHash('sha256').update(refreshToken.trim()).digest('hex');
-        await this.dbService.db
-          .update(schema.userSessions)
-          .set({ isRevoked: true, updatedAt: new Date() })
-          .where(eq(schema.userSessions.refreshTokenHash, tokenHash));
+        await this.prisma.userSession.updateMany({
+          where: { refreshTokenHash: tokenHash },
+          data: { isRevoked: true, updatedAt: new Date() },
+        });
       } else {
-        await this.dbService.db
-          .update(schema.userSessions)
-          .set({ isRevoked: true, updatedAt: new Date() })
-          .where(eq(schema.userSessions.userId, userId));
+        await this.prisma.userSession.updateMany({
+          where: { userId },
+          data: { isRevoked: true, updatedAt: new Date() },
+        });
       }
       return { success: true, message: 'Logged out successfully' };
     }
@@ -596,11 +596,11 @@ export class AuthService {
   }
 
   async logoutAll(userId: string) {
-    if (this.dbService.getConnectionStatus()) {
-      await this.dbService.db
-        .update(schema.userSessions)
-        .set({ isRevoked: true, updatedAt: new Date() })
-        .where(eq(schema.userSessions.userId, userId));
+    if (this.prisma.isConnected) {
+      await this.prisma.userSession.updateMany({
+        where: { userId },
+        data: { isRevoked: true, updatedAt: new Date() },
+      });
     } else {
       this.demoSessions.filter((x) => x.userId === userId).forEach((x) => (x.isRevoked = true));
     }
@@ -609,24 +609,22 @@ export class AuthService {
   }
 
   async getActiveSessions(userId: string) {
-    if (this.dbService.getConnectionStatus()) {
-      const sessions = await this.dbService.db
-        .select({
-          id: schema.userSessions.id,
-          userAgent: schema.userSessions.userAgent,
-          ipAddress: schema.userSessions.ipAddress,
-          expiresAt: schema.userSessions.expiresAt,
-          createdAt: schema.userSessions.createdAt,
-        })
-        .from(schema.userSessions)
-        .where(
-          and(
-            eq(schema.userSessions.userId, userId),
-            eq(schema.userSessions.isRevoked, false),
-            gt(schema.userSessions.expiresAt, new Date()),
-          ),
-        )
-        .orderBy(desc(schema.userSessions.createdAt));
+    if (this.prisma.isConnected) {
+      const sessions = await this.prisma.userSession.findMany({
+        where: {
+          userId,
+          isRevoked: false,
+          expiresAt: { gt: new Date() },
+        },
+        select: {
+          id: true,
+          userAgent: true,
+          ipAddress: true,
+          expiresAt: true,
+          createdAt: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
 
       return sessions;
     }
@@ -643,29 +641,31 @@ export class AuthService {
   }
 
   async getProfile(userId: string) {
-    if (this.dbService.getConnectionStatus()) {
-      const [user] = await this.dbService.db
-        .select({
-          id: schema.users.id,
-          referenceId: schema.users.referenceId,
-          email: schema.users.email,
-          firstName: schema.users.firstName,
-          lastName: schema.users.lastName,
-          phone: schema.users.phone,
-          avatarUrl: schema.users.avatarUrl,
-          role: schema.users.roleCode,
-          departmentId: schema.users.departmentId,
-          teamId: schema.users.teamId,
-          jobTitle: schema.users.jobTitle,
-          isActive: schema.users.isActive,
-          createdAt: schema.users.createdAt,
-        })
-        .from(schema.users)
-        .where(eq(schema.users.id, userId))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          referenceId: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          phone: true,
+          avatarUrl: true,
+          roleCode: true,
+          departmentId: true,
+          teamId: true,
+          jobTitle: true,
+          isActive: true,
+          createdAt: true,
+        },
+      });
 
       if (user) {
-        return user;
+        return {
+          ...user,
+          role: user.roleCode,
+        };
       }
     }
 
