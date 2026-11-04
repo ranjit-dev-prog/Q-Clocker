@@ -1,7 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
-import * as schema from '../../database/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
 
 @Injectable()
@@ -53,11 +51,11 @@ export class PermissionsService {
     { code: 'settings.update', name: 'Modify System Settings', module: 'Settings' },
   ];
 
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAll() {
-    if (this.dbService.getConnectionStatus()) {
-      const rows = await this.dbService.db.select().from(schema.permissions);
+    if (this.prisma.isConnected) {
+      const rows = await this.prisma.permission.findMany();
       if (rows.length > 0) return rows;
     }
     return this.staticPermissions.map((p, idx) => ({
@@ -91,4 +89,3 @@ export class PermissionsService {
     };
   }
 }
-
