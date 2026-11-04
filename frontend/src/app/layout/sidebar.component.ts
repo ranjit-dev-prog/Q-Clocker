@@ -33,6 +33,7 @@ interface NavItem {
 
       <!-- Navigation Section -->
       <div class="flex-1 overflow-y-auto px-3 py-4 space-y-6">
+        <!-- Operations & Work -->
         <div>
           <div class="px-3 mb-2 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
             Operations & Work
@@ -59,14 +60,34 @@ interface NavItem {
           </nav>
         </div>
 
-        <!-- Management Section (Admins/Leads) -->
-        <div *ngIf="authService.isTeamLead()">
+        <!-- Management Section (Admins/Leads/HR/IT) -->
+        <div *ngIf="canAccessManagement()">
           <div class="px-3 mb-2 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
             Management & Insights
           </div>
           <nav class="space-y-1">
             <a
-              *ngFor="let item of managementNav"
+              *ngFor="let item of filteredManagementNav()"
+              [routerLink]="item.route"
+              routerLinkActive="bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-300 font-semibold"
+              class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white transition-all group"
+            >
+              <span class="material-icons text-xl text-slate-400 group-hover:text-primary-600 dark:group-hover:text-primary-400 transition-colors">
+                {{ item.icon }}
+              </span>
+              <span class="flex-1">{{ item.label }}</span>
+            </a>
+          </nav>
+        </div>
+
+        <!-- System Administration & RBAC -->
+        <div *ngIf="authService.isAdmin()">
+          <div class="px-3 mb-2 text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+            System & Security
+          </div>
+          <nav class="space-y-1">
+            <a
+              *ngFor="let item of adminNav"
               [routerLink]="item.route"
               routerLinkActive="bg-primary-50 text-primary-700 dark:bg-primary-950/50 dark:text-primary-300 font-semibold"
               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white transition-all group"
@@ -83,7 +104,7 @@ interface NavItem {
       <!-- User Role Pill Footer -->
       <div class="p-4 border-t border-slate-100 dark:border-slate-800/60 bg-slate-50/50 dark:bg-slate-900/50">
         <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center font-bold text-slate-700 dark:text-slate-200 text-sm">
+          <div class="w-9 h-9 rounded-full bg-primary-600 text-white flex items-center justify-center font-bold text-xs shadow-sm">
             {{ userInitials() }}
           </div>
           <div class="flex-1 min-w-0">
@@ -92,7 +113,7 @@ interface NavItem {
             </div>
             <div class="text-[10px] font-medium text-primary-600 dark:text-primary-400 flex items-center gap-1">
               <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              {{ authService.currentUser()?.role }}
+              {{ formatRole(authService.currentUser()?.role) }}
             </div>
           </div>
         </div>
@@ -109,18 +130,37 @@ export class SidebarComponent {
     { label: 'IT Support Tickets', route: '/tickets', icon: 'confirmation_number' },
     { label: 'Timesheet & Work Log', route: '/work-logs', icon: 'access_time' },
     { label: 'My Performance', route: '/performance', icon: 'trending_up' },
+    { label: 'Notifications', route: '/notifications', icon: 'notifications' },
   ];
 
   managementNav: NavItem[] = [
-    { label: 'Employees', route: '/employees', icon: 'people' },
-    { label: 'Departments', route: '/departments', icon: 'corporate_fare' },
-    { label: 'Reports & Analytics', route: '/reports', icon: 'insights' },
+    { label: 'Employees', route: '/employees', icon: 'people', roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR', 'HR_MANAGER', 'HR_ADMINISTRATOR', 'TEAM_LEAD', 'AUDITOR'] },
+    { label: 'Departments', route: '/departments', icon: 'corporate_fare', roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR', 'HR_MANAGER', 'HR_ADMINISTRATOR', 'TEAM_LEAD', 'AUDITOR'] },
+    { label: 'Reports & Analytics', route: '/reports', icon: 'insights', roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR', 'HR_MANAGER', 'IT_MANAGER', 'AUDITOR'] },
   ];
+
+  adminNav: NavItem[] = [
+    { label: 'Roles & RBAC', route: '/admin/roles', icon: 'admin_panel_settings' },
+  ];
+
+  canAccessManagement(): boolean {
+    return this.authService.isTeamLead() || this.authService.isHR() || this.authService.isITManager() || this.authService.isAuditor();
+  }
+
+  filteredManagementNav(): NavItem[] {
+    const role = this.authService.userRole() || '';
+    if (this.authService.isSuperAdmin()) return this.managementNav;
+    return this.managementNav.filter((item) => !item.roles || item.roles.includes(role));
+  }
 
   userInitials(): string {
     const user = this.authService.currentUser();
     if (!user) return 'QC';
-    return (user.firstName[0] || '') + (user.lastName[0] || '');
+    return `${user.firstName?.[0] || ''}${user.lastName?.[0] || ''}`.toUpperCase() || 'U';
+  }
+
+  formatRole(role: any): string {
+    if (!role) return 'Employee';
+    return String(role).replace(/_/g, ' ');
   }
 }
-
