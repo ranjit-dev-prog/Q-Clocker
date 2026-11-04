@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { authGuard } from './core/guards/auth.guard';
+import { authGuard, roleGuard } from './core/guards/auth.guard';
 import { ShellComponent } from './layout/shell.component';
 
 export const routes: Routes = [
@@ -46,20 +46,50 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'notifications',
+        loadComponent: () =>
+          import('./features/notifications/notifications.component').then(
+            (m) => m.NotificationsComponent,
+          ),
+      },
+      {
         path: 'reports',
+        canActivate: [roleGuard],
+        data: {
+          roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR', 'HR_MANAGER', 'IT_MANAGER', 'AUDITOR'],
+        },
         loadComponent: () =>
           import('./features/reports/reports.component').then((m) => m.ReportsComponent),
       },
       {
         path: 'employees',
+        canActivate: [roleGuard],
+        data: {
+          roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR', 'HR_MANAGER', 'HR_ADMINISTRATOR', 'TEAM_LEAD', 'AUDITOR'],
+        },
         loadComponent: () =>
           import('./features/employees/employees.component').then((m) => m.EmployeesComponent),
       },
       {
         path: 'departments',
+        canActivate: [roleGuard],
+        data: {
+          roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR', 'HR_MANAGER', 'HR_ADMINISTRATOR', 'TEAM_LEAD', 'AUDITOR'],
+        },
         loadComponent: () =>
           import('./features/departments/departments.component').then(
             (m) => m.DepartmentsComponent,
+          ),
+      },
+      {
+        path: 'admin/roles',
+        canActivate: [roleGuard],
+        data: {
+          roles: ['SUPER_ADMIN', 'ADMIN', 'SYSTEM_ADMINISTRATOR'],
+        },
+        loadComponent: () =>
+          import('./features/admin/roles/roles-admin.component').then(
+            (m) => m.RolesAdminComponent,
           ),
       },
     ],
@@ -69,4 +99,3 @@ export const routes: Routes = [
     redirectTo: 'dashboard',
   },
 ];
-
