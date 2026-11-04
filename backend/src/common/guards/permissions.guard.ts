@@ -7,9 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PERMISSIONS_KEY } from '../decorators/permissions.decorator';
-import { DatabaseService } from '../../database/database.service';
-import * as schema from '../../database/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { UserRole } from '../enums';
 
 @Injectable()
@@ -229,7 +227,7 @@ export class PermissionsGuard implements CanActivate {
 
   constructor(
     private readonly reflector: Reflector,
-    private readonly dbService: DatabaseService,
+    private readonly prisma: PrismaService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {

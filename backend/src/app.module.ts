@@ -35,7 +35,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
         limit: 120,
       },
     ]),
-    DatabaseModule,
+    PrismaModule,
     AuthModule,
     UsersModule,
     DepartmentsModule,
