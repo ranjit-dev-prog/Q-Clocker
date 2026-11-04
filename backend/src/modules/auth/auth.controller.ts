@@ -129,4 +129,75 @@ export class AuthController {
   async getProfile(@CurrentUser('id') userId: string) {
     return this.authService.getProfile(userId);
   }
+
+  // =============================================================
+  // DUAL-FACTOR ENTERPRISE ACCOUNT RECOVERY
+  // =============================================================
+
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Initiate dual-factor account recovery (Anti-enumeration)' })
+  @ApiResponse({ status: 200, description: 'Recovery instructions dispatched' })
+  async forgotPassword(@Body() dto: ForgotPasswordDto, @Req() req: Request) {
+    const ipAddress = (req.headers['x-forwarded-for'] as string) || req.socket?.remoteAddress;
+    return this.authService.forgotPassword(dto, { ipAddress });
+  }
+
+  @Public()
+  @Get('reset-challenge')
+  @ApiOperation({ summary: 'Retrieve security questions for a reset challenge token' })
+  @ApiResponse({ status: 200, description: 'Challenge questions returned' })
+  @ApiResponse({ status: 404, description: 'Token invalid or expired' })
+  async getResetChallenge(@Query('token') token: string) {
+    return this.authService.getResetChallenge(token);
+  }
+
+  @Public()
+  @Post('verify-reset-challenge')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Verify security question answers or recovery passphrase' })
+  @ApiResponse({ status: 200, description: 'Challenge verified successfully' })
+  @ApiResponse({ status: 401, description: 'Incorrect security challenge answers' })
+  async verifyResetChallenge(@Body() dto: VerifyChallengeDto) {
+    return this.authService.verifyResetChallenge(dto);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Set new enterprise password and revoke all active sessions' })
+  @ApiResponse({ status: 200, description: 'Password reset and sessions terminated' })
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto);
+  }
+
+  // =============================================================
+  // ADMINISTRATIVE SECURITY ACTIONS
+  // =============================================================
+
+  @Post('users/:id/revoke-sessions')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Administrative termination of all active sessions for user' })
+  @ApiResponse({ status: 200, description: 'All sessions revoked' })
+  async revokeUserSessions(@Param('id') userId: string) {
+    return this.authService.revokeUserSessions(userId);
+  }
+
+  @Post('users/:id/admin-reset-password')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Direct administrative password reset with temporary credential generation' })
+  @ApiResponse({ status: 200, description: 'Temporary password generated and sessions terminated' })
+  async adminResetPassword(
+    @Param('id') userId: string,
+    @Body() dto: AdminResetPasswordDto,
+  ) {
+    return this.authService.adminResetPassword(userId, dto);
+  }
 }
