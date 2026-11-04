@@ -458,12 +458,10 @@ export class AuthService {
 
     const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
 
-    if (this.dbService.getConnectionStatus()) {
-      const [session] = await this.dbService.db
-        .select()
-        .from(schema.userSessions)
-        .where(eq(schema.userSessions.refreshTokenHash, tokenHash))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const session = await this.prisma.userSession.findFirst({
+        where: { refreshTokenHash: tokenHash },
+      });
 
       if (!session) {
         throw new UnauthorizedException('Invalid refresh token');
@@ -475,36 +473,34 @@ export class AuthService {
           `Security Alert: Refresh token reuse detected for user ${session.userId}. Revoking all sessions.`,
         );
         // Revoke all sessions for this user immediately
-        await this.dbService.db
-          .update(schema.userSessions)
-          .set({ isRevoked: true, updatedAt: new Date() })
-          .where(eq(schema.userSessions.userId, session.userId));
+        await this.prisma.userSession.updateMany({
+          where: { userId: session.userId },
+          data: { isRevoked: true, updatedAt: new Date() },
+        });
 
         throw new UnauthorizedException('Security alert: Token reuse detected. All sessions revoked.');
       }
 
       // Check expiration
       if (new Date(session.expiresAt) < new Date()) {
-        await this.dbService.db
-          .update(schema.userSessions)
-          .set({ isRevoked: true, updatedAt: new Date() })
-          .where(eq(schema.userSessions.id, session.id));
+        await this.prisma.userSession.update({
+          where: { id: session.id },
+          data: { isRevoked: true, updatedAt: new Date() },
+        });
 
         throw new UnauthorizedException('Refresh token has expired. Please log in again.');
       }
 
       // Invalidate current session (Rotation)
-      await this.dbService.db
-        .update(schema.userSessions)
-        .set({ isRevoked: true, updatedAt: new Date() })
-        .where(eq(schema.userSessions.id, session.id));
+      await this.prisma.userSession.update({
+        where: { id: session.id },
+        data: { isRevoked: true, updatedAt: new Date() },
+      });
 
       // Fetch active user
-      const [user] = await this.dbService.db
-        .select()
-        .from(schema.users)
-        .where(eq(schema.users.id, session.userId))
-        .limit(1);
+      const user = await this.prisma.user.findUnique({
+        where: { id: session.userId },
+      });
 
       if (!user || !user.isActive) {
         throw new UnauthorizedException('User account is inactive or deleted');
