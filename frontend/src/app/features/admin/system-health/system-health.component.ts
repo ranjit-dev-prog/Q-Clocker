@@ -129,13 +129,27 @@ import { HealthService, SystemHealthResponse } from '../../../core/services/heal
           </a>
 
           <a
-            href="https://local.drizzle.studio"
+            routerLink="/admin/database"
+            class="p-3 rounded-lg border border-indigo-200 dark:border-indigo-900 bg-indigo-50/50 dark:bg-indigo-950/30 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950 transition flex items-center justify-between group"
+          >
+            <div>
+              <div class="font-bold text-xs text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
+                <span>Drizzle DB Explorer</span>
+                <span class="px-1.5 py-0.2 rounded text-[9px] bg-indigo-600 text-white font-semibold">Native</span>
+              </div>
+              <div class="font-mono text-[11px] text-slate-500 mt-0.5">/admin/database</div>
+            </div>
+            <span class="material-icons text-sm text-indigo-600 group-hover:translate-x-0.5 transition-transform">arrow_forward</span>
+          </a>
+
+          <a
+            href="https://local.drizzle.studio?port=4984"
             target="_blank"
             class="p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center justify-between group"
           >
             <div>
-              <div class="font-bold text-xs text-slate-900 dark:text-white">Drizzle Studio</div>
-              <div class="font-mono text-[11px] text-slate-400 mt-0.5">local.drizzle.studio</div>
+              <div class="font-bold text-xs text-slate-900 dark:text-white">Drizzle Web Studio</div>
+              <div class="font-mono text-[11px] text-slate-400 mt-0.5">local.drizzle.studio:4984</div>
             </div>
             <span class="material-icons text-sm text-slate-400 group-hover:text-indigo-600">open_in_new</span>
           </a>
