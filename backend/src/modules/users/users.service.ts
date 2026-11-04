@@ -263,46 +263,39 @@ export class UsersService {
   async create(dto: CreateUserDto, creatorUser?: any) {
     const normalizedEmail = dto.email.toLowerCase().trim();
 
-    if (this.dbService.getConnectionStatus()) {
-      const existing = await this.dbService.db
-        .select()
-        .from(schema.users)
-        .where(eq(schema.users.email, normalizedEmail))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const existing = await this.prisma.user.findFirst({
+        where: { email: normalizedEmail },
+      });
 
-      if (existing.length > 0) {
+      if (existing) {
         throw new ConflictException('An employee with this email already exists');
       }
 
       // Check duplicate employeeCode if provided
       if (dto.employeeCode) {
-        const existingCode = await this.dbService.db
-          .select()
-          .from(schema.users)
-          .where(eq(schema.users.employeeCode, dto.employeeCode.trim()))
-          .limit(1);
-        if (existingCode.length > 0) {
+        const existingCode = await this.prisma.user.findFirst({
+          where: { employeeCode: dto.employeeCode.trim() },
+        });
+        if (existingCode) {
           throw new ConflictException(`Employee badge code '${dto.employeeCode}' is already taken`);
         }
       }
 
       // Find role
-      let [role] = await this.dbService.db
-        .select()
-        .from(schema.roles)
-        .where(eq(schema.roles.code, dto.roleCode))
-        .limit(1);
+      let role = await this.prisma.role.findUnique({
+        where: { code: dto.roleCode },
+      });
 
       if (!role) {
-        [role] = await this.dbService.db
-          .insert(schema.roles)
-          .values({
+        role = await this.prisma.role.create({
+          data: {
             code: dto.roleCode,
             name: dto.roleCode.replace('_', ' '),
             description: 'Application Role',
             isSystem: true,
-          })
-          .returning();
+          },
+        });
       }
 
       const rawPassword = dto.password || crypto.randomBytes(16).toString('hex') + '!2026';
@@ -320,9 +313,8 @@ export class UsersService {
         accountStatus = AccountStatus.INVITATION_PENDING;
       }
 
-      const [newUser] = await this.dbService.db
-        .insert(schema.users)
-        .values({
+      const newUser = await this.prisma.user.create({
+        data: {
           referenceId,
           employeeCode: dto.employeeCode?.trim() || `EMP${Math.floor(1000 + Math.random() * 9000)}`,
           email: normalizedEmail,
@@ -339,15 +331,15 @@ export class UsersService {
           managerId: dto.managerId || null,
           jobTitle: dto.jobTitle?.trim() || 'Team Member',
           employmentType: dto.employmentType || EmploymentType.FULL_TIME,
-          joiningDate: dto.joiningDate || new Date().toISOString().substring(0, 10),
+          joiningDate: dto.joiningDate ? new Date(dto.joiningDate) : new Date(),
           workLocation: dto.workLocation?.trim() || 'Headquarters',
           hasLoginAccount: dto.hasLoginAccount !== false,
           accountStatus,
           invitationToken,
           invitationTokenExpiresAt: invitationExpires,
           isActive: true,
-        })
-        .returning();
+        },
+      });
 
       const { passwordHash: _, ...sanitized } = newUser;
       return sanitized;
