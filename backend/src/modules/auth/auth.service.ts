@@ -231,6 +231,10 @@ export class AuthService {
     meta?: { ipAddress?: string; userAgent?: string },
   ): Promise<AuthResponseDto> {
     const { email, password } = loginDto;
+    const clientKey = `${meta?.ipAddress || '127.0.0.1'}:${email.toLowerCase().trim()}`;
+
+    // Enforce sliding-window brute force lock
+    this.checkRateLimit(clientKey);
 
     // Check database first if connected
     if (this.dbService.getConnectionStatus()) {
@@ -248,8 +252,11 @@ export class AuthService {
 
           const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
           if (!isPasswordValid) {
+            this.recordFailedAttempt(clientKey);
             throw new UnauthorizedException('Invalid email or password credentials');
           }
+
+          this.resetFailedAttempts(clientKey);
 
           // Update last login
           await this.dbService.db
@@ -275,7 +282,7 @@ export class AuthService {
           );
         }
       } catch (err) {
-        if (err instanceof UnauthorizedException) {
+        if (err instanceof UnauthorizedException || err instanceof HttpException) {
           throw err;
         }
         this.logger.warn(`Database login check had issue: ${(err as Error).message}. Trying fallback.`);
@@ -302,8 +309,11 @@ export class AuthService {
         'password123',
       ];
       if (!validDemoPasswords.includes(password) && !(await bcrypt.compare(password, demo.passwordHash))) {
+        this.recordFailedAttempt(clientKey);
         throw new UnauthorizedException('Invalid email or password credentials');
       }
+
+      this.resetFailedAttempts(clientKey);
 
       return await this.generateAuthResponse(
         {
@@ -323,6 +333,7 @@ export class AuthService {
       );
     }
 
+    this.recordFailedAttempt(clientKey);
     throw new UnauthorizedException('Invalid email or password credentials');
   }
 
