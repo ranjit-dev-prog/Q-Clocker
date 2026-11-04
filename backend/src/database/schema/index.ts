@@ -812,17 +812,26 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   ledTeams: many(teams, { relationName: 'teamLead' }),
   subordinates: many(users, { relationName: 'managerSubordinates' }),
   sessions: many(userSessions),
-  assignedTasks: many(taskAssignments),
+  assignedTasks: many(taskAssignments, { relationName: 'assignedEmployee' }),
+  delegatedTasks: many(taskAssignments, { relationName: 'assignedByUser' }),
   createdTasks: many(tasks, { relationName: 'taskCreator' }),
   reviewedTasks: many(tasks, { relationName: 'taskReviewer' }),
   requestedTickets: many(tickets, { relationName: 'ticketRequester' }),
   assignedTickets: many(tickets, { relationName: 'ticketTechnician' }),
   workLogs: many(workLogs),
-  attendanceEvents: many(attendanceEvents),
+  attendanceEvents: many(attendanceEvents, { relationName: 'attendanceEmployee' }),
+  verifiedAttendanceEvents: many(attendanceEvents, { relationName: 'attendanceVerifier' }),
   workSessions: many(workSessions),
   taskTimeEntries: many(taskTimeEntries),
   ticketTimeEntries: many(ticketTimeEntries),
-  timesheets: many(timesheets),
+  timesheets: many(timesheets, { relationName: 'timesheetEmployee' }),
+  managedTimesheets: many(timesheets, { relationName: 'timesheetManager' }),
+  requestedApprovals: many(approvals, { relationName: 'approvalRequester' }),
+  assignedApprovals: many(approvals, { relationName: 'approvalApprover' }),
+  ownedFollowUps: many(followUps, { relationName: 'followUpOwner' }),
+  assignedFollowUps: many(followUps, { relationName: 'followUpAssignee' }),
+  taxDeclarations: many(taxDeclarations, { relationName: 'taxDeclarationEmployee' }),
+  verifiedTaxDeclarations: many(taxDeclarations, { relationName: 'taxDeclarationVerifier' }),
   receivedReviews: many(performanceReviews, { relationName: 'employeeReviews' }),
   givenReviews: many(performanceReviews, { relationName: 'managerReviews' }),
   notifications: many(notifications),
@@ -875,10 +884,12 @@ export const taskAssignmentsRelations = relations(taskAssignments, ({ one }) => 
   employee: one(users, {
     fields: [taskAssignments.employeeId],
     references: [users.id],
+    relationName: 'assignedEmployee',
   }),
   assignedBy: one(users, {
     fields: [taskAssignments.assignedById],
     references: [users.id],
+    relationName: 'assignedByUser',
   }),
 }));
 
@@ -982,10 +993,12 @@ export const attendanceEventsRelations = relations(attendanceEvents, ({ one }) =
   employee: one(users, {
     fields: [attendanceEvents.employeeId],
     references: [users.id],
+    relationName: 'attendanceEmployee',
   }),
   verifier: one(users, {
     fields: [attendanceEvents.verifiedById],
     references: [users.id],
+    relationName: 'attendanceVerifier',
   }),
 }));
 
@@ -1022,6 +1035,7 @@ export const timesheetsRelations = relations(timesheets, ({ one, many }) => ({
   employee: one(users, {
     fields: [timesheets.employeeId],
     references: [users.id],
+    relationName: 'timesheetEmployee',
   }),
   department: one(departments, {
     fields: [timesheets.departmentId],
@@ -1030,6 +1044,7 @@ export const timesheetsRelations = relations(timesheets, ({ one, many }) => ({
   manager: one(users, {
     fields: [timesheets.managerId],
     references: [users.id],
+    relationName: 'timesheetManager',
   }),
   entries: many(timesheetEntries),
 }));
@@ -1053,10 +1068,12 @@ export const approvalsRelations = relations(approvals, ({ one }) => ({
   requester: one(users, {
     fields: [approvals.requestedById],
     references: [users.id],
+    relationName: 'approvalRequester',
   }),
   approver: one(users, {
     fields: [approvals.approverId],
     references: [users.id],
+    relationName: 'approvalApprover',
   }),
 }));
 
@@ -1064,10 +1081,12 @@ export const followUpsRelations = relations(followUps, ({ one }) => ({
   owner: one(users, {
     fields: [followUps.ownerId],
     references: [users.id],
+    relationName: 'followUpOwner',
   }),
   assignee: one(users, {
     fields: [followUps.assignedToId],
     references: [users.id],
+    relationName: 'followUpAssignee',
   }),
 }));
 
@@ -1250,10 +1269,12 @@ export const taxDeclarationsRelations = relations(taxDeclarations, ({ one }) => 
   employee: one(users, {
     fields: [taxDeclarations.employeeId],
     references: [users.id],
+    relationName: 'taxDeclarationEmployee',
   }),
   verifiedBy: one(users, {
     fields: [taxDeclarations.verifiedById],
     references: [users.id],
+    relationName: 'taxDeclarationVerifier',
   }),
 }));
 

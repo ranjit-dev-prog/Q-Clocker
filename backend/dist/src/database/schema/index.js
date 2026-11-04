@@ -608,17 +608,26 @@ exports.usersRelations = (0, drizzle_orm_1.relations)(exports.users, ({ one, man
     ledTeams: many(exports.teams, { relationName: 'teamLead' }),
     subordinates: many(exports.users, { relationName: 'managerSubordinates' }),
     sessions: many(exports.userSessions),
-    assignedTasks: many(exports.taskAssignments),
+    assignedTasks: many(exports.taskAssignments, { relationName: 'assignedEmployee' }),
+    delegatedTasks: many(exports.taskAssignments, { relationName: 'assignedByUser' }),
     createdTasks: many(exports.tasks, { relationName: 'taskCreator' }),
     reviewedTasks: many(exports.tasks, { relationName: 'taskReviewer' }),
     requestedTickets: many(exports.tickets, { relationName: 'ticketRequester' }),
     assignedTickets: many(exports.tickets, { relationName: 'ticketTechnician' }),
     workLogs: many(exports.workLogs),
-    attendanceEvents: many(exports.attendanceEvents),
+    attendanceEvents: many(exports.attendanceEvents, { relationName: 'attendanceEmployee' }),
+    verifiedAttendanceEvents: many(exports.attendanceEvents, { relationName: 'attendanceVerifier' }),
     workSessions: many(exports.workSessions),
     taskTimeEntries: many(exports.taskTimeEntries),
     ticketTimeEntries: many(exports.ticketTimeEntries),
-    timesheets: many(exports.timesheets),
+    timesheets: many(exports.timesheets, { relationName: 'timesheetEmployee' }),
+    managedTimesheets: many(exports.timesheets, { relationName: 'timesheetManager' }),
+    requestedApprovals: many(exports.approvals, { relationName: 'approvalRequester' }),
+    assignedApprovals: many(exports.approvals, { relationName: 'approvalApprover' }),
+    ownedFollowUps: many(exports.followUps, { relationName: 'followUpOwner' }),
+    assignedFollowUps: many(exports.followUps, { relationName: 'followUpAssignee' }),
+    taxDeclarations: many(exports.taxDeclarations, { relationName: 'taxDeclarationEmployee' }),
+    verifiedTaxDeclarations: many(exports.taxDeclarations, { relationName: 'taxDeclarationVerifier' }),
     receivedReviews: many(exports.performanceReviews, { relationName: 'employeeReviews' }),
     givenReviews: many(exports.performanceReviews, { relationName: 'managerReviews' }),
     notifications: many(exports.notifications),
@@ -668,10 +677,12 @@ exports.taskAssignmentsRelations = (0, drizzle_orm_1.relations)(exports.taskAssi
     employee: one(exports.users, {
         fields: [exports.taskAssignments.employeeId],
         references: [exports.users.id],
+        relationName: 'assignedEmployee',
     }),
     assignedBy: one(exports.users, {
         fields: [exports.taskAssignments.assignedById],
         references: [exports.users.id],
+        relationName: 'assignedByUser',
     }),
 }));
 exports.taskCommentsRelations = (0, drizzle_orm_1.relations)(exports.taskComments, ({ one }) => ({
@@ -767,10 +778,12 @@ exports.attendanceEventsRelations = (0, drizzle_orm_1.relations)(exports.attenda
     employee: one(exports.users, {
         fields: [exports.attendanceEvents.employeeId],
         references: [exports.users.id],
+        relationName: 'attendanceEmployee',
     }),
     verifier: one(exports.users, {
         fields: [exports.attendanceEvents.verifiedById],
         references: [exports.users.id],
+        relationName: 'attendanceVerifier',
     }),
 }));
 exports.workSessionsRelations = (0, drizzle_orm_1.relations)(exports.workSessions, ({ one }) => ({
@@ -803,6 +816,7 @@ exports.timesheetsRelations = (0, drizzle_orm_1.relations)(exports.timesheets, (
     employee: one(exports.users, {
         fields: [exports.timesheets.employeeId],
         references: [exports.users.id],
+        relationName: 'timesheetEmployee',
     }),
     department: one(exports.departments, {
         fields: [exports.timesheets.departmentId],
@@ -811,6 +825,7 @@ exports.timesheetsRelations = (0, drizzle_orm_1.relations)(exports.timesheets, (
     manager: one(exports.users, {
         fields: [exports.timesheets.managerId],
         references: [exports.users.id],
+        relationName: 'timesheetManager',
     }),
     entries: many(exports.timesheetEntries),
 }));
@@ -832,20 +847,24 @@ exports.approvalsRelations = (0, drizzle_orm_1.relations)(exports.approvals, ({ 
     requester: one(exports.users, {
         fields: [exports.approvals.requestedById],
         references: [exports.users.id],
+        relationName: 'approvalRequester',
     }),
     approver: one(exports.users, {
         fields: [exports.approvals.approverId],
         references: [exports.users.id],
+        relationName: 'approvalApprover',
     }),
 }));
 exports.followUpsRelations = (0, drizzle_orm_1.relations)(exports.followUps, ({ one }) => ({
     owner: one(exports.users, {
         fields: [exports.followUps.ownerId],
         references: [exports.users.id],
+        relationName: 'followUpOwner',
     }),
     assignee: one(exports.users, {
         fields: [exports.followUps.assignedToId],
         references: [exports.users.id],
+        relationName: 'followUpAssignee',
     }),
 }));
 exports.remindersRelations = (0, drizzle_orm_1.relations)(exports.reminders, ({ one }) => ({
@@ -990,10 +1009,12 @@ exports.taxDeclarationsRelations = (0, drizzle_orm_1.relations)(exports.taxDecla
     employee: one(exports.users, {
         fields: [exports.taxDeclarations.employeeId],
         references: [exports.users.id],
+        relationName: 'taxDeclarationEmployee',
     }),
     verifiedBy: one(exports.users, {
         fields: [exports.taxDeclarations.verifiedById],
         references: [exports.users.id],
+        relationName: 'taxDeclarationVerifier',
     }),
 }));
 exports.lifecycleEventsRelations = (0, drizzle_orm_1.relations)(exports.lifecycleEvents, ({ one }) => ({
