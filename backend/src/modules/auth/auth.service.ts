@@ -2,8 +2,11 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
   Logger,
   NotFoundException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
@@ -15,6 +18,12 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import {
+  ForgotPasswordDto,
+  VerifyChallengeDto,
+  ResetPasswordDto,
+  AdminResetPasswordDto,
+} from './dto/password-reset.dto';
 import { UserRole } from '../../common/enums';
 import { generateReferenceId } from '../../common/utils/reference-id.util';
 import { PermissionsGuard } from '../../common/guards/permissions.guard';
@@ -158,10 +167,64 @@ export class AuthService {
     createdAt: Date;
   }> = [];
 
+  // Sliding window brute-force lockout: 5 failed attempts within 15 minutes triggers lock
+  private failedAttempts = new Map<string, { count: number; lockedUntil: number; lastAttempt: number }>();
+
+  // Multi-step dual-factor password recovery store
+  private passwordResetTokens = new Map<
+    string,
+    {
+      userId: string;
+      email: string;
+      token: string;
+      expiresAt: number;
+      securityQuestions: {
+        question1: string;
+        answer1: string;
+        question2: string;
+        answer2: string;
+      };
+      recoveryCode: string;
+      verified: boolean;
+    }
+  >();
+
   constructor(
     private dbService: DatabaseService,
     private jwtService: JwtService,
   ) {}
+
+  private checkRateLimit(clientKey: string): void {
+    const rateData = this.failedAttempts.get(clientKey);
+    const now = Date.now();
+    if (rateData && rateData.lockedUntil > now) {
+      const minutesLeft = Math.ceil((rateData.lockedUntil - now) / 60000);
+      this.logger.warn(`Brute force shield: ${clientKey} locked for ${minutesLeft} more minute(s).`);
+      throw new HttpException(
+        `Account or IP temporarily locked due to 5 consecutive authentication failures. Try again in ${minutesLeft} minute(s) or use account recovery.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+  }
+
+  private recordFailedAttempt(clientKey: string): void {
+    const now = Date.now();
+    const existing = this.failedAttempts.get(clientKey) || { count: 0, lockedUntil: 0, lastAttempt: now };
+    if (now - existing.lastAttempt > 15 * 60 * 1000) {
+      existing.count = 0;
+    }
+    existing.count += 1;
+    existing.lastAttempt = now;
+    if (existing.count >= 5) {
+      existing.lockedUntil = now + 15 * 60 * 1000;
+      this.logger.error(`SECURITY ALERT: Client ${clientKey} temporarily locked for 15 minutes after 5 failed login attempts.`);
+    }
+    this.failedAttempts.set(clientKey, existing);
+  }
+
+  private resetFailedAttempts(clientKey: string): void {
+    this.failedAttempts.delete(clientKey);
+  }
 
   async login(
     loginDto: LoginDto,
