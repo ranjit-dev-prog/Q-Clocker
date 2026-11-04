@@ -13,6 +13,7 @@ const { runE2EWorkflows } = require('./e2e/test-business-workflows');
 const { runDatabaseTests } = require('./database/test-database');
 const { runPerformanceTests } = require('./performance/test-performance');
 const { runAccessibilityTests } = require('./accessibility/test-ui-accessibility');
+const { runItsmDomainTests } = require('./api/test-itsm-service');
 
 async function runMasterSuite() {
   console.log('================================================================');
@@ -47,6 +48,10 @@ async function runMasterSuite() {
   // Step 7: Frontend Accessibility & Responsive UI Suite
   console.log('\n>>> RUNNING FRONTEND ACCESSIBILITY & RESPONSIVE UI AUDIT');
   await runAccessibilityTests();
+
+  // Step 8: Enterprise ITSM & SLA Lifecycle Suite
+  console.log('\n>>> RUNNING ENTERPRISE ITSM & SLA LIFECYCLE SUITE');
+  await runItsmDomainTests();
 
   const totalDurationSeconds = ((performance.now() - overallStart) / 1000).toFixed(2);
   const summary = tracker.getSummary();

@@ -595,9 +595,12 @@ let TicketsService = TicketsService_1 = class TicketsService {
                 .where((0, drizzle_orm_1.eq)(schema.ticketTimeEntries.ticketId, ticket.id))
                 .orderBy((0, drizzle_orm_1.desc)(schema.ticketTimeEntries.createdAt));
             const liveSla = this.slaService.evaluateLiveSla(ticket);
+            const totalTimeSpentSeconds = timeEntries.reduce((sum, te) => sum + (te.durationSeconds || 0), 0);
+            const activeTimer = timeEntries.find((te) => te.isRunning) || null;
             return {
                 ...ticket,
                 requesterName: `${ticket.requesterFirstName || ''} ${ticket.requesterLastName || ''}`.trim() || 'Employee',
+                isPaused: liveSla.slaStatus === enums_1.SlaStatus.PAUSED,
                 slaStatus: liveSla.slaStatus,
                 slaBreached: liveSla.slaBreached,
                 remainingSeconds: liveSla.remainingSeconds,
@@ -616,6 +619,8 @@ let TicketsService = TicketsService_1 = class TicketsService {
                     employeeName: `${te.employeeFirstName || ''} ${te.employeeLastName || ''}`.trim() || 'Staff',
                     durationMinutes: Math.round(te.durationSeconds / 60),
                 })),
+                totalTimeSpentMinutes: Math.round(totalTimeSpentSeconds / 60),
+                activeTimer,
                 linkedTasks: [],
             };
         }
@@ -633,8 +638,11 @@ let TicketsService = TicketsService_1 = class TicketsService {
         const timeEntries = this.demoTimeEntries.filter((te) => te.ticketId === ticket.id);
         const linkedTasks = this.demoTaskLinks.filter((tl) => tl.ticketId === ticket.id);
         const liveSla = this.slaService.evaluateLiveSla(ticket);
+        const totalTimeSpentSeconds = timeEntries.reduce((sum, te) => sum + (te.durationSeconds || 0), 0);
+        const activeTimer = timeEntries.find((te) => te.isRunning) || null;
         return {
             ...ticket,
+            isPaused: liveSla.slaStatus === enums_1.SlaStatus.PAUSED,
             slaStatus: liveSla.slaStatus,
             slaBreached: liveSla.slaBreached,
             remainingSeconds: liveSla.remainingSeconds,
@@ -644,6 +652,8 @@ let TicketsService = TicketsService_1 = class TicketsService {
             history,
             timeEntries,
             linkedTasks,
+            totalTimeSpentMinutes: Math.round(totalTimeSpentSeconds / 60),
+            activeTimer,
         };
     }
     async transitionStatus(id, dto, user) {
@@ -1119,6 +1129,7 @@ let TicketsService = TicketsService_1 = class TicketsService {
                 : '100%',
             averageFirstResponseHours: '1.8h',
             averageResolutionHours: '6.4h',
+            avgResolutionTimeHours: 6.4,
             priorityBreakdown,
             categoryBreakdown,
             statusBreakdown,

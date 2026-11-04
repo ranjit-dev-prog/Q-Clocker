@@ -664,9 +664,13 @@ export class TicketsService {
 
       const liveSla = this.slaService.evaluateLiveSla(ticket);
 
+      const totalTimeSpentSeconds = timeEntries.reduce((sum, te) => sum + (te.durationSeconds || 0), 0);
+      const activeTimer = timeEntries.find((te) => te.isRunning) || null;
+
       return {
         ...ticket,
         requesterName: `${ticket.requesterFirstName || ''} ${ticket.requesterLastName || ''}`.trim() || 'Employee',
+        isPaused: liveSla.slaStatus === SlaStatus.PAUSED,
         slaStatus: liveSla.slaStatus,
         slaBreached: liveSla.slaBreached,
         remainingSeconds: liveSla.remainingSeconds,
@@ -685,6 +689,8 @@ export class TicketsService {
           employeeName: `${te.employeeFirstName || ''} ${te.employeeLastName || ''}`.trim() || 'Staff',
           durationMinutes: Math.round(te.durationSeconds / 60),
         })),
+        totalTimeSpentMinutes: Math.round(totalTimeSpentSeconds / 60),
+        activeTimer,
         linkedTasks: [],
       };
     }
@@ -707,9 +713,12 @@ export class TicketsService {
     const timeEntries = this.demoTimeEntries.filter((te) => te.ticketId === ticket.id);
     const linkedTasks = this.demoTaskLinks.filter((tl) => tl.ticketId === ticket.id);
     const liveSla = this.slaService.evaluateLiveSla(ticket);
+    const totalTimeSpentSeconds = timeEntries.reduce((sum, te) => sum + (te.durationSeconds || 0), 0);
+    const activeTimer = timeEntries.find((te) => te.isRunning) || null;
 
     return {
       ...ticket,
+      isPaused: liveSla.slaStatus === SlaStatus.PAUSED,
       slaStatus: liveSla.slaStatus,
       slaBreached: liveSla.slaBreached,
       remainingSeconds: liveSla.remainingSeconds,
@@ -719,6 +728,8 @@ export class TicketsService {
       history,
       timeEntries,
       linkedTasks,
+      totalTimeSpentMinutes: Math.round(totalTimeSpentSeconds / 60),
+      activeTimer,
     };
   }
 
@@ -1319,6 +1330,7 @@ export class TicketsService {
           : '100%',
       averageFirstResponseHours: '1.8h',
       averageResolutionHours: '6.4h',
+      avgResolutionTimeHours: 6.4,
       priorityBreakdown,
       categoryBreakdown,
       statusBreakdown,

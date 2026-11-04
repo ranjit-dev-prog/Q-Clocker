@@ -34,6 +34,7 @@ export declare class TicketsController {
         slaComplianceRate: string;
         averageFirstResponseHours: string;
         averageResolutionHours: string;
+        avgResolutionTimeHours: number;
         priorityBreakdown: {
             P1: number;
             P2: number;
