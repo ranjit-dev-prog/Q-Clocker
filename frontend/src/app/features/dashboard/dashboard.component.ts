@@ -1,7 +1,11 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { TicketService } from '../../core/services/ticket.service';
+import { TaskService } from '../../core/services/task.service';
+import { EmployeeService } from '../../core/services/employee.service';
+import { DepartmentService } from '../../core/services/department.service';
 
 @Component({
   selector: 'app-dashboard',
@@ -12,8 +16,11 @@ import { AuthService } from '../../core/services/auth.service';
       <!-- Welcome Banner -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-slate-200 dark:border-slate-800">
         <div>
-          <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-            Operational Overview
+          <h1 class="text-2xl font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-2">
+            <span>Welcome back, {{ authService.currentUser()?.firstName }}</span>
+            <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-primary-100 dark:bg-primary-950/80 text-primary-700 dark:text-primary-300 uppercase">
+              {{ formatRole(authService.userRole()) }}
+            </span>
           </h1>
           <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
             Real-time telemetry on organization tasks, IT tickets and employee performance
@@ -26,7 +33,7 @@ import { AuthService } from '../../core/services/auth.service';
           </div>
           <a
             routerLink="/tasks"
-            class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center gap-1.5"
+            class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer"
           >
             <span class="material-icons text-base">add</span>
             Create Task
@@ -34,65 +41,85 @@ import { AuthService } from '../../core/services/auth.service';
         </div>
       </div>
 
-      <!-- Top Metric Cards Grid -->
+      <!-- Top Metric Cards Grid (Dynamic based on Role) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <!-- Total & Active Employees -->
+        <!-- Metric 1: Workforce / Assigned Tasks -->
         <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span class="text-xs font-semibold uppercase tracking-wider">Total Workforce</span>
-            <span class="material-icons text-primary-500 text-xl">groups</span>
+            <span class="text-xs font-semibold uppercase tracking-wider">
+              {{ authService.isAdmin() ? 'Total Workforce' : 'Active Tasks' }}
+            </span>
+            <span class="material-icons text-primary-500 text-xl">
+              {{ authService.isAdmin() ? 'groups' : 'assignment' }}
+            </span>
           </div>
           <div class="mt-3 flex items-baseline gap-2">
-            <span class="text-2xl font-bold text-slate-900 dark:text-white">48</span>
-            <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">44 Active Today</span>
+            <span class="text-2xl font-bold text-slate-900 dark:text-white">
+              {{ authService.isAdmin() ? (employeeService.employees().length || 9) : (taskService.tasks().length || 4) }}
+            </span>
+            <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">
+              Active Today
+            </span>
           </div>
           <div class="mt-3 text-[11px] text-slate-400">
-            Across Engineering, IT, HR & Operations
+            Across IT, Software Engineering & HR
           </div>
         </div>
 
-        <!-- Tasks Assigned & Completed Today -->
+        <!-- Metric 2: Open Tickets -->
         <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span class="text-xs font-semibold uppercase tracking-wider">Tasks Assigned Today</span>
-            <span class="material-icons text-indigo-500 text-xl">assignment</span>
+            <span class="text-xs font-semibold uppercase tracking-wider">ITSM Tickets</span>
+            <span class="material-icons text-amber-500 text-xl">confirmation_number</span>
           </div>
           <div class="mt-3 flex items-baseline gap-2">
-            <span class="text-2xl font-bold text-slate-900 dark:text-white">32</span>
-            <span class="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded">24 Completed (75%)</span>
+            <span class="text-2xl font-bold text-slate-900 dark:text-white">
+              {{ ticketService.metrics()?.openTickets ?? 4 }} Open
+            </span>
+            <span class="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded">
+              {{ ticketService.metrics()?.criticalTickets ?? 1 }} P1 Critical
+            </span>
           </div>
           <div class="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div class="bg-primary-600 h-1.5 rounded-full" style="width: 75%"></div>
+            <div class="bg-amber-500 h-1.5 rounded-full" style="width: 70%"></div>
           </div>
         </div>
 
-        <!-- Pending & Overdue Tasks -->
+        <!-- Metric 3: SLA Compliance Rate -->
         <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span class="text-xs font-semibold uppercase tracking-wider">Pending & Overdue</span>
-            <span class="material-icons text-amber-500 text-xl">pending_actions</span>
+            <span class="text-xs font-semibold uppercase tracking-wider">SLA Compliance</span>
+            <span class="material-icons text-emerald-500 text-xl">verified</span>
           </div>
           <div class="mt-3 flex items-baseline gap-2">
-            <span class="text-2xl font-bold text-slate-900 dark:text-white">8</span>
-            <span class="text-xs font-medium text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 px-1.5 py-0.5 rounded">2 Overdue</span>
+            <span class="text-2xl font-bold text-emerald-600">
+              {{ ticketService.metrics()?.slaComplianceRate ?? 98.2 }}%
+            </span>
+            <span class="text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">
+              Target: >95%
+            </span>
           </div>
           <div class="mt-3 text-[11px] text-slate-400">
-            6 in progress / review, 2 require attention
+            Avg resolution: {{ ticketService.metrics()?.averageResolutionHours ?? 3.4 }}h
           </div>
         </div>
 
-        <!-- IT Tickets Open & Resolved -->
+        <!-- Metric 4: Departments / Sprint Health -->
         <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
-            <span class="text-xs font-semibold uppercase tracking-wider">IT Tickets</span>
-            <span class="material-icons text-cyan-500 text-xl">confirmation_number</span>
+            <span class="text-xs font-semibold uppercase tracking-wider">Departments Active</span>
+            <span class="material-icons text-cyan-500 text-xl">corporate_fare</span>
           </div>
           <div class="mt-3 flex items-baseline gap-2">
-            <span class="text-2xl font-bold text-slate-900 dark:text-white">14 Open</span>
-            <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">98.2% SLA</span>
+            <span class="text-2xl font-bold text-slate-900 dark:text-white">
+              {{ departmentService.departments().length || 4 }} Depts
+            </span>
+            <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">
+              100% Operational
+            </span>
           </div>
           <div class="mt-3 text-[11px] text-slate-400">
-            Avg resolution time: 3.4 hours
+            Engineering, IT, HR & Operations
           </div>
         </div>
       </div>
@@ -109,11 +136,10 @@ import { AuthService } from '../../core/services/auth.service';
               <p class="text-xs text-slate-400 mt-0.5">Estimated vs Actual Hours across sprints</p>
             </div>
             <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-              Current Week
+              Current Sprint
             </span>
           </div>
 
-          <!-- Synthetic Bar Graph representation using Tailwind -->
           <div class="space-y-4 pt-2">
             <div *ngFor="let day of weeklyStats" class="space-y-1">
               <div class="flex justify-between text-xs font-medium">
@@ -220,8 +246,12 @@ import { AuthService } from '../../core/services/auth.service';
     </div>
   `,
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   authService = inject(AuthService);
+  ticketService = inject(TicketService);
+  taskService = inject(TaskService);
+  employeeService = inject(EmployeeService);
+  departmentService = inject(DepartmentService);
 
   weeklyStats = [
     { day: 'Monday', completed: 28, total: 30, hours: 224 },
@@ -250,5 +280,17 @@ export class DashboardComponent {
     { user: 'Sarah Jenkins', action: 'approved work log', target: 'Backend API Authentication Endpoints', time: '2 hours ago', icon: 'thumb_up' },
     { user: 'Alexander Vance', action: 'configured department policy', target: 'Q4 Performance Evaluation Metric', time: '3 hours ago', icon: 'settings' },
   ];
-}
 
+  ngOnInit() {
+    this.ticketService.loadMetrics().subscribe();
+    this.ticketService.loadTickets().subscribe();
+    this.taskService.loadTasks();
+    this.employeeService.loadEmployees();
+    this.departmentService.loadDepartments();
+  }
+
+  formatRole(role: any): string {
+    if (!role) return 'Employee';
+    return String(role).replace(/_/g, ' ');
+  }
+}
