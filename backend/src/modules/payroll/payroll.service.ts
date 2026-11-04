@@ -6,7 +6,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
-import PDFDocument from 'pdfkit';
+const PDFDocument = require('pdfkit');
 import * as crypto from 'crypto';
 import { DatabaseService } from '../../database/database.service';
 import * as schema from '../../database/schema';

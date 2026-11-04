@@ -16,7 +16,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PayrollService = void 0;
 const common_1 = require("@nestjs/common");
 const ExcelJS = require("exceljs");
-const pdfkit_1 = require("pdfkit");
+const PDFDocument = require('pdfkit');
 const crypto = require("crypto");
 const database_service_1 = require("../../database/database.service");
 const notifications_service_1 = require("../notifications/notifications.service");
@@ -362,7 +362,7 @@ let PayrollService = PayrollService_1 = class PayrollService {
             throw new common_1.BadRequestException('Unauthorized access to employee payslip');
         }
         return new Promise((resolve, reject) => {
-            const doc = new pdfkit_1.default({ margin: 40, size: 'A4' });
+            const doc = new PDFDocument({ margin: 40, size: 'A4' });
             const buffers = [];
             doc.on('data', (c) => buffers.push(c));
             doc.on('end', () => resolve(Buffer.concat(buffers)));
