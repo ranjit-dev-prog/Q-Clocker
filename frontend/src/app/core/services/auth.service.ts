@@ -96,6 +96,59 @@ export class AuthService {
   }
 
   /**
+   * Request password reset token (Dual-Factor Account Recovery)
+   */
+  forgotPassword(email: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/forgot-password`, { email });
+  }
+
+  /**
+   * Retrieve security challenge questions for valid reset token
+   */
+  getResetChallenge(token: string): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/reset-challenge?token=${encodeURIComponent(token)}`);
+  }
+
+  /**
+   * Verify answers to recovery challenge questions or recovery passphrase
+   */
+  verifyResetChallenge(
+    token: string,
+    answers: { questionId: string; answer: string }[],
+    recoveryPassphrase?: string,
+  ): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/verify-reset-challenge`, {
+      token,
+      answers,
+      recoveryPassphrase,
+    });
+  }
+
+  /**
+   * Complete password reset with high-entropy credential
+   */
+  resetPassword(token: string, newPassword: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/reset-password`, {
+      token,
+      newPassword,
+    });
+  }
+
+  /**
+   * Admin-triggered password reset with temporary token issuance
+   */
+  adminResetPassword(userId: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/users/${userId}/admin-reset-password`, {});
+  }
+
+  /**
+   * Administrative revocation of all user active sessions
+   */
+  revokeUserSessions(userId: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/users/${userId}/revoke-sessions`, {});
+  }
+
+  /**
    * Check if current user has a specific granular permission
    */
   hasPermission(permission: string): boolean {
