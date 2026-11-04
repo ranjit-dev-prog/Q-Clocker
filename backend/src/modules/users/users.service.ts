@@ -6,9 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { DatabaseService } from '../../database/database.service';
-import * as schema from '../../database/schema';
-import { eq, and, isNull, desc, ilike, or } from 'drizzle-orm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
@@ -260,7 +258,7 @@ export class UsersService {
     },
   ];
 
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(dto: CreateUserDto, creatorUser?: any) {
     const normalizedEmail = dto.email.toLowerCase().trim();
