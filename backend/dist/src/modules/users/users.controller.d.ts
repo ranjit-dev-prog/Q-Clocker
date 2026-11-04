@@ -1,4 +1,6 @@
+import { Response } from 'express';
 import { UsersService } from './users.service';
+import { AuthService } from '../auth/auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
@@ -6,7 +8,35 @@ import { ImportEmployeeRow } from './dto/import-employee.dto';
 import { UserRole } from '../../common/enums';
 export declare class UsersController {
     private readonly usersService;
-    constructor(usersService: UsersService);
+    private readonly authService;
+    constructor(usersService: UsersService, authService: AuthService);
+    getBulkTemplate(res: Response): Promise<Response<any, Record<string, any>>>;
+    bulkUpload(file: Express.Multer.File, actor: any): Promise<{
+        totalRows: number;
+        validRows: number;
+        invalidRows: number;
+        errors: {
+            rowNumber: number;
+            email?: string;
+            error: string;
+        }[];
+        insertedUsers: {
+            id: string;
+            email: string;
+            employeeCode: string;
+            temporaryPassword?: string;
+        }[];
+    }>;
+    adminResetPassword(id: string): Promise<{
+        success: boolean;
+        temporaryPassword: string;
+        requirePasswordChange: boolean;
+        message: string;
+    }>;
+    revokeSessions(id: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
     getAdminDashboardMetrics(): Promise<{
         totalEmployees: number;
         activeEmployees: number;

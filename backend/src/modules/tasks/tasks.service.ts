@@ -251,13 +251,10 @@ export class TasksService {
         userId: assigneeId,
         title: 'Task Assigned',
         message: `You were assigned as lead to task ${newTask.referenceId}: "${newTask.title}"`,
-        type: 'TASK_ASSIGNED',
+        type: 'TASK',
         link: '/tasks',
       });
     }
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
     this.demoTasks.unshift(newTask);
     return newTask;
   }

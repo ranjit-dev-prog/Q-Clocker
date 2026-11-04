@@ -943,7 +943,7 @@ export class AuthService {
     };
   }
 
-  async adminResetPassword(userId: string, dto: AdminResetPasswordDto) {
+  async adminResetPassword(userId: string, dto?: AdminResetPasswordDto) {
     const tempPassword = `Temp#${crypto.randomBytes(4).toString('hex')}!2026`;
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(tempPassword, salt);

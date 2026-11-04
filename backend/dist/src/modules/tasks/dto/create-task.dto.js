@@ -22,6 +22,8 @@ class CreateTaskDto {
     priority;
     category;
     assignedEmployeeId;
+    leadAssigneeId;
+    collaboratorIds;
     reviewerId;
     startDate;
     dueDate;
@@ -78,6 +80,17 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
 ], CreateTaskDto.prototype, "assignedEmployeeId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Lead Assignee Employee UUID' }),
+    (0, class_validator_1.IsUUID)(),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", String)
+], CreateTaskDto.prototype, "leadAssigneeId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'Collaborator Employee UUIDs', type: [String] }),
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Array)
+], CreateTaskDto.prototype, "collaboratorIds", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: 'Reviewer Employee UUID' }),
     (0, class_validator_1.IsUUID)(),

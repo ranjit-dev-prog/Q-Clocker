@@ -14,8 +14,10 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const users_service_1 = require("./users.service");
+const auth_service_1 = require("../auth/auth.service");
 const create_user_dto_1 = require("./dto/create-user.dto");
 const update_user_dto_1 = require("./dto/update-user.dto");
 const user_query_dto_1 = require("./dto/user-query.dto");
@@ -26,8 +28,25 @@ const current_user_decorator_1 = require("../../common/decorators/current-user.d
 const enums_1 = require("../../common/enums");
 let UsersController = class UsersController {
     usersService;
-    constructor(usersService) {
+    authService;
+    constructor(usersService, authService) {
         this.usersService = usersService;
+        this.authService = authService;
+    }
+    async getBulkTemplate(res) {
+        const buffer = await this.usersService.generateBulkTemplate();
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', 'attachment; filename="q_clocker_bulk_onboarding_template.xlsx"');
+        return res.end(buffer);
+    }
+    async bulkUpload(file, actor) {
+        return this.usersService.bulkUpload(file, actor);
+    }
+    async adminResetPassword(id) {
+        return this.authService.adminResetPassword(id);
+    }
+    async revokeSessions(id) {
+        return this.authService.revokeUserSessions(id);
     }
     async getAdminDashboardMetrics() {
         return this.usersService.getAdminDashboardMetrics();
@@ -67,6 +86,47 @@ let UsersController = class UsersController {
     }
 };
 exports.UsersController = UsersController;
+__decorate([
+    (0, common_1.Get)('bulk-template'),
+    (0, roles_decorator_1.Roles)(enums_1.UserRole.SUPER_ADMIN, enums_1.UserRole.ADMIN, enums_1.UserRole.HR_MANAGER),
+    (0, swagger_1.ApiOperation)({ summary: 'Download employee bulk onboarding .xlsx template' }),
+    __param(0, (0, common_1.Res)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "getBulkTemplate", null);
+__decorate([
+    (0, common_1.Post)('bulk-upload'),
+    (0, roles_decorator_1.Roles)(enums_1.UserRole.SUPER_ADMIN, enums_1.UserRole.ADMIN, enums_1.UserRole.HR_MANAGER),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('file')),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Bulk onboard employees via .xlsx or .csv with schema validation' }),
+    __param(0, (0, common_1.UploadedFile)()),
+    __param(1, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "bulkUpload", null);
+__decorate([
+    (0, common_1.Post)(':id/admin-reset-password'),
+    (0, roles_decorator_1.Roles)(enums_1.UserRole.SUPER_ADMIN, enums_1.UserRole.ADMIN, enums_1.UserRole.HR_MANAGER),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Administratively reset employee password with temporary credential' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "adminResetPassword", null);
+__decorate([
+    (0, common_1.Post)(':id/revoke-sessions'),
+    (0, roles_decorator_1.Roles)(enums_1.UserRole.SUPER_ADMIN, enums_1.UserRole.ADMIN),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Revoke all active sessions for an employee' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], UsersController.prototype, "revokeSessions", null);
 __decorate([
     (0, common_1.Get)('admin-dashboard'),
     (0, roles_decorator_1.Roles)(enums_1.UserRole.SUPER_ADMIN, enums_1.UserRole.ADMIN, enums_1.UserRole.HR_MANAGER),
@@ -201,6 +261,7 @@ exports.UsersController = UsersController = __decorate([
     (0, common_1.Controller)('users'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, swagger_1.ApiBearerAuth)(),
-    __metadata("design:paramtypes", [users_service_1.UsersService])
+    __metadata("design:paramtypes", [users_service_1.UsersService,
+        auth_service_1.AuthService])
 ], UsersController);
 //# sourceMappingURL=users.controller.js.map

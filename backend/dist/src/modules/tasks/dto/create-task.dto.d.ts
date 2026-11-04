@@ -8,6 +8,8 @@ export declare class CreateTaskDto {
     priority?: Priority;
     category?: string;
     assignedEmployeeId?: string;
+    leadAssigneeId?: string;
+    collaboratorIds?: string[];
     reviewerId?: string;
     startDate: string;
     dueDate: string;

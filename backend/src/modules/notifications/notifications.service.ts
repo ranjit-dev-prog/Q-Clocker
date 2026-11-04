@@ -213,5 +213,24 @@ export class NotificationsService {
     this.memoryNotifications.unshift(item);
     return item;
   }
+
+  async createNotification(data: {
+    userId: string;
+    title: string;
+    message: string;
+    type?: any;
+    entityType?: any;
+    entityId?: string | null;
+    link?: string;
+  }): Promise<NotificationItem> {
+    return this.create({
+      userId: data.userId,
+      title: data.title,
+      message: data.message,
+      type: (['INFO', 'SUCCESS', 'WARNING', 'URGENT', 'TICKET', 'TASK', 'SYSTEM'].includes(data.type) ? data.type : 'INFO') as any,
+      entityType: data.entityType,
+      entityId: data.entityId,
+    });
+  }
 }
 

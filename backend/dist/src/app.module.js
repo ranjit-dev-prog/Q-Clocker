@@ -22,6 +22,7 @@ const tasks_module_1 = require("./modules/tasks/tasks.module");
 const tickets_module_1 = require("./modules/tickets/tickets.module");
 const notifications_module_1 = require("./modules/notifications/notifications.module");
 const work_logs_module_1 = require("./modules/work-logs/work-logs.module");
+const reports_module_1 = require("./modules/reports/reports.module");
 const health_module_1 = require("./modules/health/health.module");
 const transform_interceptor_1 = require("./common/interceptors/transform.interceptor");
 let AppModule = class AppModule {
@@ -51,6 +52,7 @@ exports.AppModule = AppModule = __decorate([
             tickets_module_1.TicketsModule,
             notifications_module_1.NotificationsModule,
             work_logs_module_1.WorkLogsModule,
+            reports_module_1.ReportsModule,
             health_module_1.HealthModule,
         ],
         providers: [

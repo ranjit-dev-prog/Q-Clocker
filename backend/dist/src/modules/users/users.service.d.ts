@@ -111,4 +111,21 @@ export declare class UsersService {
         departmentDistribution: Record<string, number>;
         recentRegistrations: any[];
     }>;
+    generateBulkTemplate(): Promise<Buffer>;
+    bulkUpload(file: Express.Multer.File, actorUser?: any): Promise<{
+        totalRows: number;
+        validRows: number;
+        invalidRows: number;
+        errors: Array<{
+            rowNumber: number;
+            email?: string;
+            error: string;
+        }>;
+        insertedUsers: Array<{
+            id: string;
+            email: string;
+            employeeCode: string;
+            temporaryPassword?: string;
+        }>;
+    }>;
 }

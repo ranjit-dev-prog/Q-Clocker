@@ -20,9 +20,13 @@ const login_dto_1 = require("./dto/login.dto");
 const register_dto_1 = require("./dto/register.dto");
 const auth_response_dto_1 = require("./dto/auth-response.dto");
 const refresh_token_dto_1 = require("./dto/refresh-token.dto");
+const password_reset_dto_1 = require("./dto/password-reset.dto");
 const public_decorator_1 = require("../../common/decorators/public.decorator");
 const current_user_decorator_1 = require("../../common/decorators/current-user.decorator");
+const roles_decorator_1 = require("../../common/decorators/roles.decorator");
 const jwt_auth_guard_1 = require("../../common/guards/jwt-auth.guard");
+const roles_guard_1 = require("../../common/guards/roles.guard");
+const enums_1 = require("../../common/enums");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
@@ -54,6 +58,25 @@ let AuthController = class AuthController {
     }
     async getProfile(userId) {
         return this.authService.getProfile(userId);
+    }
+    async forgotPassword(dto, req) {
+        const ipAddress = req.headers['x-forwarded-for'] || req.socket?.remoteAddress;
+        return this.authService.forgotPassword(dto, { ipAddress });
+    }
+    async getResetChallenge(token) {
+        return this.authService.getResetChallenge(token);
+    }
+    async verifyResetChallenge(dto) {
+        return this.authService.verifyResetChallenge(dto);
+    }
+    async resetPassword(dto) {
+        return this.authService.resetPassword(dto);
+    }
+    async revokeUserSessions(userId) {
+        return this.authService.revokeUserSessions(userId);
+    }
+    async adminResetPassword(userId, dto) {
+        return this.authService.adminResetPassword(userId, dto);
     }
 };
 exports.AuthController = AuthController;
@@ -156,6 +179,79 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "getProfile", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('forgot-password'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Initiate dual-factor account recovery (Anti-enumeration)' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Recovery instructions dispatched' }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [password_reset_dto_1.ForgotPasswordDto, Object]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "forgotPassword", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('reset-challenge'),
+    (0, swagger_1.ApiOperation)({ summary: 'Retrieve security questions for a reset challenge token' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Challenge questions returned' }),
+    (0, swagger_1.ApiResponse)({ status: 404, description: 'Token invalid or expired' }),
+    __param(0, (0, common_1.Query)('token')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "getResetChallenge", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('verify-reset-challenge'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Verify security question answers or recovery passphrase' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Challenge verified successfully' }),
+    (0, swagger_1.ApiResponse)({ status: 401, description: 'Incorrect security challenge answers' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [password_reset_dto_1.VerifyChallengeDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "verifyResetChallenge", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('reset-password'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Set new enterprise password and revoke all active sessions' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Password reset and sessions terminated' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [password_reset_dto_1.ResetPasswordDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "resetPassword", null);
+__decorate([
+    (0, common_1.Post)('users/:id/revoke-sessions'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(enums_1.UserRole.SUPER_ADMIN, enums_1.UserRole.ADMIN),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Administrative termination of all active sessions for user' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'All sessions revoked' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "revokeUserSessions", null);
+__decorate([
+    (0, common_1.Post)('users/:id/admin-reset-password'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(enums_1.UserRole.SUPER_ADMIN, enums_1.UserRole.ADMIN),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({ summary: 'Direct administrative password reset with temporary credential generation' }),
+    (0, swagger_1.ApiResponse)({ status: 200, description: 'Temporary password generated and sessions terminated' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, password_reset_dto_1.AdminResetPasswordDto]),
+    __metadata("design:returntype", Promise)
+], AuthController.prototype, "adminResetPassword", null);
 exports.AuthController = AuthController = __decorate([
     (0, swagger_1.ApiTags)('Authentication'),
     (0, common_1.Controller)('auth'),

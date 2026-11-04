@@ -4,6 +4,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { ForgotPasswordDto, VerifyChallengeDto, ResetPasswordDto, AdminResetPasswordDto } from './dto/password-reset.dto';
 import { UserRole } from '../../common/enums';
 export declare class AuthService {
     private dbService;
@@ -11,7 +12,12 @@ export declare class AuthService {
     private readonly logger;
     private demoAccounts;
     private demoSessions;
+    private failedAttempts;
+    private passwordResetTokens;
     constructor(dbService: DatabaseService, jwtService: JwtService);
+    private checkRateLimit;
+    private recordFailedAttempt;
+    private resetFailedAttempts;
     login(loginDto: LoginDto, meta?: {
         ipAddress?: string;
         userAgent?: string;
@@ -69,4 +75,37 @@ export declare class AuthService {
         createdAt: string;
     }>;
     private generateAuthResponse;
+    forgotPassword(dto: ForgotPasswordDto, meta?: {
+        ipAddress?: string;
+    }): Promise<{
+        success: boolean;
+        message: string;
+        resetToken: string;
+    }>;
+    getResetChallenge(token: string): Promise<{
+        valid: boolean;
+        email: string;
+        question1: string;
+        question2: string;
+    }>;
+    verifyResetChallenge(dto: VerifyChallengeDto): Promise<{
+        success: boolean;
+        verified: boolean;
+        challengeToken: string;
+        message: string;
+    }>;
+    resetPassword(dto: ResetPasswordDto): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    revokeUserSessions(userId: string): Promise<{
+        success: boolean;
+        message: string;
+    }>;
+    adminResetPassword(userId: string, dto: AdminResetPasswordDto): Promise<{
+        success: boolean;
+        temporaryPassword: string;
+        requirePasswordChange: boolean;
+        message: string;
+    }>;
 }
