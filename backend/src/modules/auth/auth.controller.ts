@@ -7,6 +7,8 @@ import {
   HttpCode,
   HttpStatus,
   Req,
+  Query,
+  Param,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -20,9 +22,18 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import {
+  ForgotPasswordDto,
+  VerifyChallengeDto,
+  ResetPasswordDto,
+  AdminResetPasswordDto,
+} from './dto/password-reset.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { UserRole } from '../../common/enums';
 
 @ApiTags('Authentication')
 @Controller('auth')
