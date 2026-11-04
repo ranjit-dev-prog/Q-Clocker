@@ -721,16 +721,18 @@ export class AuthService {
     const refreshTokenHash = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
-    if (this.dbService.getConnectionStatus()) {
+    if (this.prisma.isConnected) {
       try {
-        await this.dbService.db.insert(schema.userSessions).values({
-          referenceId: generateReferenceId('SES'),
-          userId: user.id,
-          refreshTokenHash,
-          userAgent: userAgent || null,
-          ipAddress: ipAddress || null,
-          isRevoked: false,
-          expiresAt,
+        await this.prisma.userSession.create({
+          data: {
+            referenceId: generateReferenceId('SES'),
+            userId: user.id,
+            refreshTokenHash,
+            userAgent: userAgent || null,
+            ipAddress: ipAddress || null,
+            isRevoked: false,
+            expiresAt,
+          },
         });
       } catch (err) {
         this.logger.warn(`Failed to persist user session: ${(err as Error).message}`);
@@ -769,13 +771,12 @@ export class AuthService {
     const email = dto.email.toLowerCase().trim();
     let foundUser: { id: string; email: string; referenceId?: string } | null = null;
 
-    if (this.dbService.getConnectionStatus()) {
+    if (this.prisma.isConnected) {
       try {
-        const [u] = await this.dbService.db
-          .select({ id: schema.users.id, email: schema.users.email, referenceId: schema.users.referenceId })
-          .from(schema.users)
-          .where(eq(schema.users.email, email))
-          .limit(1);
+        const u = await this.prisma.user.findFirst({
+          where: { email },
+          select: { id: true, email: true, referenceId: true },
+        });
         if (u) foundUser = u;
       } catch (err) {
         // Fall back
