@@ -72,3 +72,4 @@ export class LifecycleService {
     return this.http.post<any>(`${this.apiUrl}/reminders/${id}/resolve`, {});
   }
 }
+

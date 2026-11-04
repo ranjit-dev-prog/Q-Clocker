@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { RouterModule } from '@angular/router';
 import { EmployeeService, Employee } from '../../core/services/employee.service';
 import { DepartmentService } from '../../core/services/department.service';
+import { RoleService } from '../../core/services/role.service';
 import { AuthService } from '../../core/services/auth.service';
 import { UserRole } from '../../core/models/user.model';
 
@@ -77,13 +78,7 @@ import { UserRole } from '../../core/models/user.model';
             class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none"
           >
             <option value="">All Roles</option>
-            <option value="SUPER_ADMIN">Super Administrator</option>
-            <option value="ADMIN">IT Manager / Admin</option>
-            <option value="HR_MANAGER">HR Manager</option>
-            <option value="DEPARTMENT_MANAGER">Department Manager</option>
-            <option value="TEAM_LEAD">Team Lead</option>
-            <option value="EMPLOYEE">Employee</option>
-            <option value="AUDITOR">Auditor</option>
+            <option *ngFor="let r of roleService.roles()" [value]="r.code">{{ r.name }}</option>
           </select>
         </div>
 
@@ -220,11 +215,7 @@ import { UserRole } from '../../core/models/user.model';
               <div>
                 <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Role</label>
                 <select formControlName="roleCode" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
-                  <option value="EMPLOYEE">Employee</option>
-                  <option value="TEAM_LEAD">Team Lead</option>
-                  <option value="ADMIN">IT Manager / Admin</option>
-                  <option value="HR_MANAGER">HR Manager</option>
-                  <option *ngIf="authService.isSuperAdmin()" value="SUPER_ADMIN">Super Administrator</option>
+                  <option *ngFor="let r of roleService.roles()" [value]="r.code">{{ r.name }}</option>
                 </select>
               </div>
 
@@ -274,11 +265,7 @@ import { UserRole } from '../../core/models/user.model';
             <div>
               <label class="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Role Assignment</label>
               <select formControlName="roleCode" class="w-full px-3 py-2 bg-slate-50 dark:bg-slate-800 text-xs rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white">
-                <option value="EMPLOYEE">Employee</option>
-                <option value="TEAM_LEAD">Team Lead</option>
-                <option value="ADMIN">IT Manager / Admin</option>
-                <option value="HR_MANAGER">HR Manager</option>
-                <option *ngIf="authService.isSuperAdmin()" value="SUPER_ADMIN">Super Administrator</option>
+                <option *ngFor="let r of roleService.roles()" [value]="r.code">{{ r.name }}</option>
               </select>
             </div>
 
@@ -380,7 +367,12 @@ export class EmployeesComponent {
   private fb = inject(FormBuilder);
   empService = inject(EmployeeService);
   deptService = inject(DepartmentService);
+  roleService = inject(RoleService);
   authService = inject(AuthService);
+
+  constructor() {
+    this.roleService.loadRoles().subscribe();
+  }
 
   searchQuery = signal<string>('');
   selectedRole = signal<string>('');

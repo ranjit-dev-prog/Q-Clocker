@@ -63,3 +63,4 @@ export class HealthService {
     return this.http.get<SystemHealthResponse>(this.apiUrl);
   }
 }
+

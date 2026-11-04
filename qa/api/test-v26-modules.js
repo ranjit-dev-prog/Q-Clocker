@@ -306,6 +306,99 @@ async function run() {
     assert(false, `ITSM Categories threw error: ${err.message}`);
   }
 
+  // Step 6: Dynamic Role-Adaptive Dashboard Summary Engine
+  console.log('\n--- SECTION 6: Dynamic Role-Adaptive Dashboard Engine (/api/v1/dashboard/summary) ---');
+  try {
+    // 6.1 Super Admin Dashboard Summary
+    const adminDashRes = await request({
+      path: '/api/v1/dashboard/summary',
+      method: 'GET',
+      headers: adminHeaders,
+    });
+    assert(adminDashRes.statusCode === 200, 'Super Admin retrieves dynamic dashboard summary');
+    assert(typeof adminDashRes.data?.kpis?.totalEmployees === 'number', 'Summary contains totalEmployees KPI');
+    assert(Array.isArray(adminDashRes.data?.weeklyProductivity), 'Summary contains weekly productivity dataset');
+    assert(Array.isArray(adminDashRes.data?.departments), 'Summary contains department allocation breakdown');
+    assert(Array.isArray(adminDashRes.data?.upcomingTasks), 'Summary contains upcoming task list');
+    assert(Array.isArray(adminDashRes.data?.recentActivities), 'Summary contains live audit activity feed');
+    assert(adminDashRes.data?.roleSpecificData?.overview === 'Enterprise Global Control Center', 'Super Admin receives Global Control Center role payload');
+
+    // 6.2 Employee Dashboard Summary
+    const empDashRes = await request({
+      path: '/api/v1/dashboard/summary',
+      method: 'GET',
+      headers: empHeaders,
+    });
+    assert(empDashRes.statusCode === 200, 'Employee retrieves dynamic personal dashboard summary');
+    assert(empDashRes.data?.roleSpecificData?.overview === 'Personal Productivity Workspace', 'Employee receives Personal Workspace role payload');
+    assert(typeof empDashRes.data?.roleSpecificData?.myAssignedTasks === 'number', 'Employee sees personal assigned tasks count');
+
+    // 6.3 IT Manager Dashboard Summary
+    const itLogin = await request(
+      {
+        path: '/api/v1/auth/login',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      { email: 'itmanager@qclocker.io', password: 'ItManager@2026!' }
+    );
+    const itToken = itLogin.data?.tokens?.accessToken || itLogin.data?.accessToken;
+    const itDashRes = await request({
+      path: '/api/v1/dashboard/summary',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${itToken}`,
+      },
+    });
+    assert(itDashRes.statusCode === 200, 'IT Manager retrieves infrastructure & ITSM dashboard');
+    assert(itDashRes.data?.roleSpecificData?.overview === 'IT Operations & Infrastructure Control', 'IT Manager receives IT Ops role payload');
+    assert(typeof itDashRes.data?.roleSpecificData?.criticalIncidents === 'number', 'IT Manager sees critical incidents metric');
+
+    // 6.4 HR Manager Dashboard Summary
+    const hrLogin = await request(
+      {
+        path: '/api/v1/auth/login',
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      },
+      { email: 'hradmin@qclocker.io', password: 'HrAdmin@2026!' }
+    );
+    const hrToken = hrLogin.data?.tokens?.accessToken || hrLogin.data?.accessToken;
+    const hrDashRes = await request({
+      path: '/api/v1/dashboard/summary',
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${hrToken}`,
+      },
+    });
+    assert(hrDashRes.statusCode === 200, 'HR Manager retrieves workforce & compliance dashboard');
+    assert(hrDashRes.data?.roleSpecificData?.overview === 'Human Capital & Workforce Management', 'HR Manager receives HR Ops role payload');
+    assert(typeof hrDashRes.data?.roleSpecificData?.upcomingProbationReviews === 'number', 'HR Manager sees probation reviews metric');
+  } catch (err) {
+    assert(false, `Dashboard summary test threw error: ${err.message}`);
+  }
+
+  // Step 7: Employee Dynamic Performance Appraisal & Ratings Engine
+  console.log('\n--- SECTION 7: Employee Performance Appraisal Engine (/api/v1/performance/me) ---');
+  try {
+    const perfRes = await request({
+      path: '/api/v1/performance/me',
+      method: 'GET',
+      headers: empHeaders,
+    });
+    assert(perfRes.statusCode === 200, 'Employee retrieves performance appraisal metrics');
+    assert(typeof perfRes.data?.overallScore === 'number' && perfRes.data?.overallScore > 0, `Overall score is calculated (${perfRes.data?.overallScore})`);
+    assert(typeof perfRes.data?.timelinessRate === 'number', `Timeliness rate present (${perfRes.data?.timelinessRate}%)`);
+    assert(typeof perfRes.data?.managerRating === 'number', `Manager rating present (${perfRes.data?.managerRating}/5.0)`);
+    assert(typeof perfRes.data?.ratingTier === 'string' && perfRes.data?.ratingTier.length > 0, `Rating tier classified (${perfRes.data?.ratingTier})`);
+    assert(typeof perfRes.data?.tasksCompleted === 'number', 'Tasks completed count present');
+    assert(typeof perfRes.data?.ticketsResolved === 'number', 'Tickets resolved count present');
+  } catch (err) {
+    assert(false, `Performance appraisal test threw error: ${err.message}`);
+  }
+
   // Summary
   console.log('\n================================================================');
   console.log(`TOTAL TESTS: ${totalTests}`);

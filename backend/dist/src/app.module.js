@@ -26,6 +26,8 @@ const reports_module_1 = require("./modules/reports/reports.module");
 const payroll_module_1 = require("./modules/payroll/payroll.module");
 const lifecycle_module_1 = require("./modules/lifecycle/lifecycle.module");
 const health_module_1 = require("./modules/health/health.module");
+const dashboard_module_1 = require("./modules/dashboard/dashboard.module");
+const performance_module_1 = require("./modules/performance/performance.module");
 const transform_interceptor_1 = require("./common/interceptors/transform.interceptor");
 let AppModule = class AppModule {
 };
@@ -58,6 +60,8 @@ exports.AppModule = AppModule = __decorate([
             payroll_module_1.PayrollModule,
             lifecycle_module_1.LifecycleModule,
             health_module_1.HealthModule,
+            dashboard_module_1.DashboardModule,
+            performance_module_1.PerformanceModule,
         ],
         providers: [
             {

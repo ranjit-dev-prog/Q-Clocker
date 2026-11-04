@@ -2,6 +2,7 @@ import { Component, inject, OnInit, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
+import { DashboardService } from '../../core/services/dashboard.service';
 import { TicketService } from '../../core/services/ticket.service';
 import { TaskService } from '../../core/services/task.service';
 import { EmployeeService } from '../../core/services/employee.service';
@@ -24,14 +25,17 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
             </span>
           </h1>
           <p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-            {{ isHrRole() ? 'Enterprise Human Resources, Payroll & Workforce Lifecycle Center' : 'Real-time telemetry on organization tasks, IT tickets and sprint delivery' }}
+            {{ dashboardService.roleOverview() }}
           </p>
         </div>
         <div class="flex items-center gap-3">
-          <div class="px-3 py-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            System Live & Monitored
-          </div>
+          <button
+            (click)="refreshDashboard()"
+            class="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-semibold flex items-center gap-1.5 transition text-slate-700 dark:text-slate-300"
+          >
+            <span class="material-icons text-sm" [class.animate-spin]="dashboardService.isLoading()">sync</span>
+            <span>Sync Live</span>
+          </button>
           <a
             routerLink="/tasks"
             class="px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white font-medium text-xs rounded-xl shadow-sm transition flex items-center gap-1.5 cursor-pointer"
@@ -42,8 +46,14 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
         </div>
       </div>
 
-      <!-- Top Metric Cards Grid (Dynamic based on Role) -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <!-- Loading State -->
+      <div *ngIf="dashboardService.isLoading() && !dashboardService.kpis()" class="p-12 text-center text-slate-500">
+        <span class="material-icons animate-spin text-3xl text-primary-600">sync</span>
+        <p class="mt-2 text-sm font-medium">Aggregating database telemetry and metrics...</p>
+      </div>
+
+      <!-- Top Metric Cards Grid (Dynamic from Database) -->
+      <div *ngIf="dashboardService.kpis() as k" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <!-- Metric 1: Workforce / Assigned Tasks -->
         <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
@@ -56,14 +66,14 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
           </div>
           <div class="mt-3 flex items-baseline gap-2">
             <span class="text-2xl font-bold text-slate-900 dark:text-white">
-              {{ isHrRole() ? (employeeService.employees().length || 9) : (taskService.tasks().length || 4) }}
+              {{ isHrRole() ? k.totalWorkforce : k.activeTasks }}
             </span>
             <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">
               Active Today
             </span>
           </div>
           <div class="mt-3 text-[11px] text-slate-400">
-            Across IT, Software Engineering & HR
+            Across {{ k.totalDepartments }} active departments
           </div>
         </div>
 
@@ -75,14 +85,14 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
           </div>
           <div class="mt-3 flex items-baseline gap-2">
             <span class="text-2xl font-bold text-slate-900 dark:text-white">
-              {{ ticketService.metrics()?.openTickets ?? 4 }} Open
+              {{ k.openTickets }} Open
             </span>
             <span class="text-xs font-medium text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-1.5 py-0.5 rounded">
-              {{ ticketService.metrics()?.p1CriticalCount ?? 1 }} P1 Critical
+              {{ k.p1CriticalCount }} P1 Critical
             </span>
           </div>
           <div class="mt-3 w-full bg-slate-100 dark:bg-slate-800 h-1.5 rounded-full overflow-hidden">
-            <div class="bg-amber-500 h-1.5 rounded-full" style="width: 70%"></div>
+            <div class="bg-amber-500 h-1.5 rounded-full" [style.width.%]="k.openTickets > 0 ? 70 : 0"></div>
           </div>
         </div>
 
@@ -94,18 +104,18 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
           </div>
           <div class="mt-3 flex items-baseline gap-2">
             <span class="text-2xl font-bold text-emerald-600">
-              {{ ticketService.metrics()?.slaComplianceRate ?? '98.2' }}%
+              {{ k.slaComplianceRate }}%
             </span>
             <span class="text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">
               Target: >95%
             </span>
           </div>
           <div class="mt-3 text-[11px] text-slate-400">
-            Avg resolution: {{ ticketService.metrics()?.avgResolutionTimeHours ?? 3.4 }}h
+            Avg resolution: {{ k.avgResolutionTimeHours }}h
           </div>
         </div>
 
-        <!-- Metric 4: Departments / Sprint Health -->
+        <!-- Metric 4: Departments Active -->
         <div class="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <div class="flex items-center justify-between text-slate-500 dark:text-slate-400">
             <span class="text-xs font-semibold uppercase tracking-wider">Departments</span>
@@ -113,7 +123,7 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
           </div>
           <div class="mt-3 flex items-baseline gap-2">
             <span class="text-2xl font-bold text-slate-900 dark:text-white">
-              {{ departmentService.departments().length || 4 }} Depts
+              {{ k.totalDepartments }} Depts
             </span>
             <span class="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded">
               100% Operational
@@ -237,17 +247,17 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
           <div class="flex items-center justify-between mb-4">
             <div>
               <h3 class="text-sm font-bold text-slate-900 dark:text-white">Department Headcount & Allocation</h3>
-              <p class="text-xs text-slate-400 mt-0.5">Active workforce distribution across organization</p>
+              <p class="text-xs text-slate-400 mt-0.5">Live workforce distribution from database</p>
             </div>
             <a routerLink="/departments" class="text-xs font-semibold text-primary-600 hover:text-primary-700">Manage Depts →</a>
           </div>
 
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
-            <div *ngFor="let dept of departmentService.departments()" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+            <div *ngFor="let dept of dashboardService.departments()" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
               <div class="text-[10px] font-bold uppercase tracking-wider text-primary-600 dark:text-primary-400">{{ dept.code }}</div>
               <div class="text-xs font-bold text-slate-900 dark:text-white mt-0.5 truncate">{{ dept.name }}</div>
               <div class="text-lg font-black text-slate-800 dark:text-slate-200 mt-1">
-                {{ dept.memberCount || 3 }} <span class="text-[10px] font-normal text-slate-400">members</span>
+                {{ dept.memberCount }} <span class="text-[10px] font-normal text-slate-400">members</span>
               </div>
             </div>
           </div>
@@ -308,14 +318,14 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
 
       <!-- Middle Section: Visual Performance Charts & Department Distribution -->
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Daily Task Completion & Weekly Productivity -->
+        <!-- Daily Task Completion & Weekly Productivity (Dynamic from WorkLogs) -->
         <div class="lg:col-span-2 bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <div class="flex items-center justify-between mb-4">
             <div>
               <h3 class="text-base font-bold text-slate-900 dark:text-white">
                 Weekly Productivity & Task Velocity
               </h3>
-              <p class="text-xs text-slate-400 mt-0.5">Estimated vs Actual Hours across sprints</p>
+              <p class="text-xs text-slate-400 mt-0.5">Aggregated live from database work logs & deliverables</p>
             </div>
             <span class="text-xs font-semibold px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
               Current Sprint
@@ -323,7 +333,7 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
           </div>
 
           <div class="space-y-4 pt-2">
-            <div *ngFor="let day of weeklyStats" class="space-y-1">
+            <div *ngFor="let day of dashboardService.weeklyProductivity()" class="space-y-1">
               <div class="flex justify-between text-xs font-medium">
                 <span class="text-slate-600 dark:text-slate-300">{{ day.day }}</span>
                 <span class="text-slate-400">{{ day.completed }} / {{ day.total }} tasks ({{ day.hours }}h logged)</span>
@@ -345,7 +355,7 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
             <p class="text-xs text-slate-400 mb-4">Quality & timely delivery scores</p>
 
             <div class="space-y-3.5">
-              <div *ngFor="let dept of departments" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div *ngFor="let dept of dashboardService.departments()" class="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 flex items-center justify-between">
                 <div>
                   <div class="text-xs font-bold text-slate-800 dark:text-slate-200">{{ dept.name }}</div>
                   <div class="text-[10px] text-slate-400">{{ dept.code }} • {{ dept.tasks }} active tasks</div>
@@ -366,7 +376,7 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
         </div>
       </div>
 
-      <!-- Bottom Tables: Recent Activities & Upcoming Deadlines -->
+      <!-- Bottom Tables: Recent Activities & Upcoming Deadlines (Database Sourced) -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <!-- Upcoming Deadlines -->
         <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
@@ -376,7 +386,7 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
           </div>
 
           <div class="divide-y divide-slate-100 dark:divide-slate-800">
-            <div *ngFor="let t of upcomingTasks" class="py-3 flex items-center justify-between gap-3">
+            <div *ngFor="let t of dashboardService.upcomingTasks()" class="py-3 flex items-center justify-between gap-3">
               <div class="min-w-0">
                 <div class="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
                   {{ t.title }}
@@ -407,11 +417,11 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
         <div class="bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-sm">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-base font-bold text-slate-900 dark:text-white">Recent Activities</h3>
-            <span class="text-xs text-slate-400">Live Feed</span>
+            <span class="text-xs text-slate-400">Live Database Events</span>
           </div>
 
           <div class="space-y-3.5">
-            <div *ngFor="let act of recentActivities" class="flex items-start gap-3 text-xs">
+            <div *ngFor="let act of dashboardService.recentActivities()" class="flex items-start gap-3 text-xs">
               <div class="w-7 h-7 rounded-full bg-primary-100 dark:bg-primary-950 flex items-center justify-center text-primary-600 shrink-0 mt-0.5">
                 <span class="material-icons text-sm">{{ act.icon }}</span>
               </div>
@@ -430,6 +440,7 @@ import { LifecycleService, CelebrationEvent } from '../../core/services/lifecycl
 })
 export class DashboardComponent implements OnInit {
   authService = inject(AuthService);
+  dashboardService = inject(DashboardService);
   ticketService = inject(TicketService);
   taskService = inject(TaskService);
   employeeService = inject(EmployeeService);
@@ -443,35 +454,12 @@ export class DashboardComponent implements OnInit {
     return this.authService.isHR() || this.authService.isAdmin() || this.authService.isSuperAdmin();
   });
 
-  weeklyStats = [
-    { day: 'Monday', completed: 28, total: 30, hours: 224 },
-    { day: 'Tuesday', completed: 32, total: 35, hours: 256 },
-    { day: 'Wednesday', completed: 30, total: 32, hours: 240 },
-    { day: 'Thursday', completed: 26, total: 30, hours: 215 },
-    { day: 'Friday', completed: 24, total: 28, hours: 198 },
-  ];
-
-  departments = [
-    { name: 'Software Engineering', code: 'ENG', tasks: 18, score: 94.8, trend: '+2.4%' },
-    { name: 'Information Technology', code: 'IT', tasks: 12, score: 96.2, trend: '+1.8%' },
-    { name: 'Operations & Delivery', code: 'OPS', tasks: 8, score: 91.5, trend: '+0.5%' },
-    { name: 'Human Resources', code: 'HR', tasks: 6, score: 93.0, trend: '+1.1%' },
-  ];
-
-  upcomingTasks = [
-    { code: 'ENG-2026-042', title: 'PostgreSQL Connection Pool Rightsizing', assignee: 'David Ross', due: 'Today, 5:00 PM', priority: 'CRITICAL', isUrgent: true },
-    { code: 'IT-2026-018', title: 'Active Directory SSO Certificate Renewal', assignee: 'Marcus Chen', due: 'Tomorrow, 12:00 PM', priority: 'HIGH', isUrgent: false },
-    { code: 'OPS-2026-009', title: 'SOC2 Type II Audit Artifact Assembly', assignee: 'Sarah Jenkins', due: 'Nov 6, 2026', priority: 'MEDIUM', isUrgent: false },
-  ];
-
-  recentActivities = [
-    { user: 'David Ross', action: 'submitted task for review', target: 'Drizzle ORM DDL Migration Script', time: '12 mins ago', icon: 'done_all' },
-    { user: 'Marcus Chen', action: 'resolved ticket', target: 'VPN Gateway Timeout in EU Region', time: '45 mins ago', icon: 'check_circle' },
-    { user: 'Sarah Jenkins', action: 'approved work log', target: 'Backend API Authentication Endpoints', time: '2 hours ago', icon: 'thumb_up' },
-    { user: 'Alexander Vance', action: 'configured department policy', target: 'Q4 Performance Evaluation Metric', time: '3 hours ago', icon: 'settings' },
-  ];
-
   ngOnInit() {
+    this.refreshDashboard();
+  }
+
+  refreshDashboard() {
+    this.dashboardService.loadSummary().subscribe();
     this.ticketService.loadMetrics().subscribe();
     this.ticketService.loadTickets().subscribe();
     this.taskService.loadTasks();

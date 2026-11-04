@@ -78,3 +78,4 @@ export class PayrollService {
     return this.http.post<any>(`${this.apiUrl}/tax-declaration`, dto);
   }
 }
+

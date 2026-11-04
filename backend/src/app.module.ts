@@ -17,6 +17,8 @@ import { ReportsModule } from './modules/reports/reports.module';
 import { PayrollModule } from './modules/payroll/payroll.module';
 import { LifecycleModule } from './modules/lifecycle/lifecycle.module';
 import { HealthModule } from './modules/health/health.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { PerformanceModule } from './modules/performance/performance.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
@@ -47,6 +49,8 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     PayrollModule,
     LifecycleModule,
     HealthModule,
+    DashboardModule,
+    PerformanceModule,
   ],
   providers: [
     {
