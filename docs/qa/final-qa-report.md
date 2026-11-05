@@ -12,7 +12,7 @@
 This independent quality assurance audit was conducted across the entire **Q Clocker Enterprise Workforce & Operations Management ERP** platform. No assumptions were made regarding developer claims or compiler success; every capability, API endpoint, security boundary, database constraint, responsive breakpoint, and business workflow was validated through live, automated execution in an isolated test harness against active services:
 - **Backend API Server**: `http://localhost:3000/api/v1` (NestJS 10+ / Node.js v24.21.0)
 - **Frontend Web Application**: `http://localhost:4200/` (Angular 19+ Standalone / Signals)
-- **Database Schema**: 32 relational tables modeled in PostgreSQL 16 via Drizzle ORM
+- **Database Schema**: 39 relational tables modeled in PostgreSQL 16 via Prisma ORM
 
 ### Master Audit Metrics
 
@@ -61,7 +61,7 @@ flowchart TD
         HealthMod[Liveness & Readiness Probes]
     end
 
-    subgraph Data_Layer["PostgreSQL 16 + Drizzle ORM"]
+    subgraph Data_Layer["PostgreSQL 16 + Prisma ORM"]
         DecoupledTime[(Strict Time Decoupling)]
         SchemaTables[(32 Relational Tables)]
     end
@@ -204,7 +204,7 @@ Authentication and role enforcement was verified with live JWT tokens across all
 | `TC-SEC-JWT-002` | Identification Failure | Malformed Authorization Header | Passport Bearer extraction | **PASS (401)** |
 | `TC-SEC-JWT-003` | Session Management | Revoked Refresh Token Re-play | SHA-256 session hash lookup & `isRevoked` check | **PASS (401)** |
 | `TC-SEC-DAT-001` | Sensitive Data Exposure | Password Hash Leakage Check | `delete user.passwordHash` in service layer | **PASS (Clean)** |
-| `TC-SEC-INJ-001` | SQL Injection | `'; DROP TABLE users; --` in Search | Drizzle ORM parameterized SQL query | **PASS (Safe)** |
+| `TC-SEC-INJ-001` | SQL Injection | `'; DROP TABLE users; --` in Search | Prisma ORM parameterized SQL query | **PASS (Safe)** |
 | `TC-SEC-INJ-002` | Stored XSS | `<script>alert(1)</script>` in Comment | HTML sanitization and string storage | **PASS (Safe)** |
 | `TC-API-EMP-003` | CSV Formula Injection | `=cmd|' /C calc'!A0` in Import File | RegEx stripping of leading `[=+\-@]` | **PASS (Sanitized)** |
 

@@ -161,10 +161,6 @@ export const routes: Routes = [
         path: 'admin/prisma',
         redirectTo: 'admin/database',
       },
-      {
-        path: 'admin/drizzle',
-        redirectTo: 'admin/database',
-      },
     ],
   },
   {

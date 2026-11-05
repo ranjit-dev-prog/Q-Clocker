@@ -243,7 +243,7 @@ import { HealthService, SystemHealthResponse } from '../../../core/services/heal
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Object-Relational Mapping</span>
             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-              {{ health()?.components?.prismaOrm?.status || health()?.components?.drizzleOrm?.status || 'Active' }}
+              {{ health()?.components?.prismaOrm?.status || 'Active' }}
             </span>
           </div>
           <div class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">

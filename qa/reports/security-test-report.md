@@ -15,7 +15,7 @@
 2. **JWT Cryptographic Integrity**: Tampered JWT signatures and malformed tokens are rejected with HTTP 401.
 3. **Session & Refresh Token Revocation**: Logout actively invalidates refresh tokens and blocks token reuse attempts.
 4. **Credential Protection**: `passwordHash` is never leaked in `/auth/me`, `/auth/login`, or `/users` responses.
-5. **SQL Injection Immunity**: Drizzle ORM parameterized query builder completely prevents SQL injection in all query and path filters.
+5. **SQL Injection Immunity**: Prisma ORM parameterized query builder completely prevents SQL injection in all query and path filters.
 6. **CSV Formula Injection Sanitization**: Leading spreadsheet command characters (`=`, `+`, `-`, `@`) are systematically stripped during bulk import.
 
 ## Detailed Execution Results

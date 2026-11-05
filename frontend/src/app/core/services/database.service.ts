@@ -29,11 +29,6 @@ export interface PrismaTableDataResponse {
   rows: any[];
 }
 
-// Aliases for seamless migration
-export type DrizzleTableMeta = PrismaTableMeta;
-export type DrizzleColumnMeta = PrismaColumnMeta;
-export type DrizzleTableDataResponse = PrismaTableDataResponse;
-
 @Injectable({
   providedIn: 'root',
 })

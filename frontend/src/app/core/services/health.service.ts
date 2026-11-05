@@ -32,7 +32,6 @@ export interface SystemHealthResponse {
     restApi: ComponentHealth;
     database: ComponentHealth;
     prismaOrm: ComponentHealth;
-    drizzleOrm?: ComponentHealth;
     migrations: ComponentHealth;
     notificationService: ComponentHealth;
     payrollEngine: ComponentHealth;
@@ -50,7 +49,6 @@ export interface SystemHealthResponse {
     swaggerUrl: string;
     healthUrl: string;
     prismaStudioUrl?: string;
-    drizzleStudioUrl?: string;
   };
 }
 
