@@ -24,7 +24,7 @@ export class TasksService {
       id: '20000000-0000-0000-0000-000000000001',
       referenceId: 'TSK-9X4K21',
       taskNumber: 'TSK-9X4K21',
-      title: 'Implement Drizzle ORM Schema & Relational Models',
+      title: 'Implement Prisma ORM Schema & Relational Models',
       description: 'Define all 26 tables, foreign keys, indexes, and migration DDL for the enterprise ERP database.',
       departmentId: '10000000-0000-0000-0000-000000000001',
       teamId: null,

@@ -86,7 +86,10 @@ async function run() {
     assert(healthRes.data?.version === '2.5.0-enterprise', 'Version is 2.5.0-enterprise');
     assert(healthRes.data?.components?.frontend?.url === 'http://localhost:4200', 'Frontend component URL configured');
     assert(healthRes.data?.components?.backend?.status === 'online', 'Backend core status is online');
-    assert(healthRes.data?.components?.drizzleOrm?.tablesMapped >= 30, 'Drizzle ORM mapped tables reported');
+    assert(
+      (healthRes.data?.components?.prismaOrm?.tablesMapped || healthRes.data?.components?.drizzleOrm?.tablesMapped) >= 30,
+      'Prisma ORM mapped tables reported',
+    );
     assert(healthRes.data?.components?.payrollEngine?.status === 'active', 'Payroll engine status is active');
     assert(healthRes.data?.components?.lifecycleService?.status === 'active', 'Lifecycle service status is active');
   } catch (err) {

@@ -78,15 +78,10 @@ let WorkLogsService = WorkLogsService_1 = class WorkLogsService {
                     employeeId: user.id,
                     taskId: createWorkLogDto.taskId || null,
                     ticketId: createWorkLogDto.ticketId || null,
-                    logDate: createWorkLogDto.logDate,
-                    startTime: createWorkLogDto.startTime,
-                    endTime: createWorkLogDto.endTime,
-                    totalHours: totalHoursStr,
+                    logDate: new Date(createWorkLogDto.logDate),
+                    hoursSpent: createWorkLogDto.totalHours,
                     workDescription: createWorkLogDto.workDescription.trim(),
-                    investigationPerformed: createWorkLogDto.investigationPerformed?.trim() || null,
-                    actionsTaken: createWorkLogDto.actionsTaken?.trim() || null,
-                    challengesFaced: createWorkLogDto.challengesFaced?.trim() || null,
-                    status: 'SUBMITTED',
+                    verificationStatus: 'PENDING',
                 },
             });
             if (createWorkLogDto.taskId) {
@@ -144,7 +139,7 @@ let WorkLogsService = WorkLogsService_1 = class WorkLogsService {
                 where.employeeId = query.employeeId;
             }
             if (query.logDate) {
-                where.logDate = query.logDate;
+                where.logDate = new Date(query.logDate);
             }
             if (query.taskId) {
                 where.taskId = query.taskId;
@@ -181,15 +176,15 @@ let WorkLogsService = WorkLogsService_1 = class WorkLogsService {
                 ticketId: r.ticketId,
                 ticketTitle: r.ticket?.title || null,
                 ticketReference: r.ticket?.referenceId || null,
-                logDate: r.logDate,
-                startTime: r.startTime,
-                endTime: r.endTime,
-                totalHours: r.totalHours,
+                logDate: r.logDate instanceof Date ? r.logDate.toISOString().split('T')[0] : String(r.logDate),
+                startTime: '09:00',
+                endTime: '17:00',
+                totalHours: String(r.hoursSpent || '0.00'),
                 workDescription: r.workDescription,
-                investigationPerformed: r.investigationPerformed,
-                actionsTaken: r.actionsTaken,
-                challengesFaced: r.challengesFaced,
-                status: r.status,
+                investigationPerformed: null,
+                actionsTaken: null,
+                challengesFaced: null,
+                status: r.verificationStatus || 'SUBMITTED',
                 createdAt: r.createdAt,
             }));
         }
@@ -233,6 +228,8 @@ let WorkLogsService = WorkLogsService_1 = class WorkLogsService {
                 taskReference: log.task?.referenceId || null,
                 ticketTitle: log.ticket?.title || null,
                 ticketReference: log.ticket?.referenceId || null,
+                totalHours: String(log.hoursSpent || '0.00'),
+                status: log.verificationStatus || 'SUBMITTED',
             };
         }
         const log = this.demoWorkLogs.find((l) => l.id === id || l.referenceId === id);

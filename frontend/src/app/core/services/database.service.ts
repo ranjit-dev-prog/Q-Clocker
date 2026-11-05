@@ -2,7 +2,7 @@ import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 
-export interface DrizzleTableMeta {
+export interface PrismaTableMeta {
   name: string;
   key: string;
   category: string;
@@ -11,7 +11,7 @@ export interface DrizzleTableMeta {
   description: string;
 }
 
-export interface DrizzleColumnMeta {
+export interface PrismaColumnMeta {
   name: string;
   dataType: string;
   isPrimary: boolean;
@@ -20,7 +20,7 @@ export interface DrizzleColumnMeta {
   defaultVal?: string;
 }
 
-export interface DrizzleTableDataResponse {
+export interface PrismaTableDataResponse {
   tableName: string;
   total: number;
   page: number;
@@ -28,6 +28,11 @@ export interface DrizzleTableDataResponse {
   columns: string[];
   rows: any[];
 }
+
+// Aliases for seamless migration
+export type DrizzleTableMeta = PrismaTableMeta;
+export type DrizzleColumnMeta = PrismaColumnMeta;
+export type DrizzleTableDataResponse = PrismaTableDataResponse;
 
 @Injectable({
   providedIn: 'root',
@@ -37,16 +42,16 @@ export class DatabaseExplorerService {
   private http = inject(HttpClient);
 
   // Reactive Signals
-  tables = signal<DrizzleTableMeta[]>([]);
+  tables = signal<PrismaTableMeta[]>([]);
   activeTable = signal<string>('users');
-  activeSchema = signal<DrizzleColumnMeta[]>([]);
-  activeData = signal<DrizzleTableDataResponse | null>(null);
+  activeSchema = signal<PrismaColumnMeta[]>([]);
+  activeData = signal<PrismaTableDataResponse | null>(null);
   loading = signal<boolean>(false);
   error = signal<string | null>(null);
 
-  getTables(): Observable<DrizzleTableMeta[]> {
+  getTables(): Observable<PrismaTableMeta[]> {
     this.loading.set(true);
-    return this.http.get<DrizzleTableMeta[]>(`${this.baseUrl}/tables`).pipe(
+    return this.http.get<PrismaTableMeta[]>(`${this.baseUrl}/tables`).pipe(
       tap({
         next: (res) => {
           this.tables.set(res || []);
@@ -55,14 +60,14 @@ export class DatabaseExplorerService {
         },
         error: (err) => {
           this.loading.set(false);
-          this.error.set(err?.message || 'Failed to load Drizzle ORM tables');
+          this.error.set(err?.message || 'Failed to load Prisma ORM tables');
         },
       }),
     );
   }
 
-  getTableSchema(tableName: string): Observable<{ tableName: string; columns: DrizzleColumnMeta[] }> {
-    return this.http.get<{ tableName: string; columns: DrizzleColumnMeta[] }>(
+  getTableSchema(tableName: string): Observable<{ tableName: string; columns: PrismaColumnMeta[] }> {
+    return this.http.get<{ tableName: string; columns: PrismaColumnMeta[] }>(
       `${this.baseUrl}/tables/${tableName}/schema`,
     ).pipe(
       tap({
@@ -73,14 +78,14 @@ export class DatabaseExplorerService {
     );
   }
 
-  getTableData(tableName: string, page = 1, limit = 20, search = ''): Observable<DrizzleTableDataResponse> {
+  getTableData(tableName: string, page = 1, limit = 20, search = ''): Observable<PrismaTableDataResponse> {
     this.loading.set(true);
     let params = new HttpParams().set('page', page).set('limit', limit);
     if (search && search.trim()) {
       params = params.set('search', search.trim());
     }
 
-    return this.http.get<DrizzleTableDataResponse>(`${this.baseUrl}/tables/${tableName}/data`, { params }).pipe(
+    return this.http.get<PrismaTableDataResponse>(`${this.baseUrl}/tables/${tableName}/data`, { params }).pipe(
       tap({
         next: (res) => {
           this.activeData.set(res);
@@ -93,5 +98,8 @@ export class DatabaseExplorerService {
       }),
     );
   }
-}
 
+  setActiveTable(name: string) {
+    this.activeTable.set(name);
+  }
+}

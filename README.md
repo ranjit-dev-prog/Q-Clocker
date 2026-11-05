@@ -8,7 +8,7 @@ Q Clocker is a production-ready, full-stack enterprise web application designed 
 
 - **Frontend**: Angular 19+ (Standalone Components, Signals, Reactive Forms, Angular Material, Tailwind CSS)
 - **Backend**: NestJS (TypeScript, Modular Architecture, REST API, Swagger/OpenAPI, Passport JWT, RBAC Guards, Throttling)
-- **Database**: PostgreSQL 16 with **Drizzle ORM** & **Drizzle Kit**
+- **Database**: PostgreSQL 16 with **Prisma ORM** & **Prisma Client** (39 relational models, Prisma Studio)
 - **Infrastructure**: Docker & Docker Compose
 
 ---
@@ -55,8 +55,9 @@ docker compose up -d --build
 ```bash
 cd backend
 npm install
-npm run drizzle:migrate
-npm run drizzle:seed
+npm run prisma:generate
+npm run prisma:seed
+npm run prisma:studio # Open Prisma Studio at http://localhost:5555
 npm run start:dev
 ```
 

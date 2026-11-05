@@ -1,7 +1,7 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { DatabaseExplorerService, DrizzleTableMeta, DrizzleColumnMeta } from '../../../core/services/database.service';
+import { DatabaseExplorerService, PrismaTableMeta, PrismaColumnMeta } from '../../../core/services/database.service';
 
 @Component({
   selector: 'app-database-explorer',
@@ -19,7 +19,7 @@ import { DatabaseExplorerService, DrizzleTableMeta, DrizzleColumnMeta } from '..
               </svg>
             </div>
             <div>
-              <h1 class="text-2xl font-bold tracking-tight">Drizzle ORM Database Studio</h1>
+              <h1 class="text-2xl font-bold tracking-tight">Prisma ORM Database Studio</h1>
               <p class="text-xs text-slate-400">Integrated Relational Schema Inspector & Live Data Browser</p>
             </div>
           </div>
@@ -31,16 +31,16 @@ import { DatabaseExplorerService, DrizzleTableMeta, DrizzleColumnMeta } from '..
             39 Mapped Tables
           </div>
           <div class="px-3.5 py-1.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold">
-            PostgreSQL 16 + Drizzle ORM
+            PostgreSQL 16 + Prisma ORM
           </div>
           <a
-            href="https://local.drizzle.studio?port=4984"
+            href="http://localhost:5555"
             target="_blank"
             rel="noopener noreferrer"
             class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg transition-all"
-            title="External Drizzle Studio Web UI"
+            title="External Prisma Studio Web UI"
           >
-            <span>External Web Studio</span>
+            <span>External Prisma Studio</span>
             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
             </svg>
@@ -67,7 +67,7 @@ import { DatabaseExplorerService, DrizzleTableMeta, DrizzleColumnMeta } from '..
             </div>
             <div class="flex items-center justify-between mt-2.5 px-1 text-[11px] text-slate-500">
               <span>{{ filteredTables().length }} tables found</span>
-              <span class="font-medium text-indigo-600 dark:text-indigo-400">Drizzle Relational Schema</span>
+              <span class="font-medium text-indigo-600 dark:text-indigo-400">Prisma Relational Schema</span>
             </div>
           </div>
 
@@ -318,7 +318,7 @@ export class DatabaseExplorerComponent implements OnInit {
 
   // Group tables by Category
   groupedCategories = computed(() => {
-    const map = new Map<string, DrizzleTableMeta[]>();
+    const map = new Map<string, PrismaTableMeta[]>();
     for (const tbl of this.filteredTables()) {
       if (!map.has(tbl.category)) {
         map.set(tbl.category, []);

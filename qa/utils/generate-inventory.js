@@ -91,16 +91,16 @@ async function generateInventory() {
 
   // 3. Database Schema Tables
   console.log('3. Scanning Database Schema...');
-  const schemaPath = path.resolve(__dirname, '../../backend/src/database/schema/index.ts');
+  const schemaPath = path.resolve(__dirname, '../../backend/prisma/schema.prisma');
   const schemaContent = fs.readFileSync(schemaPath, 'utf8');
-  const tableMatches = [...schemaContent.matchAll(/export const (\w+) = pgTable\('(\w+)'/g)];
+  const tableMatches = [...schemaContent.matchAll(/model (\w+) \{[\s\S]*?@@map\("(\w+)"\)/g)];
 
   const databaseTables = tableMatches.map((m) => ({
-    variable: m[1],
+    modelName: m[1],
     tableName: m[2],
   }));
 
-  console.log(`Discovered ${databaseTables.length} PostgreSQL database tables in centralized Drizzle schema.`);
+  console.log(`Discovered ${databaseTables.length} PostgreSQL database tables in centralized Prisma schema.`);
 
   const inventory = {
     generatedAt: new Date().toISOString(),

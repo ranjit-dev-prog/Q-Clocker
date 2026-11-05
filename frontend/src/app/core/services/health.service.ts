@@ -31,12 +31,13 @@ export interface SystemHealthResponse {
     backend: ComponentHealth;
     restApi: ComponentHealth;
     database: ComponentHealth;
-    drizzleOrm: ComponentHealth;
+    prismaOrm: ComponentHealth;
+    drizzleOrm?: ComponentHealth;
     migrations: ComponentHealth;
     notificationService: ComponentHealth;
     payrollEngine: ComponentHealth;
     lifecycleService: ComponentHealth;
-    [key: string]: ComponentHealth;
+    [key: string]: ComponentHealth | undefined;
   };
   resources: {
     heapUsedMb: number;
@@ -48,7 +49,8 @@ export interface SystemHealthResponse {
     backendUrl: string;
     swaggerUrl: string;
     healthUrl: string;
-    drizzleStudioUrl: string;
+    prismaStudioUrl?: string;
+    drizzleStudioUrl?: string;
   };
 }
 
@@ -63,4 +65,3 @@ export class HealthService {
     return this.http.get<SystemHealthResponse>(this.apiUrl);
   }
 }
-

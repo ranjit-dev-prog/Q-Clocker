@@ -22,7 +22,7 @@ import { HealthService, SystemHealthResponse } from '../../../core/services/heal
             </span>
           </h1>
           <p class="text-slate-400 text-sm mt-1 max-w-xl">
-            Real-time status of all modular backend services, Drizzle ORM mappings, PostgreSQL persistence, and live developer endpoints.
+            Real-time status of all modular backend services, Prisma ORM mappings, PostgreSQL persistence, and live developer endpoints.
           </p>
         </div>
         <div class="flex items-center gap-3">
@@ -134,7 +134,7 @@ import { HealthService, SystemHealthResponse } from '../../../core/services/heal
           >
             <div>
               <div class="font-bold text-xs text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
-                <span>Drizzle DB Explorer</span>
+                <span>Prisma DB Explorer</span>
                 <span class="px-1.5 py-0.2 rounded text-[9px] bg-indigo-600 text-white font-semibold">Native</span>
               </div>
               <div class="font-mono text-[11px] text-slate-500 mt-0.5">/admin/database</div>
@@ -143,13 +143,13 @@ import { HealthService, SystemHealthResponse } from '../../../core/services/heal
           </a>
 
           <a
-            href="https://local.drizzle.studio?port=4984"
+            href="http://localhost:5555"
             target="_blank"
             class="p-3 rounded-lg border border-slate-200 dark:border-slate-800 hover:border-indigo-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition flex items-center justify-between group"
           >
             <div>
-              <div class="font-bold text-xs text-slate-900 dark:text-white">Drizzle Web Studio</div>
-              <div class="font-mono text-[11px] text-slate-400 mt-0.5">local.drizzle.studio:4984</div>
+              <div class="font-bold text-xs text-slate-900 dark:text-white">Prisma Web Studio</div>
+              <div class="font-mono text-[11px] text-slate-400 mt-0.5">localhost:5555</div>
             </div>
             <span class="material-icons text-sm text-slate-400 group-hover:text-indigo-600">open_in_new</span>
           </a>
@@ -238,23 +238,23 @@ import { HealthService, SystemHealthResponse } from '../../../core/services/heal
           </div>
         </div>
 
-        <!-- 5. Drizzle ORM -->
+        <!-- 5. Prisma ORM -->
         <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-sm space-y-3">
           <div class="flex items-center justify-between">
             <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Object-Relational Mapping</span>
             <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-              {{ health()?.components?.drizzleOrm?.status || 'Active' }}
+              {{ health()?.components?.prismaOrm?.status || health()?.components?.drizzleOrm?.status || 'Active' }}
             </span>
           </div>
           <div class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
             <span class="material-icons text-indigo-600">hub</span>
-            Drizzle ORM Relational Engine
+            Prisma ORM Enterprise Engine
           </div>
           <div class="text-xs text-slate-500">
-            Strict type-safe schema with {{ health()?.components?.drizzleOrm?.tablesMapped || 34 }} relational tables mapped.
+            Strict type-safe schema with {{ health()?.components?.prismaOrm?.tablesMapped || 39 }} relational tables mapped.
           </div>
           <div class="text-[11px] font-mono text-slate-400 pt-2 border-t border-slate-100 dark:border-slate-800">
-            Studio: https://local.drizzle.studio
+            Studio: http://localhost:5555
           </div>
         </div>
 

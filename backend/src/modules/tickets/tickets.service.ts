@@ -1232,17 +1232,17 @@ export class TicketsService {
         },
       });
 
-      // Link newly created task to ticket
+      // Update ticket updated timestamp
       await this.prisma.ticket.update({
         where: { id: ticket.id },
-        data: { relatedTaskId: newTask.id, updatedAt: new Date() },
+        data: { updatedAt: new Date() },
       });
 
       await this.prisma.ticketHistory.create({
         data: {
           ticketId: ticket.id,
-          changedById: user.id,
-          fieldChanged: 'TASK_CREATED',
+          changedBy: user.id,
+          field: 'TASK_CREATED',
           oldValue: null,
           newValue: `Created and linked task ${newTask.referenceId}`,
         },
