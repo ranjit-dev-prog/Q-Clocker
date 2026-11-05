@@ -1,8 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
-import * as schema from '../../database/schema';
-import { getTableColumns, getTableName, is, sql } from 'drizzle-orm';
-import { PgTable } from 'drizzle-orm/pg-core';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '../../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { DepartmentsService } from '../departments/departments.service';
 import { TasksService } from '../tasks/tasks.service';
@@ -85,7 +83,7 @@ export class DatabaseExplorerService {
   };
 
   constructor(
-    private readonly dbService: DatabaseService,
+    private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
     private readonly departmentsService: DepartmentsService,
     private readonly tasksService: TasksService,
@@ -98,31 +96,30 @@ export class DatabaseExplorerService {
   ) {}
 
   /**
-   * Return all 39 Drizzle ORM relational database tables
+   * Return all 39 Prisma ORM relational database tables
    */
   async getTables(): Promise<TableSummary[]> {
+    const models = Prisma.dmmf.datamodel.models;
     const tables: TableSummary[] = [];
 
-    for (const [key, val] of Object.entries(schema)) {
-      if (val && is(val, PgTable)) {
-        const tableName = getTableName(val);
-        const cols = getTableColumns(val);
-        const meta = this.categoryMap[tableName] || {
-          category: 'Other System Tables',
-          description: `Relational schema table for ${tableName}`,
-        };
+    for (const model of models) {
+      const tableName = model.dbName || model.name.toLowerCase();
+      const scalarFields = model.fields.filter((f) => f.kind === 'scalar');
+      const meta = this.categoryMap[tableName] || {
+        category: 'Other System Tables',
+        description: `Relational schema table for ${tableName}`,
+      };
 
-        const rowCount = await this.estimateRowCount(tableName, val);
+      const rowCount = await this.estimateRowCount(model);
 
-        tables.push({
-          name: tableName,
-          key,
-          category: meta.category,
-          columnCount: Object.keys(cols).length,
-          rowCount,
-          description: meta.description,
-        });
-      }
+      tables.push({
+        name: tableName,
+        key: model.name,
+        category: meta.category,
+        columnCount: scalarFields.length,
+        rowCount,
+        description: meta.description,
+      });
     }
 
     // Sort by category then name
@@ -130,28 +127,24 @@ export class DatabaseExplorerService {
   }
 
   /**
-   * Return column metadata for a specific Drizzle table
+   * Return column metadata for a specific Prisma table
    */
   async getTableSchema(tableName: string): Promise<{ tableName: string; columns: ColumnDetail[] }> {
-    const tableObj = this.findTable(tableName);
-    if (!tableObj) {
-      throw new NotFoundException(`Table '${tableName}' not found in Drizzle ORM schema`);
+    const model = this.findModel(tableName);
+    if (!model) {
+      throw new NotFoundException(`Table '${tableName}' not found in Prisma ORM schema`);
     }
 
-    const cols = getTableColumns(tableObj);
-    const columns: ColumnDetail[] = Object.entries(cols).map(([colName, colDef]: [string, any]) => {
-      let dataType = colDef.dataType || 'unknown';
-      if (colDef.columnType) {
-        dataType = colDef.columnType.replace(/Pg/, '').toLowerCase();
-      }
-
+    const scalarFields = model.fields.filter((f) => f.kind === 'scalar');
+    const columns: ColumnDetail[] = scalarFields.map((f: any) => {
+      const colName = f.dbName || f.name;
       return {
-        name: colDef.name || colName,
-        dataType,
-        isPrimary: Boolean(colDef.primary),
-        isNullable: !colDef.notNull,
-        hasDefault: Boolean(colDef.hasDefault),
-        defaultVal: colDef.default !== undefined ? String(colDef.default) : undefined,
+        name: colName,
+        dataType: (f.type || 'String').toLowerCase(),
+        isPrimary: f.name === 'id' || Boolean(f.isId),
+        isNullable: !f.isRequired,
+        hasDefault: Boolean(f.hasDefaultValue || f.default !== undefined),
+        defaultVal: f.default !== undefined ? String(f.default) : undefined,
       };
     });
 
@@ -159,7 +152,7 @@ export class DatabaseExplorerService {
   }
 
   /**
-   * Return live rows for a specific Drizzle table (with pagination & search)
+   * Return live rows for a specific Prisma table (with pagination & search)
    */
   async getTableData(
     tableName: string,
@@ -167,29 +160,28 @@ export class DatabaseExplorerService {
     limit = 20,
     search?: string,
   ): Promise<{ tableName: string; total: number; page: number; limit: number; columns: string[]; rows: any[] }> {
-    const tableObj = this.findTable(tableName);
-    if (!tableObj) {
-      throw new NotFoundException(`Table '${tableName}' not found in Drizzle schema`);
+    const model = this.findModel(tableName);
+    if (!model) {
+      throw new NotFoundException(`Table '${tableName}' not found in Prisma schema`);
     }
 
-    const cols = getTableColumns(tableObj);
-    const colNames = Object.keys(cols);
+    const scalarFields = model.fields.filter((f) => f.kind === 'scalar');
+    const colNames = scalarFields.map((f) => f.dbName || f.name);
+    const delegateName = model.name.charAt(0).toLowerCase() + model.name.slice(1);
 
-    // 1. If database connection is active, query PostgreSQL directly via Drizzle
-    if (this.dbService.getConnectionStatus()) {
+    // 1. If database connection is active, query PostgreSQL directly via Prisma
+    if (this.prisma.isConnected && (this.prisma as any)[delegateName]) {
       try {
         const offset = (page - 1) * limit;
-        const rows = await (this.dbService.db as any)
-          .select()
-          .from(tableObj)
-          .limit(limit)
-          .offset(offset);
+        const delegate = (this.prisma as any)[delegateName];
 
-        const countResult = await (this.dbService.db as any)
-          .select({ count: sql`count(*)` })
-          .from(tableObj);
-
-        const total = Number(countResult[0]?.count) || rows.length;
+        const [rows, total] = await Promise.all([
+          delegate.findMany({
+            skip: offset,
+            take: limit,
+          }),
+          delegate.count(),
+        ]);
 
         return {
           tableName,
@@ -200,11 +192,11 @@ export class DatabaseExplorerService {
           rows: this.sanitizeRows(rows),
         };
       } catch (err) {
-        this.logger.warn(`Direct DB query on ${tableName} failed: ${(err as Error).message}`);
+        this.logger.warn(`Direct DB query on ${tableName} (${delegateName}) failed: ${(err as Error).message}`);
       }
     }
 
-    // 2. Synchronized domain store query (for instant visualization regardless of DB port 5432 status)
+    // 2. Synchronized domain store query (for instant visualization regardless of DB status)
     const storeRows = await this.getDomainData(tableName);
     let filtered = [...storeRows];
 
@@ -229,25 +221,23 @@ export class DatabaseExplorerService {
     };
   }
 
-  private findTable(tableName: string): any {
-    for (const val of Object.values(schema)) {
-      if (val && is(val, PgTable) && getTableName(val) === tableName) {
-        return val;
-      }
-    }
-    return null;
+  private findModel(tableName: string): any {
+    const target = tableName.toLowerCase();
+    return Prisma.dmmf.datamodel.models.find(
+      (m) => (m.dbName && m.dbName.toLowerCase() === target) || m.name.toLowerCase() === target,
+    );
   }
 
-  private async estimateRowCount(tableName: string, tableObj: any): Promise<number> {
-    if (this.dbService.getConnectionStatus()) {
+  private async estimateRowCount(model: any): Promise<number> {
+    const delegateName = model.name.charAt(0).toLowerCase() + model.name.slice(1);
+    if (this.prisma.isConnected && (this.prisma as any)[delegateName]) {
       try {
-        const [res] = await (this.dbService.db as any).select({ count: sql`count(*)` }).from(tableObj);
-        return Number(res?.count) || 0;
+        return await (this.prisma as any)[delegateName].count();
       } catch {
         // Fallback
       }
     }
-    const domainData = await this.getDomainData(tableName);
+    const domainData = await this.getDomainData(model.dbName || model.name.toLowerCase());
     return domainData.length;
   }
 

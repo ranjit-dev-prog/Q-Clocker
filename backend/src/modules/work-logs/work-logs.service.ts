@@ -1,11 +1,10 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
-import * as schema from '../../database/schema';
-import { eq, desc, and, sql } from 'drizzle-orm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateWorkLogDto } from './dto/create-work-log.dto';
 import { WorkLogQueryDto } from './dto/work-log-query.dto';
 import { generateReferenceId } from '../../common/utils/reference-id.util';
 import { UserRole } from '../../common/enums';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class WorkLogsService {
@@ -19,7 +18,7 @@ export class WorkLogsService {
       employeeId: '00000000-0000-0000-0000-000000000004',
       employeeName: 'David Ross',
       taskId: '20000000-0000-0000-0000-000000000001',
-      taskTitle: 'Implement Drizzle ORM Schema & Relational Models',
+      taskTitle: 'Implement Prisma ORM Schema & Relational Models',
       taskReference: 'TSK-9X4K21',
       ticketId: null,
       ticketTitle: null,
@@ -28,9 +27,9 @@ export class WorkLogsService {
       startTime: '09:00',
       endTime: '13:00',
       totalHours: '4.00',
-      workDescription: 'Engineered normalized database schemas with proper foreign keys, constraints, and DDL migrations.',
+      workDescription: 'Engineered normalized database schemas with proper foreign keys, constraints, and migrations.',
       investigationPerformed: 'Benchmarked PostgreSQL connection pool limits under synthetic concurrent query stress.',
-      actionsTaken: 'Authored 26 table definitions and verified backward-compatible rollback migrations.',
+      actionsTaken: 'Authored 39 model definitions and verified backward-compatible schema relations.',
       challengesFaced: 'Resolving circular relation between departments and manager users.',
       status: 'SUBMITTED',
       createdAt: new Date('2026-11-03T13:00:00Z'),
@@ -59,16 +58,15 @@ export class WorkLogsService {
     },
   ];
 
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async create(createWorkLogDto: CreateWorkLogDto, user: any) {
     const referenceId = generateReferenceId('WLG');
     const totalHoursStr = createWorkLogDto.totalHours.toFixed(2);
 
-    if (this.dbService.getConnectionStatus()) {
-      const [newLog] = await this.dbService.db
-        .insert(schema.workLogs)
-        .values({
+    if (this.prisma.isConnected) {
+      const newLog = await this.prisma.workLog.create({
+        data: {
           referenceId,
           employeeId: user.id,
           taskId: createWorkLogDto.taskId || null,
@@ -82,19 +80,23 @@ export class WorkLogsService {
           actionsTaken: createWorkLogDto.actionsTaken?.trim() || null,
           challengesFaced: createWorkLogDto.challengesFaced?.trim() || null,
           status: 'SUBMITTED',
-        })
-        .returning();
+        },
+      });
 
       // If linked to a task, update task actual hours
       if (createWorkLogDto.taskId) {
         try {
-          await this.dbService.db
-            .update(schema.tasks)
-            .set({
-              actualHours: sql`${schema.tasks.actualHours} + ${createWorkLogDto.totalHours}`,
+          const task = await this.prisma.task.findUnique({
+            where: { id: createWorkLogDto.taskId },
+          });
+          const currentActual = task ? Number(task.actualHours || 0) : 0;
+          await this.prisma.task.update({
+            where: { id: createWorkLogDto.taskId },
+            data: {
+              actualHours: currentActual + createWorkLogDto.totalHours,
               updatedAt: new Date(),
-            })
-            .where(eq(schema.tasks.id, createWorkLogDto.taskId));
+            },
+          });
         } catch (err) {
           this.logger.warn(`Failed to increment task hours: ${(err as Error).message}`);
         }
@@ -131,61 +133,66 @@ export class WorkLogsService {
   }
 
   async findAll(query: WorkLogQueryDto, user: any) {
-    if (this.dbService.getConnectionStatus()) {
-      const conditions: any[] = [];
+    if (this.prisma.isConnected) {
+      const where: any = {};
 
       // If standard employee, restrict to their logs
       if (user.role === UserRole.EMPLOYEE) {
-        conditions.push(eq(schema.workLogs.employeeId, user.id));
+        where.employeeId = user.id;
       } else if (query.employeeId) {
-        conditions.push(eq(schema.workLogs.employeeId, query.employeeId));
+        where.employeeId = query.employeeId;
       }
 
       if (query.logDate) {
-        conditions.push(eq(schema.workLogs.logDate, query.logDate));
+        where.logDate = query.logDate;
       }
       if (query.taskId) {
-        conditions.push(eq(schema.workLogs.taskId, query.taskId));
+        where.taskId = query.taskId;
       }
       if (query.ticketId) {
-        conditions.push(eq(schema.workLogs.ticketId, query.ticketId));
+        where.ticketId = query.ticketId;
       }
 
-      const rows = await this.dbService.db
-        .select({
-          id: schema.workLogs.id,
-          referenceId: schema.workLogs.referenceId,
-          employeeId: schema.workLogs.employeeId,
-          employeeFirstName: schema.users.firstName,
-          employeeLastName: schema.users.lastName,
-          employeeEmail: schema.users.email,
-          taskId: schema.workLogs.taskId,
-          taskTitle: schema.tasks.title,
-          taskReference: schema.tasks.referenceId,
-          ticketId: schema.workLogs.ticketId,
-          ticketTitle: schema.tickets.title,
-          ticketReference: schema.tickets.referenceId,
-          logDate: schema.workLogs.logDate,
-          startTime: schema.workLogs.startTime,
-          endTime: schema.workLogs.endTime,
-          totalHours: schema.workLogs.totalHours,
-          workDescription: schema.workLogs.workDescription,
-          investigationPerformed: schema.workLogs.investigationPerformed,
-          actionsTaken: schema.workLogs.actionsTaken,
-          challengesFaced: schema.workLogs.challengesFaced,
-          status: schema.workLogs.status,
-          createdAt: schema.workLogs.createdAt,
-        })
-        .from(schema.workLogs)
-        .leftJoin(schema.users, eq(schema.workLogs.employeeId, schema.users.id))
-        .leftJoin(schema.tasks, eq(schema.workLogs.taskId, schema.tasks.id))
-        .leftJoin(schema.tickets, eq(schema.workLogs.ticketId, schema.tickets.id))
-        .where(conditions.length > 0 ? and(...conditions) : undefined)
-        .orderBy(desc(schema.workLogs.logDate), desc(schema.workLogs.createdAt));
+      const rows = await this.prisma.workLog.findMany({
+        where,
+        include: {
+          employee: {
+            select: { firstName: true, lastName: true, email: true },
+          },
+          task: {
+            select: { title: true, referenceId: true },
+          },
+          ticket: {
+            select: { title: true, referenceId: true },
+          },
+        },
+        orderBy: [{ logDate: 'desc' }, { createdAt: 'desc' }],
+      });
 
-      return rows.map((r) => ({
-        ...r,
-        employeeName: `${r.employeeFirstName || ''} ${r.employeeLastName || ''}`.trim() || 'Employee',
+      return rows.map((r: any) => ({
+        id: r.id,
+        referenceId: r.referenceId,
+        employeeId: r.employeeId,
+        employeeFirstName: r.employee?.firstName || null,
+        employeeLastName: r.employee?.lastName || null,
+        employeeEmail: r.employee?.email || null,
+        employeeName: `${r.employee?.firstName || ''} ${r.employee?.lastName || ''}`.trim() || 'Employee',
+        taskId: r.taskId,
+        taskTitle: r.task?.title || null,
+        taskReference: r.task?.referenceId || null,
+        ticketId: r.ticketId,
+        ticketTitle: r.ticket?.title || null,
+        ticketReference: r.ticket?.referenceId || null,
+        logDate: r.logDate,
+        startTime: r.startTime,
+        endTime: r.endTime,
+        totalHours: r.totalHours,
+        workDescription: r.workDescription,
+        investigationPerformed: r.investigationPerformed,
+        actionsTaken: r.actionsTaken,
+        challengesFaced: r.challengesFaced,
+        status: r.status,
+        createdAt: r.createdAt,
       }));
     }
 
@@ -198,15 +205,36 @@ export class WorkLogsService {
   }
 
   async findById(id: string) {
-    if (this.dbService.getConnectionStatus()) {
-      const [log] = await this.dbService.db
-        .select()
-        .from(schema.workLogs)
-        .where(eq(schema.workLogs.id, id))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const log = await this.prisma.workLog.findFirst({
+        where: {
+          OR: [{ id }, { referenceId: id }],
+        },
+        include: {
+          employee: {
+            select: { firstName: true, lastName: true, email: true },
+          },
+          task: {
+            select: { title: true, referenceId: true },
+          },
+          ticket: {
+            select: { title: true, referenceId: true },
+          },
+        },
+      });
 
       if (!log) throw new NotFoundException(`Work log '${id}' not found`);
-      return log;
+      return {
+        ...log,
+        employeeFirstName: log.employee?.firstName || null,
+        employeeLastName: log.employee?.lastName || null,
+        employeeEmail: log.employee?.email || null,
+        employeeName: `${log.employee?.firstName || ''} ${log.employee?.lastName || ''}`.trim() || 'Employee',
+        taskTitle: log.task?.title || null,
+        taskReference: log.task?.referenceId || null,
+        ticketTitle: log.ticket?.title || null,
+        ticketReference: log.ticket?.referenceId || null,
+      };
     }
 
     const log = this.demoWorkLogs.find((l) => l.id === id || l.referenceId === id);
@@ -216,8 +244,8 @@ export class WorkLogsService {
 
   async getDailySummary(date: string, user: any) {
     const logs = await this.findAll({ logDate: date }, user);
-    const totalHours = logs.reduce((sum, l) => sum + parseFloat(l.totalHours || 0), 0);
-    const uniqueEmployees = new Set(logs.map((l) => l.employeeId)).size;
+    const totalHours = logs.reduce((sum: number, l: any) => sum + parseFloat(l.totalHours || 0), 0);
+    const uniqueEmployees = new Set(logs.map((l: any) => l.employeeId)).size;
 
     return {
       date,

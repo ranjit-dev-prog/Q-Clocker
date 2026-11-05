@@ -24,25 +24,26 @@ export declare class AuthController {
     }>;
     getSessions(userId: string): Promise<{
         id: string;
-        userAgent: string | null;
-        ipAddress: string | null;
-        expiresAt: Date;
         createdAt: Date;
+        ipAddress: string | null;
+        userAgent: string | null;
+        expiresAt: Date;
     }[]>;
     getProfile(userId: string): Promise<{
+        role: string;
         id: string;
+        createdAt: Date;
         referenceId: string;
+        isActive: boolean;
+        departmentId: string | null;
+        teamId: string | null;
         email: string;
         firstName: string;
         lastName: string;
         phone: string | null;
         avatarUrl: string | null;
-        role: string;
-        departmentId: string | null;
-        teamId: string | null;
+        roleCode: string;
         jobTitle: string | null;
-        isActive: boolean;
-        createdAt: Date;
     } | {
         id: string;
         referenceId: string;

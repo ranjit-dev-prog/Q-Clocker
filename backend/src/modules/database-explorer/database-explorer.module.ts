@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DatabaseExplorerController } from './database-explorer.controller';
 import { DatabaseExplorerService } from './database-explorer.service';
-import { DatabaseModule } from '../../database/database.module';
 import { UsersModule } from '../users/users.module';
 import { DepartmentsModule } from '../departments/departments.module';
 import { TasksModule } from '../tasks/tasks.module';
@@ -14,7 +13,6 @@ import { LifecycleModule } from '../lifecycle/lifecycle.module';
 
 @Module({
   imports: [
-    DatabaseModule,
     UsersModule,
     DepartmentsModule,
     TasksModule,

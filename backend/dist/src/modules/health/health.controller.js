@@ -13,14 +13,14 @@ exports.HealthController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const public_decorator_1 = require("../../common/decorators/public.decorator");
-const database_service_1 = require("../../database/database.service");
+const prisma_service_1 = require("../../prisma/prisma.service");
 let HealthController = class HealthController {
-    dbService;
-    constructor(dbService) {
-        this.dbService = dbService;
+    prisma;
+    constructor(prisma) {
+        this.prisma = prisma;
     }
     check() {
-        const isDbConnected = this.dbService.getConnectionStatus();
+        const isDbConnected = this.prisma.isConnected;
         const memory = process.memoryUsage();
         return {
             status: 'ok',
@@ -55,11 +55,11 @@ let HealthController = class HealthController {
                     databaseName: 'q_clocker',
                     connectionPool: 'Max 20 Connections',
                 },
-                drizzleOrm: {
-                    name: 'Drizzle ORM Relational Engine',
-                    status: 'online',
-                    tablesMapped: 34,
-                    studioUrl: 'https://local.drizzle.studio',
+                prismaOrm: {
+                    name: 'Prisma ORM Enterprise Engine',
+                    status: isDbConnected ? 'active' : 'ready',
+                    tablesMapped: 39,
+                    studioUrl: 'http://localhost:5555',
                 },
                 migrations: {
                     name: 'Schema Evolution & Migrations',
@@ -103,6 +103,6 @@ __decorate([
 exports.HealthController = HealthController = __decorate([
     (0, swagger_1.ApiTags)('System Health'),
     (0, common_1.Controller)('health'),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], HealthController);
 //# sourceMappingURL=health.controller.js.map

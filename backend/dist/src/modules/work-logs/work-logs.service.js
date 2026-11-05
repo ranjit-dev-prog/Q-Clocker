@@ -12,13 +12,12 @@ var WorkLogsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WorkLogsService = void 0;
 const common_1 = require("@nestjs/common");
-const database_service_1 = require("../../database/database.service");
-const schema = require("../../database/schema");
-const drizzle_orm_1 = require("drizzle-orm");
+const prisma_service_1 = require("../../prisma/prisma.service");
 const reference_id_util_1 = require("../../common/utils/reference-id.util");
 const enums_1 = require("../../common/enums");
+const crypto = require("crypto");
 let WorkLogsService = WorkLogsService_1 = class WorkLogsService {
-    dbService;
+    prisma;
     logger = new common_1.Logger(WorkLogsService_1.name);
     demoWorkLogs = [
         {
@@ -27,7 +26,7 @@ let WorkLogsService = WorkLogsService_1 = class WorkLogsService {
             employeeId: '00000000-0000-0000-0000-000000000004',
             employeeName: 'David Ross',
             taskId: '20000000-0000-0000-0000-000000000001',
-            taskTitle: 'Implement Drizzle ORM Schema & Relational Models',
+            taskTitle: 'Implement Prisma ORM Schema & Relational Models',
             taskReference: 'TSK-9X4K21',
             ticketId: null,
             ticketTitle: null,
@@ -36,9 +35,9 @@ let WorkLogsService = WorkLogsService_1 = class WorkLogsService {
             startTime: '09:00',
             endTime: '13:00',
             totalHours: '4.00',
-            workDescription: 'Engineered normalized database schemas with proper foreign keys, constraints, and DDL migrations.',
+            workDescription: 'Engineered normalized database schemas with proper foreign keys, constraints, and migrations.',
             investigationPerformed: 'Benchmarked PostgreSQL connection pool limits under synthetic concurrent query stress.',
-            actionsTaken: 'Authored 26 table definitions and verified backward-compatible rollback migrations.',
+            actionsTaken: 'Authored 39 model definitions and verified backward-compatible schema relations.',
             challengesFaced: 'Resolving circular relation between departments and manager users.',
             status: 'SUBMITTED',
             createdAt: new Date('2026-11-03T13:00:00Z'),
@@ -66,40 +65,43 @@ let WorkLogsService = WorkLogsService_1 = class WorkLogsService {
             createdAt: new Date('2026-11-03T17:30:00Z'),
         },
     ];
-    constructor(dbService) {
-        this.dbService = dbService;
+    constructor(prisma) {
+        this.prisma = prisma;
     }
     async create(createWorkLogDto, user) {
         const referenceId = (0, reference_id_util_1.generateReferenceId)('WLG');
         const totalHoursStr = createWorkLogDto.totalHours.toFixed(2);
-        if (this.dbService.getConnectionStatus()) {
-            const [newLog] = await this.dbService.db
-                .insert(schema.workLogs)
-                .values({
-                referenceId,
-                employeeId: user.id,
-                taskId: createWorkLogDto.taskId || null,
-                ticketId: createWorkLogDto.ticketId || null,
-                logDate: createWorkLogDto.logDate,
-                startTime: createWorkLogDto.startTime,
-                endTime: createWorkLogDto.endTime,
-                totalHours: totalHoursStr,
-                workDescription: createWorkLogDto.workDescription.trim(),
-                investigationPerformed: createWorkLogDto.investigationPerformed?.trim() || null,
-                actionsTaken: createWorkLogDto.actionsTaken?.trim() || null,
-                challengesFaced: createWorkLogDto.challengesFaced?.trim() || null,
-                status: 'SUBMITTED',
-            })
-                .returning();
+        if (this.prisma.isConnected) {
+            const newLog = await this.prisma.workLog.create({
+                data: {
+                    referenceId,
+                    employeeId: user.id,
+                    taskId: createWorkLogDto.taskId || null,
+                    ticketId: createWorkLogDto.ticketId || null,
+                    logDate: createWorkLogDto.logDate,
+                    startTime: createWorkLogDto.startTime,
+                    endTime: createWorkLogDto.endTime,
+                    totalHours: totalHoursStr,
+                    workDescription: createWorkLogDto.workDescription.trim(),
+                    investigationPerformed: createWorkLogDto.investigationPerformed?.trim() || null,
+                    actionsTaken: createWorkLogDto.actionsTaken?.trim() || null,
+                    challengesFaced: createWorkLogDto.challengesFaced?.trim() || null,
+                    status: 'SUBMITTED',
+                },
+            });
             if (createWorkLogDto.taskId) {
                 try {
-                    await this.dbService.db
-                        .update(schema.tasks)
-                        .set({
-                        actualHours: (0, drizzle_orm_1.sql) `${schema.tasks.actualHours} + ${createWorkLogDto.totalHours}`,
-                        updatedAt: new Date(),
-                    })
-                        .where((0, drizzle_orm_1.eq)(schema.tasks.id, createWorkLogDto.taskId));
+                    const task = await this.prisma.task.findUnique({
+                        where: { id: createWorkLogDto.taskId },
+                    });
+                    const currentActual = task ? Number(task.actualHours || 0) : 0;
+                    await this.prisma.task.update({
+                        where: { id: createWorkLogDto.taskId },
+                        data: {
+                            actualHours: currentActual + createWorkLogDto.totalHours,
+                            updatedAt: new Date(),
+                        },
+                    });
                 }
                 catch (err) {
                     this.logger.warn(`Failed to increment task hours: ${err.message}`);
@@ -133,57 +135,62 @@ let WorkLogsService = WorkLogsService_1 = class WorkLogsService {
         return newLog;
     }
     async findAll(query, user) {
-        if (this.dbService.getConnectionStatus()) {
-            const conditions = [];
+        if (this.prisma.isConnected) {
+            const where = {};
             if (user.role === enums_1.UserRole.EMPLOYEE) {
-                conditions.push((0, drizzle_orm_1.eq)(schema.workLogs.employeeId, user.id));
+                where.employeeId = user.id;
             }
             else if (query.employeeId) {
-                conditions.push((0, drizzle_orm_1.eq)(schema.workLogs.employeeId, query.employeeId));
+                where.employeeId = query.employeeId;
             }
             if (query.logDate) {
-                conditions.push((0, drizzle_orm_1.eq)(schema.workLogs.logDate, query.logDate));
+                where.logDate = query.logDate;
             }
             if (query.taskId) {
-                conditions.push((0, drizzle_orm_1.eq)(schema.workLogs.taskId, query.taskId));
+                where.taskId = query.taskId;
             }
             if (query.ticketId) {
-                conditions.push((0, drizzle_orm_1.eq)(schema.workLogs.ticketId, query.ticketId));
+                where.ticketId = query.ticketId;
             }
-            const rows = await this.dbService.db
-                .select({
-                id: schema.workLogs.id,
-                referenceId: schema.workLogs.referenceId,
-                employeeId: schema.workLogs.employeeId,
-                employeeFirstName: schema.users.firstName,
-                employeeLastName: schema.users.lastName,
-                employeeEmail: schema.users.email,
-                taskId: schema.workLogs.taskId,
-                taskTitle: schema.tasks.title,
-                taskReference: schema.tasks.referenceId,
-                ticketId: schema.workLogs.ticketId,
-                ticketTitle: schema.tickets.title,
-                ticketReference: schema.tickets.referenceId,
-                logDate: schema.workLogs.logDate,
-                startTime: schema.workLogs.startTime,
-                endTime: schema.workLogs.endTime,
-                totalHours: schema.workLogs.totalHours,
-                workDescription: schema.workLogs.workDescription,
-                investigationPerformed: schema.workLogs.investigationPerformed,
-                actionsTaken: schema.workLogs.actionsTaken,
-                challengesFaced: schema.workLogs.challengesFaced,
-                status: schema.workLogs.status,
-                createdAt: schema.workLogs.createdAt,
-            })
-                .from(schema.workLogs)
-                .leftJoin(schema.users, (0, drizzle_orm_1.eq)(schema.workLogs.employeeId, schema.users.id))
-                .leftJoin(schema.tasks, (0, drizzle_orm_1.eq)(schema.workLogs.taskId, schema.tasks.id))
-                .leftJoin(schema.tickets, (0, drizzle_orm_1.eq)(schema.workLogs.ticketId, schema.tickets.id))
-                .where(conditions.length > 0 ? (0, drizzle_orm_1.and)(...conditions) : undefined)
-                .orderBy((0, drizzle_orm_1.desc)(schema.workLogs.logDate), (0, drizzle_orm_1.desc)(schema.workLogs.createdAt));
+            const rows = await this.prisma.workLog.findMany({
+                where,
+                include: {
+                    employee: {
+                        select: { firstName: true, lastName: true, email: true },
+                    },
+                    task: {
+                        select: { title: true, referenceId: true },
+                    },
+                    ticket: {
+                        select: { title: true, referenceId: true },
+                    },
+                },
+                orderBy: [{ logDate: 'desc' }, { createdAt: 'desc' }],
+            });
             return rows.map((r) => ({
-                ...r,
-                employeeName: `${r.employeeFirstName || ''} ${r.employeeLastName || ''}`.trim() || 'Employee',
+                id: r.id,
+                referenceId: r.referenceId,
+                employeeId: r.employeeId,
+                employeeFirstName: r.employee?.firstName || null,
+                employeeLastName: r.employee?.lastName || null,
+                employeeEmail: r.employee?.email || null,
+                employeeName: `${r.employee?.firstName || ''} ${r.employee?.lastName || ''}`.trim() || 'Employee',
+                taskId: r.taskId,
+                taskTitle: r.task?.title || null,
+                taskReference: r.task?.referenceId || null,
+                ticketId: r.ticketId,
+                ticketTitle: r.ticket?.title || null,
+                ticketReference: r.ticket?.referenceId || null,
+                logDate: r.logDate,
+                startTime: r.startTime,
+                endTime: r.endTime,
+                totalHours: r.totalHours,
+                workDescription: r.workDescription,
+                investigationPerformed: r.investigationPerformed,
+                actionsTaken: r.actionsTaken,
+                challengesFaced: r.challengesFaced,
+                status: r.status,
+                createdAt: r.createdAt,
             }));
         }
         return this.demoWorkLogs.filter((l) => {
@@ -197,15 +204,36 @@ let WorkLogsService = WorkLogsService_1 = class WorkLogsService {
         });
     }
     async findById(id) {
-        if (this.dbService.getConnectionStatus()) {
-            const [log] = await this.dbService.db
-                .select()
-                .from(schema.workLogs)
-                .where((0, drizzle_orm_1.eq)(schema.workLogs.id, id))
-                .limit(1);
+        if (this.prisma.isConnected) {
+            const log = await this.prisma.workLog.findFirst({
+                where: {
+                    OR: [{ id }, { referenceId: id }],
+                },
+                include: {
+                    employee: {
+                        select: { firstName: true, lastName: true, email: true },
+                    },
+                    task: {
+                        select: { title: true, referenceId: true },
+                    },
+                    ticket: {
+                        select: { title: true, referenceId: true },
+                    },
+                },
+            });
             if (!log)
                 throw new common_1.NotFoundException(`Work log '${id}' not found`);
-            return log;
+            return {
+                ...log,
+                employeeFirstName: log.employee?.firstName || null,
+                employeeLastName: log.employee?.lastName || null,
+                employeeEmail: log.employee?.email || null,
+                employeeName: `${log.employee?.firstName || ''} ${log.employee?.lastName || ''}`.trim() || 'Employee',
+                taskTitle: log.task?.title || null,
+                taskReference: log.task?.referenceId || null,
+                ticketTitle: log.ticket?.title || null,
+                ticketReference: log.ticket?.referenceId || null,
+            };
         }
         const log = this.demoWorkLogs.find((l) => l.id === id || l.referenceId === id);
         if (!log)
@@ -228,6 +256,6 @@ let WorkLogsService = WorkLogsService_1 = class WorkLogsService {
 exports.WorkLogsService = WorkLogsService;
 exports.WorkLogsService = WorkLogsService = WorkLogsService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], WorkLogsService);
 //# sourceMappingURL=work-logs.service.js.map

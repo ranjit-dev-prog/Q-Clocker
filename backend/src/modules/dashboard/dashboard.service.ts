@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { TasksService } from '../tasks/tasks.service';
 import { TicketsService } from '../tickets/tickets.service';
 import { UsersService } from '../users/users.service';
@@ -20,7 +20,7 @@ export class DashboardService {
   private readonly logger = new Logger(DashboardService.name);
 
   constructor(
-    private readonly dbService: DatabaseService,
+    private readonly prisma: PrismaService,
     private readonly tasksService: TasksService,
     private readonly ticketsService: TicketsService,
     private readonly usersService: UsersService,
@@ -166,7 +166,7 @@ export class DashboardService {
         roleSpecificData.activeSessions = 12;
         roleSpecificData.serverHealth = '100% Operational';
         roleSpecificData.networkStatus = 'All Gateways Synced';
-        roleSpecificData.databaseEngine = 'PostgreSQL 16 + Drizzle ORM';
+        roleSpecificData.databaseEngine = 'PostgreSQL 16 + Prisma ORM';
         break;
 
       case UserRole.IT_MANAGER:

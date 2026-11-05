@@ -1,4 +1,4 @@
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { UsersService } from '../users/users.service';
 import { DepartmentsService } from '../departments/departments.service';
 import { TasksService } from '../tasks/tasks.service';
@@ -25,7 +25,7 @@ export interface ColumnDetail {
     defaultVal?: string;
 }
 export declare class DatabaseExplorerService {
-    private readonly dbService;
+    private readonly prisma;
     private readonly usersService;
     private readonly departmentsService;
     private readonly tasksService;
@@ -37,7 +37,7 @@ export declare class DatabaseExplorerService {
     private readonly lifecycleService;
     private readonly logger;
     private readonly categoryMap;
-    constructor(dbService: DatabaseService, usersService: UsersService, departmentsService: DepartmentsService, tasksService: TasksService, ticketsService: TicketsService, rolesService: RolesService, permissionsService: PermissionsService, workLogsService: WorkLogsService, payrollService: PayrollService, lifecycleService: LifecycleService);
+    constructor(prisma: PrismaService, usersService: UsersService, departmentsService: DepartmentsService, tasksService: TasksService, ticketsService: TicketsService, rolesService: RolesService, permissionsService: PermissionsService, workLogsService: WorkLogsService, payrollService: PayrollService, lifecycleService: LifecycleService);
     getTables(): Promise<TableSummary[]>;
     getTableSchema(tableName: string): Promise<{
         tableName: string;
@@ -51,7 +51,7 @@ export declare class DatabaseExplorerService {
         columns: string[];
         rows: any[];
     }>;
-    private findTable;
+    private findModel;
     private estimateRowCount;
     private getDomainData;
     private sanitizeRows;

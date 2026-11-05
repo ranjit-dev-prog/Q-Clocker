@@ -5,7 +5,7 @@ import {
   Optional,
 } from '@nestjs/common';
 import * as crypto from 'crypto';
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateLifecycleEventDto, ExtendProbationDto } from './dto/lifecycle.dto';
 
@@ -122,7 +122,7 @@ export class LifecycleService {
   ];
 
   constructor(
-    private readonly dbService: DatabaseService,
+    private readonly prisma: PrismaService,
     @Optional() private readonly notificationsService?: NotificationsService,
   ) {}
 

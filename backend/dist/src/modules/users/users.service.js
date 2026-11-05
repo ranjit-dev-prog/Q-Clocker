@@ -13,15 +13,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.UsersService = void 0;
 const common_1 = require("@nestjs/common");
 const bcrypt = require("bcryptjs");
-const database_service_1 = require("../../database/database.service");
-const schema = require("../../database/schema");
-const drizzle_orm_1 = require("drizzle-orm");
+const prisma_service_1 = require("../../prisma/prisma.service");
 const enums_1 = require("../../common/enums");
 const reference_id_util_1 = require("../../common/utils/reference-id.util");
 const crypto = require("crypto");
 const ExcelJS = require("exceljs");
 let UsersService = UsersService_1 = class UsersService {
-    dbService;
+    prisma;
     logger = new common_1.Logger(UsersService_1.name);
     memoryUsers = [
         {
@@ -259,45 +257,38 @@ let UsersService = UsersService_1 = class UsersService {
             createdAt: new Date('2026-02-15').toISOString(),
         },
     ];
-    constructor(dbService) {
-        this.dbService = dbService;
+    constructor(prisma) {
+        this.prisma = prisma;
     }
     async create(dto, creatorUser) {
         const normalizedEmail = dto.email.toLowerCase().trim();
-        if (this.dbService.getConnectionStatus()) {
-            const existing = await this.dbService.db
-                .select()
-                .from(schema.users)
-                .where((0, drizzle_orm_1.eq)(schema.users.email, normalizedEmail))
-                .limit(1);
-            if (existing.length > 0) {
+        if (this.prisma.isConnected) {
+            const existing = await this.prisma.user.findFirst({
+                where: { email: normalizedEmail },
+            });
+            if (existing) {
                 throw new common_1.ConflictException('An employee with this email already exists');
             }
             if (dto.employeeCode) {
-                const existingCode = await this.dbService.db
-                    .select()
-                    .from(schema.users)
-                    .where((0, drizzle_orm_1.eq)(schema.users.employeeCode, dto.employeeCode.trim()))
-                    .limit(1);
-                if (existingCode.length > 0) {
+                const existingCode = await this.prisma.user.findFirst({
+                    where: { employeeCode: dto.employeeCode.trim() },
+                });
+                if (existingCode) {
                     throw new common_1.ConflictException(`Employee badge code '${dto.employeeCode}' is already taken`);
                 }
             }
-            let [role] = await this.dbService.db
-                .select()
-                .from(schema.roles)
-                .where((0, drizzle_orm_1.eq)(schema.roles.code, dto.roleCode))
-                .limit(1);
+            let role = await this.prisma.role.findUnique({
+                where: { code: dto.roleCode },
+            });
             if (!role) {
-                [role] = await this.dbService.db
-                    .insert(schema.roles)
-                    .values({
-                    code: dto.roleCode,
-                    name: dto.roleCode.replace('_', ' '),
-                    description: 'Application Role',
-                    isSystem: true,
-                })
-                    .returning();
+                role = await this.prisma.role.create({
+                    data: {
+                        code: dto.roleCode,
+                        name: dto.roleCode.replace('_', ' '),
+                        description: 'Application Role',
+                        isSystem: true,
+                    },
+                });
             }
             const rawPassword = dto.password || crypto.randomBytes(16).toString('hex') + '!2026';
             const passwordHash = await bcrypt.hash(rawPassword, 10);
@@ -311,34 +302,33 @@ let UsersService = UsersService_1 = class UsersService {
                 invitationExpires = new Date(Date.now() + 48 * 3600 * 1000);
                 accountStatus = enums_1.AccountStatus.INVITATION_PENDING;
             }
-            const [newUser] = await this.dbService.db
-                .insert(schema.users)
-                .values({
-                referenceId,
-                employeeCode: dto.employeeCode?.trim() || `EMP${Math.floor(1000 + Math.random() * 9000)}`,
-                email: normalizedEmail,
-                personalEmail: dto.personalEmail?.trim() || null,
-                passwordHash,
-                firstName: dto.firstName.trim(),
-                lastName: dto.lastName.trim(),
-                phone: dto.phone?.trim() || null,
-                roleId: role.id,
-                roleCode: dto.roleCode,
-                departmentId: dto.departmentId || null,
-                teamId: dto.teamId || null,
-                designationId: dto.designationId || null,
-                managerId: dto.managerId || null,
-                jobTitle: dto.jobTitle?.trim() || 'Team Member',
-                employmentType: dto.employmentType || enums_1.EmploymentType.FULL_TIME,
-                joiningDate: dto.joiningDate || new Date().toISOString().substring(0, 10),
-                workLocation: dto.workLocation?.trim() || 'Headquarters',
-                hasLoginAccount: dto.hasLoginAccount !== false,
-                accountStatus,
-                invitationToken,
-                invitationTokenExpiresAt: invitationExpires,
-                isActive: true,
-            })
-                .returning();
+            const newUser = await this.prisma.user.create({
+                data: {
+                    referenceId,
+                    employeeCode: dto.employeeCode?.trim() || `EMP${Math.floor(1000 + Math.random() * 9000)}`,
+                    email: normalizedEmail,
+                    personalEmail: dto.personalEmail?.trim() || null,
+                    passwordHash,
+                    firstName: dto.firstName.trim(),
+                    lastName: dto.lastName.trim(),
+                    phone: dto.phone?.trim() || null,
+                    roleId: role.id,
+                    roleCode: dto.roleCode,
+                    departmentId: dto.departmentId || null,
+                    teamId: dto.teamId || null,
+                    designationId: dto.designationId || null,
+                    managerId: dto.managerId || null,
+                    jobTitle: dto.jobTitle?.trim() || 'Team Member',
+                    employmentType: dto.employmentType || enums_1.EmploymentType.FULL_TIME,
+                    joiningDate: dto.joiningDate ? new Date(dto.joiningDate) : new Date(),
+                    workLocation: dto.workLocation?.trim() || 'Headquarters',
+                    hasLoginAccount: dto.hasLoginAccount !== false,
+                    accountStatus,
+                    invitationToken,
+                    invitationTokenExpiresAt: invitationExpires,
+                    isActive: true,
+                },
+            });
             const { passwordHash: _, ...sanitized } = newUser;
             return sanitized;
         }
@@ -386,52 +376,38 @@ let UsersService = UsersService_1 = class UsersService {
                 ? query.isActive === 'true'
                 : Boolean(query.isActive)
             : undefined;
-        if (this.dbService.getConnectionStatus()) {
-            const conditions = [];
+        if (this.prisma.isConnected) {
+            const where = {};
             if (roleFilter) {
-                conditions.push((0, drizzle_orm_1.eq)(schema.users.roleCode, roleFilter));
+                where.roleCode = roleFilter;
             }
             if (query.departmentId) {
-                conditions.push((0, drizzle_orm_1.eq)(schema.users.departmentId, query.departmentId));
+                where.departmentId = query.departmentId;
             }
             if (activeFilter !== undefined) {
-                conditions.push((0, drizzle_orm_1.eq)(schema.users.isActive, activeFilter));
+                where.isActive = activeFilter;
             }
             if (query.search) {
-                const pattern = `%${query.search.trim()}%`;
-                conditions.push((0, drizzle_orm_1.or)((0, drizzle_orm_1.ilike)(schema.users.firstName, pattern), (0, drizzle_orm_1.ilike)(schema.users.lastName, pattern), (0, drizzle_orm_1.ilike)(schema.users.email, pattern), (0, drizzle_orm_1.ilike)(schema.users.referenceId, pattern), (0, drizzle_orm_1.ilike)(schema.users.jobTitle, pattern)));
+                const pattern = query.search.trim();
+                where.OR = [
+                    { firstName: { contains: pattern, mode: 'insensitive' } },
+                    { lastName: { contains: pattern, mode: 'insensitive' } },
+                    { email: { contains: pattern, mode: 'insensitive' } },
+                    { referenceId: { contains: pattern, mode: 'insensitive' } },
+                    { jobTitle: { contains: pattern, mode: 'insensitive' } },
+                ];
             }
-            const rows = await this.dbService.db
-                .select({
-                id: schema.users.id,
-                referenceId: schema.users.referenceId,
-                employeeCode: schema.users.employeeCode,
-                email: schema.users.email,
-                personalEmail: schema.users.personalEmail,
-                firstName: schema.users.firstName,
-                lastName: schema.users.lastName,
-                phone: schema.users.phone,
-                avatarUrl: schema.users.avatarUrl,
-                roleCode: schema.users.roleCode,
-                departmentId: schema.users.departmentId,
-                departmentName: schema.departments.name,
-                teamId: schema.users.teamId,
-                designationId: schema.users.designationId,
-                managerId: schema.users.managerId,
-                jobTitle: schema.users.jobTitle,
-                employmentType: schema.users.employmentType,
-                joiningDate: schema.users.joiningDate,
-                workLocation: schema.users.workLocation,
-                hasLoginAccount: schema.users.hasLoginAccount,
-                accountStatus: schema.users.accountStatus,
-                isActive: schema.users.isActive,
-                createdAt: schema.users.createdAt,
-            })
-                .from(schema.users)
-                .leftJoin(schema.departments, (0, drizzle_orm_1.eq)(schema.users.departmentId, schema.departments.id))
-                .where(conditions.length > 0 ? (0, drizzle_orm_1.and)(...conditions) : undefined)
-                .orderBy((0, drizzle_orm_1.desc)(schema.users.createdAt));
-            return rows;
+            const rows = await this.prisma.user.findMany({
+                where,
+                include: {
+                    department: true,
+                },
+                orderBy: { createdAt: 'desc' },
+            });
+            return rows.map((u) => ({
+                ...u,
+                departmentName: u.department?.name,
+            }));
         }
         return this.memoryUsers.filter((u) => {
             if (roleFilter && u.roleCode !== roleFilter)
@@ -451,40 +427,21 @@ let UsersService = UsersService_1 = class UsersService {
         });
     }
     async findOne(id) {
-        if (this.dbService.getConnectionStatus()) {
-            const [user] = await this.dbService.db
-                .select({
-                id: schema.users.id,
-                referenceId: schema.users.referenceId,
-                employeeCode: schema.users.employeeCode,
-                email: schema.users.email,
-                personalEmail: schema.users.personalEmail,
-                firstName: schema.users.firstName,
-                lastName: schema.users.lastName,
-                phone: schema.users.phone,
-                avatarUrl: schema.users.avatarUrl,
-                roleCode: schema.users.roleCode,
-                departmentId: schema.users.departmentId,
-                departmentName: schema.departments.name,
-                teamId: schema.users.teamId,
-                designationId: schema.users.designationId,
-                managerId: schema.users.managerId,
-                jobTitle: schema.users.jobTitle,
-                employmentType: schema.users.employmentType,
-                joiningDate: schema.users.joiningDate,
-                workLocation: schema.users.workLocation,
-                hasLoginAccount: schema.users.hasLoginAccount,
-                accountStatus: schema.users.accountStatus,
-                isActive: schema.users.isActive,
-                createdAt: schema.users.createdAt,
-            })
-                .from(schema.users)
-                .leftJoin(schema.departments, (0, drizzle_orm_1.eq)(schema.users.departmentId, schema.departments.id))
-                .where((0, drizzle_orm_1.or)((0, drizzle_orm_1.eq)(schema.users.id, id), (0, drizzle_orm_1.eq)(schema.users.referenceId, id)))
-                .limit(1);
+        if (this.prisma.isConnected) {
+            const user = await this.prisma.user.findFirst({
+                where: {
+                    OR: [{ id }, { referenceId: id }],
+                },
+                include: {
+                    department: true,
+                },
+            });
             if (!user)
                 throw new common_1.NotFoundException(`Employee '${id}' not found`);
-            return user;
+            return {
+                ...user,
+                departmentName: user.department?.name,
+            };
         }
         const user = this.memoryUsers.find((u) => u.id === id || u.referenceId === id);
         if (!user)
@@ -496,7 +453,7 @@ let UsersService = UsersService_1 = class UsersService {
         if (dto.managerId && dto.managerId === existing.id) {
             throw new common_1.BadRequestException('An employee cannot report to themselves');
         }
-        if (this.dbService.getConnectionStatus()) {
+        if (this.prisma.isConnected) {
             const updateData = {
                 updatedAt: new Date(),
             };
@@ -525,7 +482,7 @@ let UsersService = UsersService_1 = class UsersService {
             if (dto.employmentType)
                 updateData.employmentType = dto.employmentType;
             if (dto.joiningDate)
-                updateData.joiningDate = dto.joiningDate;
+                updateData.joiningDate = new Date(dto.joiningDate);
             if (dto.workLocation)
                 updateData.workLocation = dto.workLocation.trim();
             if (dto.hasLoginAccount !== undefined)
@@ -534,10 +491,10 @@ let UsersService = UsersService_1 = class UsersService {
                 updateData.accountStatus = dto.accountStatus;
             if (dto.isActive !== undefined)
                 updateData.isActive = dto.isActive;
-            await this.dbService.db
-                .update(schema.users)
-                .set(updateData)
-                .where((0, drizzle_orm_1.eq)(schema.users.id, existing.id));
+            await this.prisma.user.update({
+                where: { id: existing.id },
+                data: updateData,
+            });
             return this.findOne(existing.id);
         }
         const user = this.memoryUsers.find((u) => u.id === existing.id);
@@ -546,21 +503,21 @@ let UsersService = UsersService_1 = class UsersService {
     }
     async archive(id, actorUser) {
         const existing = await this.findOne(id);
-        if (this.dbService.getConnectionStatus()) {
-            await this.dbService.db
-                .update(schema.users)
-                .set({
-                isActive: false,
-                accountStatus: enums_1.AccountStatus.ARCHIVED,
-                archivedAt: new Date(),
-                archivedById: actorUser?.id || null,
-                updatedAt: new Date(),
-            })
-                .where((0, drizzle_orm_1.eq)(schema.users.id, existing.id));
-            await this.dbService.db
-                .update(schema.userSessions)
-                .set({ isRevoked: true, updatedAt: new Date() })
-                .where((0, drizzle_orm_1.eq)(schema.userSessions.userId, existing.id));
+        if (this.prisma.isConnected) {
+            await this.prisma.user.update({
+                where: { id: existing.id },
+                data: {
+                    isActive: false,
+                    accountStatus: enums_1.AccountStatus.ARCHIVED,
+                    archivedAt: new Date(),
+                    archivedById: actorUser?.id || null,
+                    updatedAt: new Date(),
+                },
+            });
+            await this.prisma.userSession.updateMany({
+                where: { userId: existing.id },
+                data: { isRevoked: true, updatedAt: new Date() },
+            });
             return { success: true, message: `Employee ${existing.referenceId} safely archived` };
         }
         const user = this.memoryUsers.find((u) => u.id === existing.id);
@@ -570,15 +527,15 @@ let UsersService = UsersService_1 = class UsersService {
     }
     async reactivate(id) {
         const existing = await this.findOne(id);
-        if (this.dbService.getConnectionStatus()) {
-            await this.dbService.db
-                .update(schema.users)
-                .set({
-                isActive: true,
-                accountStatus: enums_1.AccountStatus.ACTIVE,
-                updatedAt: new Date(),
-            })
-                .where((0, drizzle_orm_1.eq)(schema.users.id, existing.id));
+        if (this.prisma.isConnected) {
+            await this.prisma.user.update({
+                where: { id: existing.id },
+                data: {
+                    isActive: true,
+                    accountStatus: enums_1.AccountStatus.ACTIVE,
+                    updatedAt: new Date(),
+                },
+            });
             return { success: true, message: `Employee ${existing.referenceId} reactivated` };
         }
         const user = this.memoryUsers.find((u) => u.id === existing.id);
@@ -590,11 +547,10 @@ let UsersService = UsersService_1 = class UsersService {
         return this.archive(id);
     }
     async findSubordinates(managerId) {
-        if (this.dbService.getConnectionStatus()) {
-            return this.dbService.db
-                .select()
-                .from(schema.users)
-                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.users.managerId, managerId), (0, drizzle_orm_1.eq)(schema.users.isActive, true)));
+        if (this.prisma.isConnected) {
+            return this.prisma.user.findMany({
+                where: { managerId, isActive: true },
+            });
         }
         return this.memoryUsers.filter((u) => u.managerId === managerId && u.isActive);
     }
@@ -946,6 +902,6 @@ EMP006,Priya,Nair,priya.nair@qclocker.io,Software Engineering,Full-Stack Softwar
 exports.UsersService = UsersService;
 exports.UsersService = UsersService = UsersService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], UsersService);
 //# sourceMappingURL=users.service.js.map

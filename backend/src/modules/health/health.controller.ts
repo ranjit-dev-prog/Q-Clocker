@@ -1,19 +1,19 @@
 import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Public } from '../../common/decorators/public.decorator';
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @ApiTags('System Health')
 @Controller('health')
 export class HealthController {
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   @Public()
   @Get()
   @ApiOperation({ summary: 'Comprehensive System Health, Services & Database Telemetry' })
   @ApiResponse({ status: 200, description: 'Service telemetry and component statuses' })
   check() {
-    const isDbConnected = this.dbService.getConnectionStatus();
+    const isDbConnected = this.prisma.isConnected;
     const memory = process.memoryUsage();
 
     return {
@@ -49,11 +49,11 @@ export class HealthController {
           databaseName: 'q_clocker',
           connectionPool: 'Max 20 Connections',
         },
-        drizzleOrm: {
-          name: 'Drizzle ORM Relational Engine',
-          status: 'online',
-          tablesMapped: 34,
-          studioUrl: 'https://local.drizzle.studio',
+        prismaOrm: {
+          name: 'Prisma ORM Enterprise Engine',
+          status: isDbConnected ? 'active' : 'ready',
+          tablesMapped: 39,
+          studioUrl: 'http://localhost:5555',
         },
         migrations: {
           name: 'Schema Evolution & Migrations',

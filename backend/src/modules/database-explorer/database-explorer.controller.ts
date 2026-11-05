@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiBearerAuth, ApiQuery } from '@nestjs/swagger'
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { DatabaseExplorerService } from './database-explorer.service';
 
-@ApiTags('Database Explorer (Drizzle ORM Studio)')
+@ApiTags('Database Explorer (Prisma ORM Studio)')
 @Controller('database')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
@@ -11,19 +11,19 @@ export class DatabaseExplorerController {
   constructor(private readonly explorerService: DatabaseExplorerService) {}
 
   @Get('tables')
-  @ApiOperation({ summary: 'List all 39 Drizzle ORM relational tables with schemas, categories, and row counts' })
+  @ApiOperation({ summary: 'List all 39 Prisma ORM relational tables with schemas, categories, and row counts' })
   async getTables() {
     return this.explorerService.getTables();
   }
 
   @Get('tables/:tableName/schema')
-  @ApiOperation({ summary: 'Get column definitions, data types, and primary key constraints for a Drizzle table' })
+  @ApiOperation({ summary: 'Get column definitions, data types, and primary key constraints for a Prisma table' })
   async getTableSchema(@Param('tableName') tableName: string) {
     return this.explorerService.getTableSchema(tableName);
   }
 
   @Get('tables/:tableName/data')
-  @ApiOperation({ summary: 'Fetch live database records from Drizzle ORM table with pagination and search' })
+  @ApiOperation({ summary: 'Fetch live database records from Prisma ORM table with pagination and search' })
   @ApiQuery({ name: 'page', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'search', required: false, type: String })
@@ -41,4 +41,3 @@ export class DatabaseExplorerController {
     );
   }
 }
-

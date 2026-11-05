@@ -12,13 +12,11 @@ var PerformanceService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PerformanceService = void 0;
 const common_1 = require("@nestjs/common");
-const database_service_1 = require("../../database/database.service");
-const schema = require("../../database/schema");
-const drizzle_orm_1 = require("drizzle-orm");
+const prisma_service_1 = require("../../prisma/prisma.service");
 const tasks_service_1 = require("../tasks/tasks.service");
 const tickets_service_1 = require("../tickets/tickets.service");
 let PerformanceService = PerformanceService_1 = class PerformanceService {
-    dbService;
+    prisma;
     tasksService;
     ticketsService;
     logger = new common_1.Logger(PerformanceService_1.name);
@@ -39,7 +37,7 @@ let PerformanceService = PerformanceService_1 = class PerformanceService {
                 tasksCompleted: 14,
                 ticketsResolved: 6,
                 qualityScore: 95.0,
-                feedbackNotes: 'Exceptional architectural delivery across Drizzle ORM migrations, enterprise ITSM state machines, and Zero-Trust RBAC integration.',
+                feedbackNotes: 'Exceptional architectural delivery across Prisma ORM migrations, enterprise ITSM state machines, and Zero-Trust RBAC integration.',
                 breakdown: {
                     technicalExecution: 96,
                     codeQuality: 95,
@@ -49,21 +47,19 @@ let PerformanceService = PerformanceService_1 = class PerformanceService {
             },
         ],
     ]);
-    constructor(dbService, tasksService, ticketsService) {
-        this.dbService = dbService;
+    constructor(prisma, tasksService, ticketsService) {
+        this.prisma = prisma;
         this.tasksService = tasksService;
         this.ticketsService = ticketsService;
     }
     async getMyPerformance(user) {
         const userId = user.id;
-        if (this.dbService.getConnectionStatus()) {
+        if (this.prisma.isConnected) {
             try {
-                const [review] = await this.dbService.db
-                    .select()
-                    .from(schema.performanceReviews)
-                    .where((0, drizzle_orm_1.eq)(schema.performanceReviews.employeeId, userId))
-                    .orderBy((0, drizzle_orm_1.desc)(schema.performanceReviews.periodEnd))
-                    .limit(1);
+                const review = await this.prisma.performanceReview.findFirst({
+                    where: { employeeId: userId },
+                    orderBy: { periodEnd: 'desc' },
+                });
                 if (review) {
                     return {
                         overallScore: Number(review.score) || 92.5,
@@ -123,7 +119,7 @@ let PerformanceService = PerformanceService_1 = class PerformanceService {
 exports.PerformanceService = PerformanceService;
 exports.PerformanceService = PerformanceService = PerformanceService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService,
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         tasks_service_1.TasksService,
         tickets_service_1.TicketsService])
 ], PerformanceService);

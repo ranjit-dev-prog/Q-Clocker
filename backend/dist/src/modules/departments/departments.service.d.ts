@@ -1,17 +1,17 @@
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateDepartmentDto } from './dto/create-department.dto';
 import { UpdateDepartmentDto } from './dto/update-department.dto';
 import { CreateTeamDto } from './dto/create-team.dto';
 export declare class DepartmentsService {
-    private readonly dbService;
+    private readonly prisma;
     private readonly logger;
     private memoryDepts;
     private memoryTeams;
-    constructor(dbService: DatabaseService);
+    constructor(prisma: PrismaService);
     create(dto: CreateDepartmentDto): Promise<{
         id: string;
-        name: string;
         code: string;
+        name: string;
         description: string | null;
         createdAt: Date;
         updatedAt: Date;
@@ -45,8 +45,8 @@ export declare class DepartmentsService {
         createdAt: string;
     }[] | {
         id: string;
-        name: string;
         code: string;
+        name: string;
         description: string | null;
         createdAt: Date;
         updatedAt: Date;
@@ -56,6 +56,16 @@ export declare class DepartmentsService {
     }[]>;
     findOne(id: string): Promise<{
         id: string;
+        code: string;
+        name: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        referenceId: string;
+        managerId: string | null;
+        isActive: boolean;
+    } | {
+        id: string;
         referenceId?: string;
         name: string;
         code: string;
@@ -66,19 +76,19 @@ export declare class DepartmentsService {
         teamCount: number;
         isActive: boolean;
         createdAt: string;
-    } | {
-        id: string;
-        name: string;
-        code: string;
-        description: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-        referenceId: string;
-        managerId: string | null;
-        isActive: boolean;
     }>;
     update(id: string, dto: UpdateDepartmentDto): Promise<{
         id: string;
+        code: string;
+        name: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        referenceId: string;
+        managerId: string | null;
+        isActive: boolean;
+    } | {
+        id: string;
         referenceId?: string;
         name: string;
         code: string;
@@ -89,16 +99,6 @@ export declare class DepartmentsService {
         teamCount: number;
         isActive: boolean;
         createdAt: string;
-    } | {
-        id: string;
-        referenceId: string;
-        name: string;
-        code: string;
-        description: string | null;
-        managerId: string | null;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     remove(id: string): Promise<{
         message: string;

@@ -1,23 +1,23 @@
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserQueryDto } from './dto/user-query.dto';
 import { ImportEmployeeRow } from './dto/import-employee.dto';
 import { UserRole, AccountStatus, EmploymentType } from '../../common/enums';
 export declare class UsersService {
-    private readonly dbService;
+    private readonly prisma;
     private readonly logger;
     private memoryUsers;
-    constructor(dbService: DatabaseService);
+    constructor(prisma: PrismaService);
     create(dto: CreateUserDto, creatorUser?: any): Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        roleId: string;
         referenceId: string;
         managerId: string | null;
         isActive: boolean;
         departmentId: string | null;
+        teamId: string | null;
         employeeCode: string | null;
         email: string;
         personalEmail: string | null;
@@ -25,12 +25,12 @@ export declare class UsersService {
         lastName: string;
         phone: string | null;
         avatarUrl: string | null;
+        roleId: string;
         roleCode: string;
-        teamId: string | null;
         designationId: string | null;
         jobTitle: string | null;
         employmentType: string;
-        joiningDate: string | null;
+        joiningDate: Date | null;
         workLocation: string;
         hasLoginAccount: boolean;
         accountStatus: string;

@@ -13,12 +13,12 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReportsService = void 0;
 const common_1 = require("@nestjs/common");
 const ExcelJS = require("exceljs");
-const database_service_1 = require("../../database/database.service");
+const prisma_service_1 = require("../../prisma/prisma.service");
 let ReportsService = ReportsService_1 = class ReportsService {
-    dbService;
+    prisma;
     logger = new common_1.Logger(ReportsService_1.name);
-    constructor(dbService) {
-        this.dbService = dbService;
+    constructor(prisma) {
+        this.prisma = prisma;
     }
     async getItsmReport(query) {
         return {
@@ -237,6 +237,6 @@ let ReportsService = ReportsService_1 = class ReportsService {
 exports.ReportsService = ReportsService;
 exports.ReportsService = ReportsService = ReportsService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], ReportsService);
 //# sourceMappingURL=reports.service.js.map

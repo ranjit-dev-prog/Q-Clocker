@@ -1,7 +1,7 @@
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../prisma/prisma.service';
 export declare class HealthController {
-    private readonly dbService;
-    constructor(dbService: DatabaseService);
+    private readonly prisma;
+    constructor(prisma: PrismaService);
     check(): {
         status: string;
         version: string;
@@ -35,7 +35,7 @@ export declare class HealthController {
                 databaseName: string;
                 connectionPool: string;
             };
-            drizzleOrm: {
+            prismaOrm: {
                 name: string;
                 status: string;
                 tablesMapped: number;

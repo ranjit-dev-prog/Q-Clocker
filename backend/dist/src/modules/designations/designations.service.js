@@ -11,12 +11,11 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DesignationsService = void 0;
 const common_1 = require("@nestjs/common");
-const database_service_1 = require("../../database/database.service");
-const schema = require("../../database/schema");
-const drizzle_orm_1 = require("drizzle-orm");
+const prisma_service_1 = require("../../prisma/prisma.service");
 const reference_id_util_1 = require("../../common/utils/reference-id.util");
+const crypto = require("crypto");
 let DesignationsService = class DesignationsService {
-    dbService;
+    prisma;
     demoDesignations = [
         {
             id: '80000000-0000-0000-0000-000000000001',
@@ -59,22 +58,24 @@ let DesignationsService = class DesignationsService {
             createdAt: new Date(),
         },
     ];
-    constructor(dbService) {
-        this.dbService = dbService;
+    constructor(prisma) {
+        this.prisma = prisma;
     }
     async findAll() {
-        if (this.dbService.getConnectionStatus()) {
-            return this.dbService.db.select().from(schema.designations);
+        if (this.prisma.isConnected) {
+            return this.prisma.designation.findMany({
+                orderBy: { createdAt: 'desc' },
+            });
         }
         return this.demoDesignations;
     }
     async findOne(id) {
-        if (this.dbService.getConnectionStatus()) {
-            const [des] = await this.dbService.db
-                .select()
-                .from(schema.designations)
-                .where((0, drizzle_orm_1.eq)(schema.designations.id, id))
-                .limit(1);
+        if (this.prisma.isConnected) {
+            const des = await this.prisma.designation.findFirst({
+                where: {
+                    OR: [{ id }, { referenceId: id }, { code: id }],
+                },
+            });
             if (!des)
                 throw new common_1.NotFoundException(`Designation '${id}' not found`);
             return des;
@@ -87,26 +88,23 @@ let DesignationsService = class DesignationsService {
     async create(dto) {
         const code = dto.code.toUpperCase().trim();
         const referenceId = (0, reference_id_util_1.generateReferenceId)('DSG');
-        if (this.dbService.getConnectionStatus()) {
-            const existing = await this.dbService.db
-                .select()
-                .from(schema.designations)
-                .where((0, drizzle_orm_1.eq)(schema.designations.code, code))
-                .limit(1);
-            if (existing.length > 0) {
+        if (this.prisma.isConnected) {
+            const existing = await this.prisma.designation.findUnique({
+                where: { code },
+            });
+            if (existing) {
                 throw new common_1.ConflictException(`Designation with code '${code}' already exists`);
             }
-            const [newDes] = await this.dbService.db
-                .insert(schema.designations)
-                .values({
-                referenceId,
-                name: dto.name.trim(),
-                code,
-                departmentId: dto.departmentId || null,
-                description: dto.description?.trim() || null,
-                isActive: dto.isActive !== false,
-            })
-                .returning();
+            const newDes = await this.prisma.designation.create({
+                data: {
+                    referenceId,
+                    name: dto.name.trim(),
+                    code,
+                    departmentId: dto.departmentId || null,
+                    description: dto.description?.trim() || null,
+                    isActive: dto.isActive !== false,
+                },
+            });
             return newDes;
         }
         const existing = this.demoDesignations.find((d) => d.code === code);
@@ -130,6 +128,6 @@ let DesignationsService = class DesignationsService {
 exports.DesignationsService = DesignationsService;
 exports.DesignationsService = DesignationsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], DesignationsService);
 //# sourceMappingURL=designations.service.js.map

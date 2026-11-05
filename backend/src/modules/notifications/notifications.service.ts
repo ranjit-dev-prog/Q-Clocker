@@ -1,7 +1,5 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
-import * as schema from '../../database/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { PrismaService } from '../../prisma/prisma.service';
 import * as crypto from 'crypto';
 
 export interface NotificationItem {
@@ -81,24 +79,23 @@ export class NotificationsService {
     },
   ];
 
-  constructor(private readonly dbService: DatabaseService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   async findAllForUser(userId: string, unreadOnly = false): Promise<NotificationItem[]> {
-    if (this.dbService.getConnectionStatus()) {
+    if (this.prisma.isConnected) {
       try {
-        let conditions = eq(schema.notifications.userId, userId);
+        const where: any = { userId };
         if (unreadOnly) {
-          conditions = and(conditions, eq(schema.notifications.isRead, false)) as any;
+          where.isRead = false;
         }
 
-        const rows = await this.dbService.db
-          .select()
-          .from(schema.notifications)
-          .where(conditions)
-          .orderBy(desc(schema.notifications.createdAt));
+        const rows = await this.prisma.notification.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+        });
 
         if (rows.length > 0) {
-          return rows.map((r) => ({
+          return rows.map((r: any) => ({
             id: r.id,
             userId: r.userId,
             title: r.title,
@@ -127,12 +124,12 @@ export class NotificationsService {
   }
 
   async markAsRead(id: string, userId: string): Promise<{ success: boolean; message: string }> {
-    if (this.dbService.getConnectionStatus()) {
+    if (this.prisma.isConnected) {
       try {
-        await this.dbService.db
-          .update(schema.notifications)
-          .set({ isRead: true, readAt: new Date() })
-          .where(and(eq(schema.notifications.id, id), eq(schema.notifications.userId, userId)));
+        await this.prisma.notification.updateMany({
+          where: { id, userId },
+          data: { isRead: true, readAt: new Date() },
+        });
         return { success: true, message: 'Notification marked as read' };
       } catch (err) {
         this.logger.warn(`Failed marking notification read in DB: ${(err as Error).message}`);
@@ -148,13 +145,13 @@ export class NotificationsService {
   }
 
   async markAllAsRead(userId: string): Promise<{ success: boolean; count: number }> {
-    if (this.dbService.getConnectionStatus()) {
+    if (this.prisma.isConnected) {
       try {
-        await this.dbService.db
-          .update(schema.notifications)
-          .set({ isRead: true, readAt: new Date() })
-          .where(and(eq(schema.notifications.userId, userId), eq(schema.notifications.isRead, false)));
-        return { success: true, count: 0 };
+        const res = await this.prisma.notification.updateMany({
+          where: { userId, isRead: false },
+          data: { isRead: true, readAt: new Date() },
+        });
+        return { success: true, count: res.count };
       } catch (err) {
         this.logger.warn(`Failed marking all read in DB: ${(err as Error).message}`);
       }
@@ -192,18 +189,20 @@ export class NotificationsService {
       createdAt: new Date().toISOString(),
     };
 
-    if (this.dbService.getConnectionStatus()) {
+    if (this.prisma.isConnected) {
       try {
-        await this.dbService.db.insert(schema.notifications).values({
-          id: item.id,
-          userId: item.userId,
-          title: item.title,
-          message: item.message,
-          type: item.type,
-          entityType: item.entityType,
-          entityId: item.entityId,
-          isRead: false,
-          createdAt: new Date(),
+        await this.prisma.notification.create({
+          data: {
+            id: item.id,
+            userId: item.userId,
+            title: item.title,
+            message: item.message,
+            type: item.type,
+            entityType: item.entityType,
+            entityId: item.entityId,
+            isRead: false,
+            createdAt: new Date(),
+          },
         });
       } catch (err) {
         this.logger.warn(`Failed writing notification to DB: ${(err as Error).message}`);
@@ -233,4 +232,3 @@ export class NotificationsService {
     });
   }
 }
-

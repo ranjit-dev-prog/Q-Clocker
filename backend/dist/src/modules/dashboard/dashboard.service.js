@@ -12,7 +12,7 @@ var DashboardService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DashboardService = void 0;
 const common_1 = require("@nestjs/common");
-const database_service_1 = require("../../database/database.service");
+const prisma_service_1 = require("../../prisma/prisma.service");
 const tasks_service_1 = require("../tasks/tasks.service");
 const tickets_service_1 = require("../tickets/tickets.service");
 const users_service_1 = require("../users/users.service");
@@ -20,15 +20,15 @@ const departments_service_1 = require("../departments/departments.service");
 const work_logs_service_1 = require("../work-logs/work-logs.service");
 const enums_1 = require("../../common/enums");
 let DashboardService = DashboardService_1 = class DashboardService {
-    dbService;
+    prisma;
     tasksService;
     ticketsService;
     usersService;
     departmentsService;
     workLogsService;
     logger = new common_1.Logger(DashboardService_1.name);
-    constructor(dbService, tasksService, ticketsService, usersService, departmentsService, workLogsService) {
-        this.dbService = dbService;
+    constructor(prisma, tasksService, ticketsService, usersService, departmentsService, workLogsService) {
+        this.prisma = prisma;
         this.tasksService = tasksService;
         this.ticketsService = ticketsService;
         this.usersService = usersService;
@@ -151,7 +151,7 @@ let DashboardService = DashboardService_1 = class DashboardService {
                 roleSpecificData.activeSessions = 12;
                 roleSpecificData.serverHealth = '100% Operational';
                 roleSpecificData.networkStatus = 'All Gateways Synced';
-                roleSpecificData.databaseEngine = 'PostgreSQL 16 + Drizzle ORM';
+                roleSpecificData.databaseEngine = 'PostgreSQL 16 + Prisma ORM';
                 break;
             case enums_1.UserRole.IT_MANAGER:
                 roleSpecificData.overview = 'IT Operations & Infrastructure Control';
@@ -217,7 +217,7 @@ let DashboardService = DashboardService_1 = class DashboardService {
 exports.DashboardService = DashboardService;
 exports.DashboardService = DashboardService = DashboardService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService,
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         tasks_service_1.TasksService,
         tickets_service_1.TicketsService,
         users_service_1.UsersService,

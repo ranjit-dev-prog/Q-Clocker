@@ -12,11 +12,10 @@ var PermissionsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PermissionsService = void 0;
 const common_1 = require("@nestjs/common");
-const database_service_1 = require("../../database/database.service");
-const schema = require("../../database/schema");
+const prisma_service_1 = require("../../prisma/prisma.service");
 const permissions_guard_1 = require("../../common/guards/permissions.guard");
 let PermissionsService = PermissionsService_1 = class PermissionsService {
-    dbService;
+    prisma;
     logger = new common_1.Logger(PermissionsService_1.name);
     staticPermissions = [
         { code: 'employees.create', name: 'Create Employee Records', module: 'Employees' },
@@ -61,12 +60,12 @@ let PermissionsService = PermissionsService_1 = class PermissionsService {
         { code: 'settings.read', name: 'View Enterprise Configuration', module: 'Settings' },
         { code: 'settings.update', name: 'Modify System Settings', module: 'Settings' },
     ];
-    constructor(dbService) {
-        this.dbService = dbService;
+    constructor(prisma) {
+        this.prisma = prisma;
     }
     async findAll() {
-        if (this.dbService.getConnectionStatus()) {
-            const rows = await this.dbService.db.select().from(schema.permissions);
+        if (this.prisma.isConnected) {
+            const rows = await this.prisma.permission.findMany();
             if (rows.length > 0)
                 return rows;
         }
@@ -100,6 +99,6 @@ let PermissionsService = PermissionsService_1 = class PermissionsService {
 exports.PermissionsService = PermissionsService;
 exports.PermissionsService = PermissionsService = PermissionsService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], PermissionsService);
 //# sourceMappingURL=permissions.service.js.map

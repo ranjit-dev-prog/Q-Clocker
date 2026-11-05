@@ -1,4 +1,4 @@
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTicketDto } from './dto/create-ticket.dto';
 import { UpdateTicketDto, ResolveTicketDto, TransitionTicketStatusDto, AssignTicketDto, EscalateTicketDto, ReopenTicketDto } from './dto/update-ticket.dto';
 import { TicketQueryDto } from './dto/ticket-query.dto';
@@ -9,7 +9,7 @@ import { TicketStateMachineService } from './services/ticket-state-machine.servi
 import { TicketSlaService } from './services/ticket-sla.service';
 import { NotificationsService } from '../notifications/notifications.service';
 export declare class TicketsService {
-    private readonly dbService;
+    private readonly prisma;
     private readonly stateMachine;
     private readonly slaService;
     private readonly notificationsService?;
@@ -20,7 +20,7 @@ export declare class TicketsService {
     private demoHistory;
     private demoTimeEntries;
     private demoTaskLinks;
-    constructor(dbService: DatabaseService, stateMachine: TicketStateMachineService, slaService: TicketSlaService, notificationsService?: NotificationsService | undefined);
+    constructor(prisma: PrismaService, stateMachine: TicketStateMachineService, slaService: TicketSlaService, notificationsService?: NotificationsService | undefined);
     getCategories(): {
         code: string;
         name: string;
@@ -45,8 +45,8 @@ export declare class TicketsService {
         createdAt: Date;
         userId: string;
         comment: string;
+        isInternal: boolean;
         ticketId: string;
-        isInternalNote: boolean;
     } | {
         id: `${string}-${string}-${string}-${string}-${string}`;
         ticketId: any;
@@ -59,13 +59,12 @@ export declare class TicketsService {
     }>;
     startTimer(id: string, user: any, dto?: StartTicketTimerDto): Promise<{
         id: string;
+        description: string | null;
         createdAt: Date;
-        updatedAt: Date;
         employeeId: string;
         ticketId: string;
-        notes: string | null;
-        startedAt: Date;
-        endedAt: Date | null;
+        startTime: Date;
+        endTime: Date | null;
         durationSeconds: number;
         isRunning: boolean;
     } | {
@@ -84,13 +83,12 @@ export declare class TicketsService {
     stopTimer(id: string, user: any): Promise<any>;
     addManualTimeEntry(id: string, dto: CreateTicketTimeEntryDto, user: any): Promise<{
         id: string;
+        description: string | null;
         createdAt: Date;
-        updatedAt: Date;
         employeeId: string;
         ticketId: string;
-        notes: string | null;
-        startedAt: Date;
-        endedAt: Date | null;
+        startTime: Date;
+        endTime: Date | null;
         durationSeconds: number;
         isRunning: boolean;
     } | {
@@ -119,22 +117,22 @@ export declare class TicketsService {
         departmentId: string | null;
         teamId: string | null;
         deletedAt: Date | null;
-        status: string;
-        startDate: Date;
-        category: string;
-        taskNumber: string;
+        priority: string;
         title: string;
         projectId: string | null;
-        priority: string;
-        dueDate: Date;
-        estimatedHours: string | null;
-        actualHours: string | null;
+        category: string;
+        startDate: Date | null;
+        dueDate: Date | null;
+        estimatedHours: import("@prisma/client-runtime-utils").Decimal | null;
+        status: string;
         completionPercentage: number;
-        createdById: string;
-        reviewedById: string | null;
+        actualHours: import("@prisma/client-runtime-utils").Decimal | null;
         reviewFeedback: string | null;
+        taskNumber: string;
         reviewedAt: Date | null;
         completedAt: Date | null;
+        createdById: string;
+        reviewedById: string | null;
     } | {
         id: `${string}-${string}-${string}-${string}-${string}`;
         referenceId: string;

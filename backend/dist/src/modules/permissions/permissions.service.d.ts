@@ -1,13 +1,13 @@
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../prisma/prisma.service';
 export declare class PermissionsService {
-    private readonly dbService;
+    private readonly prisma;
     private readonly logger;
     private readonly staticPermissions;
-    constructor(dbService: DatabaseService);
+    constructor(prisma: PrismaService);
     findAll(): Promise<{
         id: string;
-        name: string;
         code: string;
+        name: string;
         description: string | null;
         createdAt: Date;
         module: string;
@@ -15,8 +15,8 @@ export declare class PermissionsService {
     getMatrix(): Promise<{
         permissions: {
             id: string;
-            name: string;
             code: string;
+            name: string;
             description: string | null;
             createdAt: Date;
             module: string;

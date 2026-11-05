@@ -1,4 +1,4 @@
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { TaxDeclarationDto } from './dto/payroll.dto';
@@ -29,14 +29,14 @@ export interface PayslipItem {
     createdAt: string;
 }
 export declare class PayrollService {
-    private readonly dbService;
+    private readonly prisma;
     private readonly usersService;
     private readonly notificationsService?;
     private readonly logger;
     private memoryBatches;
     private memoryPayslips;
     private memoryDeclarations;
-    constructor(dbService: DatabaseService, usersService: UsersService, notificationsService?: NotificationsService | undefined);
+    constructor(prisma: PrismaService, usersService: UsersService, notificationsService?: NotificationsService | undefined);
     generatePayrollTemplate(): Promise<Buffer>;
     uploadBatch(file: Express.Multer.File, actorUser: any): Promise<{
         success: boolean;

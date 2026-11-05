@@ -8,9 +8,7 @@ import {
 import * as ExcelJS from 'exceljs';
 const PDFDocument = require('pdfkit');
 import * as crypto from 'crypto';
-import { DatabaseService } from '../../database/database.service';
-import * as schema from '../../database/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { TaxDeclarationDto } from './dto/payroll.dto';
@@ -145,7 +143,7 @@ export class PayrollService {
   private memoryDeclarations: Map<string, any> = new Map();
 
   constructor(
-    private readonly dbService: DatabaseService,
+    private readonly prisma: PrismaService,
     private readonly usersService: UsersService,
     @Optional() private readonly notificationsService?: NotificationsService,
   ) {}

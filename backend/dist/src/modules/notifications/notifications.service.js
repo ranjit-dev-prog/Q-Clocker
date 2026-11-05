@@ -12,12 +12,10 @@ var NotificationsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationsService = void 0;
 const common_1 = require("@nestjs/common");
-const database_service_1 = require("../../database/database.service");
-const schema = require("../../database/schema");
-const drizzle_orm_1 = require("drizzle-orm");
+const prisma_service_1 = require("../../prisma/prisma.service");
 const crypto = require("crypto");
 let NotificationsService = NotificationsService_1 = class NotificationsService {
-    dbService;
+    prisma;
     logger = new common_1.Logger(NotificationsService_1.name);
     memoryNotifications = [
         {
@@ -77,21 +75,20 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
         },
     ];
-    constructor(dbService) {
-        this.dbService = dbService;
+    constructor(prisma) {
+        this.prisma = prisma;
     }
     async findAllForUser(userId, unreadOnly = false) {
-        if (this.dbService.getConnectionStatus()) {
+        if (this.prisma.isConnected) {
             try {
-                let conditions = (0, drizzle_orm_1.eq)(schema.notifications.userId, userId);
+                const where = { userId };
                 if (unreadOnly) {
-                    conditions = (0, drizzle_orm_1.and)(conditions, (0, drizzle_orm_1.eq)(schema.notifications.isRead, false));
+                    where.isRead = false;
                 }
-                const rows = await this.dbService.db
-                    .select()
-                    .from(schema.notifications)
-                    .where(conditions)
-                    .orderBy((0, drizzle_orm_1.desc)(schema.notifications.createdAt));
+                const rows = await this.prisma.notification.findMany({
+                    where,
+                    orderBy: { createdAt: 'desc' },
+                });
                 if (rows.length > 0) {
                     return rows.map((r) => ({
                         id: r.id,
@@ -120,12 +117,12 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
         return { count: list.length };
     }
     async markAsRead(id, userId) {
-        if (this.dbService.getConnectionStatus()) {
+        if (this.prisma.isConnected) {
             try {
-                await this.dbService.db
-                    .update(schema.notifications)
-                    .set({ isRead: true, readAt: new Date() })
-                    .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.notifications.id, id), (0, drizzle_orm_1.eq)(schema.notifications.userId, userId)));
+                await this.prisma.notification.updateMany({
+                    where: { id, userId },
+                    data: { isRead: true, readAt: new Date() },
+                });
                 return { success: true, message: 'Notification marked as read' };
             }
             catch (err) {
@@ -140,13 +137,13 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
         return { success: true, message: 'Notification marked as read' };
     }
     async markAllAsRead(userId) {
-        if (this.dbService.getConnectionStatus()) {
+        if (this.prisma.isConnected) {
             try {
-                await this.dbService.db
-                    .update(schema.notifications)
-                    .set({ isRead: true, readAt: new Date() })
-                    .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.notifications.userId, userId), (0, drizzle_orm_1.eq)(schema.notifications.isRead, false)));
-                return { success: true, count: 0 };
+                const res = await this.prisma.notification.updateMany({
+                    where: { userId, isRead: false },
+                    data: { isRead: true, readAt: new Date() },
+                });
+                return { success: true, count: res.count };
             }
             catch (err) {
                 this.logger.warn(`Failed marking all read in DB: ${err.message}`);
@@ -174,18 +171,20 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             isRead: false,
             createdAt: new Date().toISOString(),
         };
-        if (this.dbService.getConnectionStatus()) {
+        if (this.prisma.isConnected) {
             try {
-                await this.dbService.db.insert(schema.notifications).values({
-                    id: item.id,
-                    userId: item.userId,
-                    title: item.title,
-                    message: item.message,
-                    type: item.type,
-                    entityType: item.entityType,
-                    entityId: item.entityId,
-                    isRead: false,
-                    createdAt: new Date(),
+                await this.prisma.notification.create({
+                    data: {
+                        id: item.id,
+                        userId: item.userId,
+                        title: item.title,
+                        message: item.message,
+                        type: item.type,
+                        entityType: item.entityType,
+                        entityId: item.entityId,
+                        isRead: false,
+                        createdAt: new Date(),
+                    },
                 });
             }
             catch (err) {
@@ -209,6 +208,6 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
 exports.NotificationsService = NotificationsService;
 exports.NotificationsService = NotificationsService = NotificationsService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], NotificationsService);
 //# sourceMappingURL=notifications.service.js.map

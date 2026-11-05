@@ -7,8 +7,8 @@ export declare class DepartmentsController {
     constructor(departmentsService: DepartmentsService);
     create(createDepartmentDto: CreateDepartmentDto): Promise<{
         id: string;
-        name: string;
         code: string;
+        name: string;
         description: string | null;
         createdAt: Date;
         updatedAt: Date;
@@ -42,8 +42,8 @@ export declare class DepartmentsController {
         createdAt: string;
     }[] | {
         id: string;
-        name: string;
         code: string;
+        name: string;
         description: string | null;
         createdAt: Date;
         updatedAt: Date;
@@ -69,6 +69,16 @@ export declare class DepartmentsController {
     }>;
     findOne(id: string): Promise<{
         id: string;
+        code: string;
+        name: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        referenceId: string;
+        managerId: string | null;
+        isActive: boolean;
+    } | {
+        id: string;
         referenceId?: string;
         name: string;
         code: string;
@@ -79,19 +89,19 @@ export declare class DepartmentsController {
         teamCount: number;
         isActive: boolean;
         createdAt: string;
-    } | {
-        id: string;
-        name: string;
-        code: string;
-        description: string | null;
-        createdAt: Date;
-        updatedAt: Date;
-        referenceId: string;
-        managerId: string | null;
-        isActive: boolean;
     }>;
     update(id: string, updateDepartmentDto: UpdateDepartmentDto): Promise<{
         id: string;
+        code: string;
+        name: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        referenceId: string;
+        managerId: string | null;
+        isActive: boolean;
+    } | {
+        id: string;
         referenceId?: string;
         name: string;
         code: string;
@@ -102,16 +112,6 @@ export declare class DepartmentsController {
         teamCount: number;
         isActive: boolean;
         createdAt: string;
-    } | {
-        id: string;
-        referenceId: string;
-        name: string;
-        code: string;
-        description: string | null;
-        managerId: string | null;
-        isActive: boolean;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     remove(id: string): Promise<{
         message: string;

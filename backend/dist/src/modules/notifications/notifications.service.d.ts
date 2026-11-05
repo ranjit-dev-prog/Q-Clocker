@@ -1,4 +1,4 @@
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../prisma/prisma.service';
 export interface NotificationItem {
     id: string;
     userId: string;
@@ -12,10 +12,10 @@ export interface NotificationItem {
     createdAt: string;
 }
 export declare class NotificationsService {
-    private readonly dbService;
+    private readonly prisma;
     private readonly logger;
     private memoryNotifications;
-    constructor(dbService: DatabaseService);
+    constructor(prisma: PrismaService);
     findAllForUser(userId: string, unreadOnly?: boolean): Promise<NotificationItem[]>;
     getUnreadCount(userId: string): Promise<{
         count: number;

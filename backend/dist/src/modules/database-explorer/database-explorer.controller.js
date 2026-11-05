@@ -35,14 +35,14 @@ let DatabaseExplorerController = class DatabaseExplorerController {
 exports.DatabaseExplorerController = DatabaseExplorerController;
 __decorate([
     (0, common_1.Get)('tables'),
-    (0, swagger_1.ApiOperation)({ summary: 'List all 39 Drizzle ORM relational tables with schemas, categories, and row counts' }),
+    (0, swagger_1.ApiOperation)({ summary: 'List all 39 Prisma ORM relational tables with schemas, categories, and row counts' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], DatabaseExplorerController.prototype, "getTables", null);
 __decorate([
     (0, common_1.Get)('tables/:tableName/schema'),
-    (0, swagger_1.ApiOperation)({ summary: 'Get column definitions, data types, and primary key constraints for a Drizzle table' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Get column definitions, data types, and primary key constraints for a Prisma table' }),
     __param(0, (0, common_1.Param)('tableName')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -50,7 +50,7 @@ __decorate([
 ], DatabaseExplorerController.prototype, "getTableSchema", null);
 __decorate([
     (0, common_1.Get)('tables/:tableName/data'),
-    (0, swagger_1.ApiOperation)({ summary: 'Fetch live database records from Drizzle ORM table with pagination and search' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Fetch live database records from Prisma ORM table with pagination and search' }),
     (0, swagger_1.ApiQuery)({ name: 'page', required: false, type: Number }),
     (0, swagger_1.ApiQuery)({ name: 'limit', required: false, type: Number }),
     (0, swagger_1.ApiQuery)({ name: 'search', required: false, type: String }),
@@ -63,7 +63,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], DatabaseExplorerController.prototype, "getTableData", null);
 exports.DatabaseExplorerController = DatabaseExplorerController = __decorate([
-    (0, swagger_1.ApiTags)('Database Explorer (Drizzle ORM Studio)'),
+    (0, swagger_1.ApiTags)('Database Explorer (Prisma ORM Studio)'),
     (0, common_1.Controller)('database'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiBearerAuth)(),

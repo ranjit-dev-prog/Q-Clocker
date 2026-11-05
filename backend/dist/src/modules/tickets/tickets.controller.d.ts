@@ -56,8 +56,8 @@ export declare class TicketsController {
         createdAt: Date;
         userId: string;
         comment: string;
+        isInternal: boolean;
         ticketId: string;
-        isInternalNote: boolean;
     } | {
         id: `${string}-${string}-${string}-${string}-${string}`;
         ticketId: any;
@@ -70,13 +70,12 @@ export declare class TicketsController {
     }>;
     startTimer(id: string, user: any, dto?: StartTicketTimerDto): Promise<{
         id: string;
+        description: string | null;
         createdAt: Date;
-        updatedAt: Date;
         employeeId: string;
         ticketId: string;
-        notes: string | null;
-        startedAt: Date;
-        endedAt: Date | null;
+        startTime: Date;
+        endTime: Date | null;
         durationSeconds: number;
         isRunning: boolean;
     } | {
@@ -95,13 +94,12 @@ export declare class TicketsController {
     stopTimer(id: string, user: any): Promise<any>;
     addManualTimeEntry(id: string, dto: CreateTicketTimeEntryDto, user: any): Promise<{
         id: string;
+        description: string | null;
         createdAt: Date;
-        updatedAt: Date;
         employeeId: string;
         ticketId: string;
-        notes: string | null;
-        startedAt: Date;
-        endedAt: Date | null;
+        startTime: Date;
+        endTime: Date | null;
         durationSeconds: number;
         isRunning: boolean;
     } | {
@@ -126,22 +124,22 @@ export declare class TicketsController {
         departmentId: string | null;
         teamId: string | null;
         deletedAt: Date | null;
-        status: string;
-        startDate: Date;
-        category: string;
-        taskNumber: string;
+        priority: string;
         title: string;
         projectId: string | null;
-        priority: string;
-        dueDate: Date;
-        estimatedHours: string | null;
-        actualHours: string | null;
+        category: string;
+        startDate: Date | null;
+        dueDate: Date | null;
+        estimatedHours: import("@prisma/client-runtime-utils").Decimal | null;
+        status: string;
         completionPercentage: number;
-        createdById: string;
-        reviewedById: string | null;
+        actualHours: import("@prisma/client-runtime-utils").Decimal | null;
         reviewFeedback: string | null;
+        taskNumber: string;
         reviewedAt: Date | null;
         completedAt: Date | null;
+        createdById: string;
+        reviewedById: string | null;
     } | {
         id: `${string}-${string}-${string}-${string}-${string}`;
         referenceId: string;

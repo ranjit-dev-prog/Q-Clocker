@@ -1,4 +1,4 @@
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { ExtendProbationDto } from './dto/lifecycle.dto';
 export interface LifecycleItem {
@@ -20,11 +20,11 @@ export interface LifecycleItem {
     createdAt: string;
 }
 export declare class LifecycleService {
-    private readonly dbService;
+    private readonly prisma;
     private readonly notificationsService?;
     private readonly logger;
     private memoryEvents;
-    constructor(dbService: DatabaseService, notificationsService?: NotificationsService | undefined);
+    constructor(prisma: PrismaService, notificationsService?: NotificationsService | undefined);
     getCelebrationsFeed(): Promise<LifecycleItem[]>;
     congratulate(eventId: string, user: any): Promise<{
         success: boolean;

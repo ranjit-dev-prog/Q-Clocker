@@ -12,13 +12,11 @@ var DepartmentsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DepartmentsService = void 0;
 const common_1 = require("@nestjs/common");
-const database_service_1 = require("../../database/database.service");
-const schema = require("../../database/schema");
-const drizzle_orm_1 = require("drizzle-orm");
+const prisma_service_1 = require("../../prisma/prisma.service");
 const reference_id_util_1 = require("../../common/utils/reference-id.util");
 const crypto = require("crypto");
 let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
-    dbService;
+    prisma;
     logger = new common_1.Logger(DepartmentsService_1.name);
     memoryDepts = [
         {
@@ -82,6 +80,15 @@ let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
         },
         {
             id: '20000000-0000-0000-0000-000000000002',
+            departmentId: '10000000-0000-0000-0000-000000000002',
+            name: 'Frontend Design Systems',
+            description: 'Angular architecture, responsive dashboards, and microfrontends',
+            leadId: null,
+            leadName: 'Unassigned',
+            isActive: true,
+        },
+        {
+            id: '20000000-0000-0000-0000-000000000003',
             departmentId: '10000000-0000-0000-0000-000000000001',
             name: 'Helpdesk & Security Operations',
             description: 'Tier 1/2 IT Support, endpoint security, and access control',
@@ -90,31 +97,28 @@ let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
             isActive: true,
         },
     ];
-    constructor(dbService) {
-        this.dbService = dbService;
+    constructor(prisma) {
+        this.prisma = prisma;
     }
     async create(dto) {
         const code = dto.code.toUpperCase().trim();
-        if (this.dbService.getConnectionStatus()) {
-            const existing = await this.dbService.db
-                .select()
-                .from(schema.departments)
-                .where((0, drizzle_orm_1.eq)(schema.departments.code, code))
-                .limit(1);
-            if (existing.length > 0) {
+        if (this.prisma.isConnected) {
+            const existing = await this.prisma.department.findUnique({
+                where: { code },
+            });
+            if (existing) {
                 throw new common_1.ConflictException(`Department code '${code}' already exists`);
             }
-            const [newDept] = await this.dbService.db
-                .insert(schema.departments)
-                .values({
-                referenceId: (0, reference_id_util_1.generateReferenceId)('DEP'),
-                name: dto.name.trim(),
-                code,
-                description: dto.description,
-                managerId: dto.managerId || null,
-                isActive: true,
-            })
-                .returning();
+            const newDept = await this.prisma.department.create({
+                data: {
+                    referenceId: (0, reference_id_util_1.generateReferenceId)('DEP'),
+                    name: dto.name.trim(),
+                    code,
+                    description: dto.description,
+                    managerId: dto.managerId || null,
+                    isActive: true,
+                },
+            });
             return newDept;
         }
         const existing = this.memoryDepts.find((d) => d.code === code);
@@ -138,21 +142,20 @@ let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
         return newDept;
     }
     async findAll() {
-        if (this.dbService.getConnectionStatus()) {
-            return this.dbService.db
-                .select()
-                .from(schema.departments)
-                .orderBy((0, drizzle_orm_1.desc)(schema.departments.createdAt));
+        if (this.prisma.isConnected) {
+            return this.prisma.department.findMany({
+                orderBy: { createdAt: 'desc' },
+            });
         }
         return this.memoryDepts;
     }
     async findOne(id) {
-        if (this.dbService.getConnectionStatus()) {
-            const [dept] = await this.dbService.db
-                .select()
-                .from(schema.departments)
-                .where((0, drizzle_orm_1.eq)(schema.departments.id, id))
-                .limit(1);
+        if (this.prisma.isConnected) {
+            const dept = await this.prisma.department.findFirst({
+                where: {
+                    OR: [{ id }, { referenceId: id }, { code: id }],
+                },
+            });
             if (!dept)
                 throw new common_1.NotFoundException('Department not found');
             return dept;
@@ -163,25 +166,24 @@ let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
         return found;
     }
     async update(id, dto) {
-        if (this.dbService.getConnectionStatus()) {
-            const [existing] = await this.dbService.db
-                .select()
-                .from(schema.departments)
-                .where((0, drizzle_orm_1.eq)(schema.departments.id, id))
-                .limit(1);
+        if (this.prisma.isConnected) {
+            const existing = await this.prisma.department.findFirst({
+                where: {
+                    OR: [{ id }, { referenceId: id }],
+                },
+            });
             if (!existing)
                 throw new common_1.NotFoundException('Department not found');
-            const [updated] = await this.dbService.db
-                .update(schema.departments)
-                .set({
-                name: dto.name || existing.name,
-                description: dto.description !== undefined ? dto.description : existing.description,
-                managerId: dto.managerId !== undefined ? dto.managerId : existing.managerId,
-                isActive: dto.isActive !== undefined ? dto.isActive : existing.isActive,
-                updatedAt: new Date(),
-            })
-                .where((0, drizzle_orm_1.eq)(schema.departments.id, id))
-                .returning();
+            const updated = await this.prisma.department.update({
+                where: { id: existing.id },
+                data: {
+                    name: dto.name || existing.name,
+                    description: dto.description !== undefined ? dto.description : existing.description,
+                    managerId: dto.managerId !== undefined ? dto.managerId : existing.managerId,
+                    isActive: dto.isActive !== undefined ? dto.isActive : existing.isActive,
+                    updatedAt: new Date(),
+                },
+            });
             return updated;
         }
         const index = this.memoryDepts.findIndex((d) => d.id === id);
@@ -194,14 +196,16 @@ let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
         return this.memoryDepts[index];
     }
     async remove(id) {
-        if (this.dbService.getConnectionStatus()) {
-            const [dept] = await this.dbService.db
-                .update(schema.departments)
-                .set({ isActive: false, updatedAt: new Date() })
-                .where((0, drizzle_orm_1.eq)(schema.departments.id, id))
-                .returning();
-            if (!dept)
+        if (this.prisma.isConnected) {
+            const existing = await this.prisma.department.findFirst({
+                where: { OR: [{ id }, { referenceId: id }] },
+            });
+            if (!existing)
                 throw new common_1.NotFoundException('Department not found');
+            await this.prisma.department.update({
+                where: { id: existing.id },
+                data: { isActive: false, updatedAt: new Date() },
+            });
             return { message: 'Department deactivated successfully' };
         }
         const index = this.memoryDepts.findIndex((d) => d.id === id);
@@ -212,18 +216,17 @@ let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
     }
     async createTeam(departmentId, dto) {
         await this.findOne(departmentId);
-        if (this.dbService.getConnectionStatus()) {
-            const [newTeam] = await this.dbService.db
-                .insert(schema.teams)
-                .values({
-                referenceId: (0, reference_id_util_1.generateReferenceId)('TEM'),
-                departmentId,
-                name: dto.name,
-                leadId: dto.leadId || null,
-                description: dto.description || null,
-                isActive: true,
-            })
-                .returning();
+        if (this.prisma.isConnected) {
+            const newTeam = await this.prisma.team.create({
+                data: {
+                    referenceId: (0, reference_id_util_1.generateReferenceId)('TEM'),
+                    departmentId,
+                    name: dto.name,
+                    leadId: dto.leadId || null,
+                    description: dto.description || null,
+                    isActive: true,
+                },
+            });
             return newTeam;
         }
         const newTeam = {
@@ -240,11 +243,10 @@ let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
         return newTeam;
     }
     async findTeams(departmentId) {
-        if (this.dbService.getConnectionStatus()) {
-            return this.dbService.db
-                .select()
-                .from(schema.teams)
-                .where((0, drizzle_orm_1.eq)(schema.teams.departmentId, departmentId));
+        if (this.prisma.isConnected) {
+            return this.prisma.team.findMany({
+                where: { departmentId },
+            });
         }
         return this.memoryTeams.filter((t) => t.departmentId === departmentId);
     }
@@ -275,6 +277,6 @@ let DepartmentsService = DepartmentsService_1 = class DepartmentsService {
 exports.DepartmentsService = DepartmentsService;
 exports.DepartmentsService = DepartmentsService = DepartmentsService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], DepartmentsService);
 //# sourceMappingURL=departments.service.js.map

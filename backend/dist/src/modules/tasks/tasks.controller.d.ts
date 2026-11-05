@@ -28,11 +28,9 @@ export declare class TasksController {
     addComment(id: string, dto: CreateTaskCommentDto, user: any): Promise<{
         id: string;
         createdAt: Date;
-        updatedAt: Date;
         userId: string;
-        taskId: string;
         comment: string;
-        isInternal: boolean;
+        taskId: string;
     } | {
         id: `${string}-${string}-${string}-${string}-${string}`;
         taskId: any;

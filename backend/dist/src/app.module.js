@@ -11,7 +11,7 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const throttler_1 = require("@nestjs/throttler");
 const core_1 = require("@nestjs/core");
-const database_module_1 = require("./database/database.module");
+const prisma_module_1 = require("./prisma/prisma.module");
 const auth_module_1 = require("./modules/auth/auth.module");
 const users_module_1 = require("./modules/users/users.module");
 const departments_module_1 = require("./modules/departments/departments.module");
@@ -46,7 +46,7 @@ exports.AppModule = AppModule = __decorate([
                     limit: 120,
                 },
             ]),
-            database_module_1.DatabaseModule,
+            prisma_module_1.PrismaModule,
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             departments_module_1.DepartmentsModule,

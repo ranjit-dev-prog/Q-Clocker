@@ -15,14 +15,12 @@ const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const bcrypt = require("bcryptjs");
 const crypto = require("crypto");
-const database_service_1 = require("../../database/database.service");
-const schema = require("../../database/schema");
-const drizzle_orm_1 = require("drizzle-orm");
+const prisma_service_1 = require("../../prisma/prisma.service");
 const enums_1 = require("../../common/enums");
 const reference_id_util_1 = require("../../common/utils/reference-id.util");
 const permissions_guard_1 = require("../../common/guards/permissions.guard");
 let AuthService = AuthService_1 = class AuthService {
-    dbService;
+    prisma;
     jwtService;
     logger = new common_1.Logger(AuthService_1.name);
     demoAccounts = [
@@ -138,8 +136,8 @@ let AuthService = AuthService_1 = class AuthService {
     demoSessions = [];
     failedAttempts = new Map();
     passwordResetTokens = new Map();
-    constructor(dbService, jwtService) {
-        this.dbService = dbService;
+    constructor(prisma, jwtService) {
+        this.prisma = prisma;
         this.jwtService = jwtService;
     }
     checkRateLimit(clientKey) {
@@ -172,13 +170,11 @@ let AuthService = AuthService_1 = class AuthService {
         const { email, password } = loginDto;
         const clientKey = `${meta?.ipAddress || '127.0.0.1'}:${email.toLowerCase().trim()}`;
         this.checkRateLimit(clientKey);
-        if (this.dbService.getConnectionStatus()) {
+        if (this.prisma.isConnected) {
             try {
-                const [user] = await this.dbService.db
-                    .select()
-                    .from(schema.users)
-                    .where((0, drizzle_orm_1.eq)(schema.users.email, email.toLowerCase().trim()))
-                    .limit(1);
+                const user = await this.prisma.user.findFirst({
+                    where: { email: email.toLowerCase().trim() },
+                });
                 if (user) {
                     if (!user.isActive) {
                         throw new common_1.UnauthorizedException('Account is deactivated. Contact your administrator.');
@@ -189,10 +185,10 @@ let AuthService = AuthService_1 = class AuthService {
                         throw new common_1.UnauthorizedException('Invalid email or password credentials');
                     }
                     this.resetFailedAttempts(clientKey);
-                    await this.dbService.db
-                        .update(schema.users)
-                        .set({ lastLoginAt: new Date() })
-                        .where((0, drizzle_orm_1.eq)(schema.users.id, user.id));
+                    await this.prisma.user.update({
+                        where: { id: user.id },
+                        data: { lastLoginAt: new Date() },
+                    });
                     return await this.generateAuthResponse({
                         id: user.id,
                         referenceId: user.referenceId,
@@ -253,51 +249,45 @@ let AuthService = AuthService_1 = class AuthService {
     async register(registerDto, meta) {
         const { email, password, firstName, lastName, roleCode, departmentId, teamId, jobTitle, phone } = registerDto;
         const normalizedEmail = email.toLowerCase().trim();
-        if (this.dbService.getConnectionStatus()) {
-            const existing = await this.dbService.db
-                .select()
-                .from(schema.users)
-                .where((0, drizzle_orm_1.eq)(schema.users.email, normalizedEmail))
-                .limit(1);
-            if (existing.length > 0) {
+        if (this.prisma.isConnected) {
+            const existing = await this.prisma.user.findFirst({
+                where: { email: normalizedEmail },
+            });
+            if (existing) {
                 throw new common_1.ConflictException('An employee account with this email already exists');
             }
             const targetRoleCode = roleCode || enums_1.UserRole.EMPLOYEE;
-            let [role] = await this.dbService.db
-                .select()
-                .from(schema.roles)
-                .where((0, drizzle_orm_1.eq)(schema.roles.code, targetRoleCode))
-                .limit(1);
+            let role = await this.prisma.role.findUnique({
+                where: { code: targetRoleCode },
+            });
             if (!role) {
-                [role] = await this.dbService.db
-                    .insert(schema.roles)
-                    .values({
-                    code: targetRoleCode,
-                    name: targetRoleCode.replace('_', ' '),
-                    description: 'Application Role',
-                    isSystem: true,
-                })
-                    .returning();
+                role = await this.prisma.role.create({
+                    data: {
+                        code: targetRoleCode,
+                        name: targetRoleCode.replace('_', ' '),
+                        description: 'Application Role',
+                        isSystem: true,
+                    },
+                });
             }
             const passwordHash = await bcrypt.hash(password, 10);
             const referenceId = (0, reference_id_util_1.generateReferenceId)('EMP');
-            const [newUser] = await this.dbService.db
-                .insert(schema.users)
-                .values({
-                referenceId,
-                email: normalizedEmail,
-                passwordHash,
-                firstName,
-                lastName,
-                phone,
-                roleId: role.id,
-                roleCode: targetRoleCode,
-                departmentId: departmentId || null,
-                teamId: teamId || null,
-                jobTitle: jobTitle || 'Team Member',
-                isActive: true,
-            })
-                .returning();
+            const newUser = await this.prisma.user.create({
+                data: {
+                    referenceId,
+                    email: normalizedEmail,
+                    passwordHash,
+                    firstName,
+                    lastName,
+                    phone,
+                    roleId: role.id,
+                    roleCode: targetRoleCode,
+                    departmentId: departmentId || null,
+                    teamId: teamId || null,
+                    jobTitle: jobTitle || 'Team Member',
+                    isActive: true,
+                },
+            });
             return await this.generateAuthResponse({
                 id: newUser.id,
                 referenceId: newUser.referenceId,
@@ -348,39 +338,35 @@ let AuthService = AuthService_1 = class AuthService {
             throw new common_1.UnauthorizedException('Refresh token is required');
         }
         const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-        if (this.dbService.getConnectionStatus()) {
-            const [session] = await this.dbService.db
-                .select()
-                .from(schema.userSessions)
-                .where((0, drizzle_orm_1.eq)(schema.userSessions.refreshTokenHash, tokenHash))
-                .limit(1);
+        if (this.prisma.isConnected) {
+            const session = await this.prisma.userSession.findFirst({
+                where: { refreshTokenHash: tokenHash },
+            });
             if (!session) {
                 throw new common_1.UnauthorizedException('Invalid refresh token');
             }
             if (session.isRevoked) {
                 this.logger.error(`Security Alert: Refresh token reuse detected for user ${session.userId}. Revoking all sessions.`);
-                await this.dbService.db
-                    .update(schema.userSessions)
-                    .set({ isRevoked: true, updatedAt: new Date() })
-                    .where((0, drizzle_orm_1.eq)(schema.userSessions.userId, session.userId));
+                await this.prisma.userSession.updateMany({
+                    where: { userId: session.userId },
+                    data: { isRevoked: true, updatedAt: new Date() },
+                });
                 throw new common_1.UnauthorizedException('Security alert: Token reuse detected. All sessions revoked.');
             }
             if (new Date(session.expiresAt) < new Date()) {
-                await this.dbService.db
-                    .update(schema.userSessions)
-                    .set({ isRevoked: true, updatedAt: new Date() })
-                    .where((0, drizzle_orm_1.eq)(schema.userSessions.id, session.id));
+                await this.prisma.userSession.update({
+                    where: { id: session.id },
+                    data: { isRevoked: true, updatedAt: new Date() },
+                });
                 throw new common_1.UnauthorizedException('Refresh token has expired. Please log in again.');
             }
-            await this.dbService.db
-                .update(schema.userSessions)
-                .set({ isRevoked: true, updatedAt: new Date() })
-                .where((0, drizzle_orm_1.eq)(schema.userSessions.id, session.id));
-            const [user] = await this.dbService.db
-                .select()
-                .from(schema.users)
-                .where((0, drizzle_orm_1.eq)(schema.users.id, session.userId))
-                .limit(1);
+            await this.prisma.userSession.update({
+                where: { id: session.id },
+                data: { isRevoked: true, updatedAt: new Date() },
+            });
+            const user = await this.prisma.user.findUnique({
+                where: { id: session.userId },
+            });
             if (!user || !user.isActive) {
                 throw new common_1.UnauthorizedException('User account is inactive or deleted');
             }
@@ -430,19 +416,19 @@ let AuthService = AuthService_1 = class AuthService {
         }, meta?.ipAddress, meta?.userAgent);
     }
     async logout(userId, refreshToken) {
-        if (this.dbService.getConnectionStatus()) {
+        if (this.prisma.isConnected) {
             if (refreshToken) {
                 const tokenHash = crypto.createHash('sha256').update(refreshToken.trim()).digest('hex');
-                await this.dbService.db
-                    .update(schema.userSessions)
-                    .set({ isRevoked: true, updatedAt: new Date() })
-                    .where((0, drizzle_orm_1.eq)(schema.userSessions.refreshTokenHash, tokenHash));
+                await this.prisma.userSession.updateMany({
+                    where: { refreshTokenHash: tokenHash },
+                    data: { isRevoked: true, updatedAt: new Date() },
+                });
             }
             else {
-                await this.dbService.db
-                    .update(schema.userSessions)
-                    .set({ isRevoked: true, updatedAt: new Date() })
-                    .where((0, drizzle_orm_1.eq)(schema.userSessions.userId, userId));
+                await this.prisma.userSession.updateMany({
+                    where: { userId },
+                    data: { isRevoked: true, updatedAt: new Date() },
+                });
             }
             return { success: true, message: 'Logged out successfully' };
         }
@@ -458,11 +444,11 @@ let AuthService = AuthService_1 = class AuthService {
         return { success: true, message: 'Logged out successfully' };
     }
     async logoutAll(userId) {
-        if (this.dbService.getConnectionStatus()) {
-            await this.dbService.db
-                .update(schema.userSessions)
-                .set({ isRevoked: true, updatedAt: new Date() })
-                .where((0, drizzle_orm_1.eq)(schema.userSessions.userId, userId));
+        if (this.prisma.isConnected) {
+            await this.prisma.userSession.updateMany({
+                where: { userId },
+                data: { isRevoked: true, updatedAt: new Date() },
+            });
         }
         else {
             this.demoSessions.filter((x) => x.userId === userId).forEach((x) => (x.isRevoked = true));
@@ -470,18 +456,22 @@ let AuthService = AuthService_1 = class AuthService {
         return { success: true, message: 'All active sessions revoked successfully' };
     }
     async getActiveSessions(userId) {
-        if (this.dbService.getConnectionStatus()) {
-            const sessions = await this.dbService.db
-                .select({
-                id: schema.userSessions.id,
-                userAgent: schema.userSessions.userAgent,
-                ipAddress: schema.userSessions.ipAddress,
-                expiresAt: schema.userSessions.expiresAt,
-                createdAt: schema.userSessions.createdAt,
-            })
-                .from(schema.userSessions)
-                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.userSessions.userId, userId), (0, drizzle_orm_1.eq)(schema.userSessions.isRevoked, false), (0, drizzle_orm_1.gt)(schema.userSessions.expiresAt, new Date())))
-                .orderBy((0, drizzle_orm_1.desc)(schema.userSessions.createdAt));
+        if (this.prisma.isConnected) {
+            const sessions = await this.prisma.userSession.findMany({
+                where: {
+                    userId,
+                    isRevoked: false,
+                    expiresAt: { gt: new Date() },
+                },
+                select: {
+                    id: true,
+                    userAgent: true,
+                    ipAddress: true,
+                    expiresAt: true,
+                    createdAt: true,
+                },
+                orderBy: { createdAt: 'desc' },
+            });
             return sessions;
         }
         return this.demoSessions
@@ -495,28 +485,30 @@ let AuthService = AuthService_1 = class AuthService {
         }));
     }
     async getProfile(userId) {
-        if (this.dbService.getConnectionStatus()) {
-            const [user] = await this.dbService.db
-                .select({
-                id: schema.users.id,
-                referenceId: schema.users.referenceId,
-                email: schema.users.email,
-                firstName: schema.users.firstName,
-                lastName: schema.users.lastName,
-                phone: schema.users.phone,
-                avatarUrl: schema.users.avatarUrl,
-                role: schema.users.roleCode,
-                departmentId: schema.users.departmentId,
-                teamId: schema.users.teamId,
-                jobTitle: schema.users.jobTitle,
-                isActive: schema.users.isActive,
-                createdAt: schema.users.createdAt,
-            })
-                .from(schema.users)
-                .where((0, drizzle_orm_1.eq)(schema.users.id, userId))
-                .limit(1);
+        if (this.prisma.isConnected) {
+            const user = await this.prisma.user.findUnique({
+                where: { id: userId },
+                select: {
+                    id: true,
+                    referenceId: true,
+                    email: true,
+                    firstName: true,
+                    lastName: true,
+                    phone: true,
+                    avatarUrl: true,
+                    roleCode: true,
+                    departmentId: true,
+                    teamId: true,
+                    jobTitle: true,
+                    isActive: true,
+                    createdAt: true,
+                },
+            });
             if (user) {
-                return user;
+                return {
+                    ...user,
+                    role: user.roleCode,
+                };
             }
         }
         const demo = this.demoAccounts.find((a) => a.id === userId);
@@ -550,16 +542,18 @@ let AuthService = AuthService_1 = class AuthService {
         const rawRefreshToken = crypto.randomBytes(40).toString('hex');
         const refreshTokenHash = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-        if (this.dbService.getConnectionStatus()) {
+        if (this.prisma.isConnected) {
             try {
-                await this.dbService.db.insert(schema.userSessions).values({
-                    referenceId: (0, reference_id_util_1.generateReferenceId)('SES'),
-                    userId: user.id,
-                    refreshTokenHash,
-                    userAgent: userAgent || null,
-                    ipAddress: ipAddress || null,
-                    isRevoked: false,
-                    expiresAt,
+                await this.prisma.userSession.create({
+                    data: {
+                        referenceId: (0, reference_id_util_1.generateReferenceId)('SES'),
+                        userId: user.id,
+                        refreshTokenHash,
+                        userAgent: userAgent || null,
+                        ipAddress: ipAddress || null,
+                        isRevoked: false,
+                        expiresAt,
+                    },
                 });
             }
             catch (err) {
@@ -592,13 +586,12 @@ let AuthService = AuthService_1 = class AuthService {
     async forgotPassword(dto, meta) {
         const email = dto.email.toLowerCase().trim();
         let foundUser = null;
-        if (this.dbService.getConnectionStatus()) {
+        if (this.prisma.isConnected) {
             try {
-                const [u] = await this.dbService.db
-                    .select({ id: schema.users.id, email: schema.users.email, referenceId: schema.users.referenceId })
-                    .from(schema.users)
-                    .where((0, drizzle_orm_1.eq)(schema.users.email, email))
-                    .limit(1);
+                const u = await this.prisma.user.findFirst({
+                    where: { email },
+                    select: { id: true, email: true, referenceId: true },
+                });
                 if (u)
                     foundUser = u;
             }
@@ -705,12 +698,12 @@ let AuthService = AuthService_1 = class AuthService {
         }
         const salt = await bcrypt.genSalt(10);
         const newHash = await bcrypt.hash(dto.newPassword, salt);
-        if (this.dbService.getConnectionStatus()) {
+        if (this.prisma.isConnected) {
             try {
-                await this.dbService.db
-                    .update(schema.users)
-                    .set({ passwordHash: newHash, updatedAt: new Date() })
-                    .where((0, drizzle_orm_1.eq)(schema.users.id, item.userId));
+                await this.prisma.user.update({
+                    where: { id: item.userId },
+                    data: { passwordHash: newHash, updatedAt: new Date() },
+                });
             }
             catch (err) {
                 this.logger.warn(`Failed updating DB password: ${err.message}`);
@@ -740,12 +733,12 @@ let AuthService = AuthService_1 = class AuthService {
         const tempPassword = `Temp#${crypto.randomBytes(4).toString('hex')}!2026`;
         const salt = await bcrypt.genSalt(10);
         const passwordHash = await bcrypt.hash(tempPassword, salt);
-        if (this.dbService.getConnectionStatus()) {
+        if (this.prisma.isConnected) {
             try {
-                await this.dbService.db
-                    .update(schema.users)
-                    .set({ passwordHash, updatedAt: new Date() })
-                    .where((0, drizzle_orm_1.eq)(schema.users.id, userId));
+                await this.prisma.user.update({
+                    where: { id: userId },
+                    data: { passwordHash, updatedAt: new Date() },
+                });
             }
             catch (err) {
                 this.logger.warn(`DB update password error: ${err.message}`);
@@ -768,7 +761,7 @@ let AuthService = AuthService_1 = class AuthService {
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = AuthService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService,
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         jwt_1.JwtService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

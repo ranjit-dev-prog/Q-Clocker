@@ -1,15 +1,15 @@
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { CreateDesignationDto } from './dto/create-designation.dto';
 export declare class DesignationsService {
-    private readonly dbService;
+    private readonly prisma;
     private demoDesignations;
-    constructor(dbService: DatabaseService);
+    constructor(prisma: PrismaService);
     findAll(): Promise<any[]>;
     findOne(id: string): Promise<any>;
     create(dto: CreateDesignationDto): Promise<{
         id: string;
-        name: string;
         code: string;
+        name: string;
         description: string | null;
         createdAt: Date;
         updatedAt: Date;

@@ -15,10 +15,10 @@ var LifecycleService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.LifecycleService = void 0;
 const common_1 = require("@nestjs/common");
-const database_service_1 = require("../../database/database.service");
+const prisma_service_1 = require("../../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 let LifecycleService = LifecycleService_1 = class LifecycleService {
-    dbService;
+    prisma;
     notificationsService;
     logger = new common_1.Logger(LifecycleService_1.name);
     memoryEvents = [
@@ -108,8 +108,8 @@ let LifecycleService = LifecycleService_1 = class LifecycleService {
             createdAt: new Date().toISOString(),
         },
     ];
-    constructor(dbService, notificationsService) {
-        this.dbService = dbService;
+    constructor(prisma, notificationsService) {
+        this.prisma = prisma;
         this.notificationsService = notificationsService;
     }
     async getCelebrationsFeed() {
@@ -203,7 +203,7 @@ exports.LifecycleService = LifecycleService;
 exports.LifecycleService = LifecycleService = LifecycleService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(1, (0, common_1.Optional)()),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService,
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         notifications_service_1.NotificationsService])
 ], LifecycleService);
 //# sourceMappingURL=lifecycle.service.js.map

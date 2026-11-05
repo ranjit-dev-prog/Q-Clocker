@@ -1,6 +1,6 @@
 import { Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { DatabaseService } from '../../../database/database.service';
+import { PrismaService } from '../../../prisma/prisma.service';
 export interface JwtPayload {
     sub: string;
     email: string;
@@ -11,9 +11,18 @@ export interface JwtPayload {
 declare const JwtStrategy_base: new (...args: any[]) => Strategy;
 export declare class JwtStrategy extends JwtStrategy_base {
     private configService;
-    private dbService;
-    constructor(configService: ConfigService, dbService: DatabaseService);
+    private prisma;
+    constructor(configService: ConfigService, prisma: PrismaService);
     validate(payload: JwtPayload): Promise<{
+        id: string;
+        email: string;
+        role: string;
+        firstName?: undefined;
+        lastName?: undefined;
+        departmentId?: undefined;
+        teamId?: undefined;
+        isActive?: undefined;
+    } | {
         id: string;
         email: string;
         firstName: string;
@@ -21,11 +30,7 @@ export declare class JwtStrategy extends JwtStrategy_base {
         role: string;
         departmentId: string | null;
         teamId: string | null;
-        isActive: boolean;
-    } | {
-        id: string;
-        email: string;
-        role: string;
+        isActive: true;
     }>;
 }
 export {};

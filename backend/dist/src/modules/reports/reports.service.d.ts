@@ -1,9 +1,9 @@
-import { DatabaseService } from '../../database/database.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import { ReportQueryDto } from './dto/report-query.dto';
 export declare class ReportsService {
-    private readonly dbService;
+    private readonly prisma;
     private readonly logger;
-    constructor(dbService: DatabaseService);
+    constructor(prisma: PrismaService);
     getItsmReport(query: ReportQueryDto): Promise<{
         period: {
             startDate: string;

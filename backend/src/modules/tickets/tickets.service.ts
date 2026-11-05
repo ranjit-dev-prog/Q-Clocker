@@ -533,61 +533,28 @@ export class TicketsService {
   async findById(id: string, user?: any) {
     const isEmployee = user?.role === UserRole.EMPLOYEE;
 
-    if (this.dbService.getConnectionStatus()) {
-      const [ticket] = await this.dbService.db
-        .select({
-          id: schema.tickets.id,
-          referenceId: schema.tickets.referenceId,
-          ticketNumber: schema.tickets.ticketNumber,
-          title: schema.tickets.title,
-          description: schema.tickets.description,
-          requesterId: schema.tickets.requesterId,
-          requesterFirstName: schema.users.firstName,
-          requesterLastName: schema.users.lastName,
-          requesterEmail: schema.users.email,
-          assignedTechnicianId: schema.tickets.assignedTechnicianId,
-          assignedTeamId: schema.tickets.assignedTeamId,
-          departmentId: schema.tickets.departmentId,
-          departmentName: schema.departments.name,
-          ticketType: schema.tickets.ticketType,
-          impact: schema.tickets.impact,
-          urgency: schema.tickets.urgency,
-          priority: schema.tickets.priority,
-          priorityCode: schema.tickets.priorityCode,
-          category: schema.tickets.category,
-          subcategory: schema.tickets.subcategory,
-          status: schema.tickets.status,
-          source: schema.tickets.source,
-          dueDate: schema.tickets.dueDate,
-          firstResponseDueAt: schema.tickets.firstResponseDueAt,
-          resolutionDueAt: schema.tickets.resolutionDueAt,
-          slaHours: schema.tickets.slaHours,
-          slaStatus: schema.tickets.slaStatus,
-          slaBreached: schema.tickets.slaBreached,
-          slaPausedAt: schema.tickets.slaPausedAt,
-          slaPauseDurationSeconds: schema.tickets.slaPauseDurationSeconds,
-          firstResponseAt: schema.tickets.firstResponseAt,
-          resolutionSummary: schema.tickets.resolutionSummary,
-          rootCause: schema.tickets.rootCause,
-          resolutionCategory: schema.tickets.resolutionCategory,
-          resolutionNotes: schema.tickets.resolutionNotes,
-          resolvedAt: schema.tickets.resolvedAt,
-          closedAt: schema.tickets.closedAt,
-          reopenedAt: schema.tickets.reopenedAt,
-          reopenCount: schema.tickets.reopenCount,
-          escalatedAt: schema.tickets.escalatedAt,
-          escalationReason: schema.tickets.escalationReason,
-          escalatedToRole: schema.tickets.escalatedToRole,
-          relatedTaskId: schema.tickets.relatedTaskId,
-          relatedAssetId: schema.tickets.relatedAssetId,
-          createdAt: schema.tickets.createdAt,
-          updatedAt: schema.tickets.updatedAt,
-        })
-        .from(schema.tickets)
-        .leftJoin(schema.users, eq(schema.tickets.requesterId, schema.users.id))
-        .leftJoin(schema.departments, eq(schema.tickets.departmentId, schema.departments.id))
-        .where(or(eq(schema.tickets.id, id), eq(schema.tickets.referenceId, id)))
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const ticket = await this.prisma.ticket.findFirst({
+        where: {
+          OR: [{ id }, { referenceId: id }],
+        },
+        include: {
+          requester: true,
+          department: true,
+          comments: {
+            include: { author: true },
+            orderBy: { createdAt: 'desc' },
+          },
+          history: {
+            include: { author: true },
+            orderBy: { createdAt: 'desc' },
+          },
+          timeEntries: {
+            include: { employee: true },
+            orderBy: { createdAt: 'desc' },
+          },
+        },
+      });
 
       if (!ticket) {
         throw new NotFoundException(`Ticket with ID or Reference '${id}' not found`);
@@ -598,70 +565,52 @@ export class TicketsService {
         throw new ForbiddenException('You are not authorized to view this ticket');
       }
 
-      // Fetch comments (strictly filter internal notes if user is requester without agent permissions)
-      const commentsConditions = [eq(schema.ticketComments.ticketId, ticket.id)];
-      if (isEmployee) {
-        commentsConditions.push(eq(schema.ticketComments.isInternalNote, false));
-      }
+      const rawComments = ticket.comments
+        .filter((c) => !isEmployee || !c.isInternal)
+        .map((c) => ({
+          id: c.id,
+          comment: c.comment,
+          isInternalNote: c.isInternal,
+          createdAt: c.createdAt,
+          authorFirstName: c.author?.firstName,
+          authorLastName: c.author?.lastName,
+          authorRole: c.author?.roleCode,
+        }));
 
-      const rawComments = await this.dbService.db
-        .select({
-          id: schema.ticketComments.id,
-          comment: schema.ticketComments.comment,
-          isInternalNote: schema.ticketComments.isInternalNote,
-          createdAt: schema.ticketComments.createdAt,
-          authorFirstName: schema.users.firstName,
-          authorLastName: schema.users.lastName,
-          authorRole: schema.users.roleCode,
-        })
-        .from(schema.ticketComments)
-        .leftJoin(schema.users, eq(schema.ticketComments.userId, schema.users.id))
-        .where(and(...commentsConditions))
-        .orderBy(desc(schema.ticketComments.createdAt));
+      const history = ticket.history.map((h) => ({
+        id: h.id,
+        fieldChanged: h.field,
+        oldValue: h.oldValue,
+        newValue: h.newValue,
+        changedAt: h.createdAt,
+        changedByFirstName: h.author?.firstName,
+        changedByLastName: h.author?.lastName,
+      }));
 
-      // Fetch history audit trail
-      const history = await this.dbService.db
-        .select({
-          id: schema.ticketHistory.id,
-          fieldChanged: schema.ticketHistory.fieldChanged,
-          oldValue: schema.ticketHistory.oldValue,
-          newValue: schema.ticketHistory.newValue,
-          changedAt: schema.ticketHistory.changedAt,
-          changedByFirstName: schema.users.firstName,
-          changedByLastName: schema.users.lastName,
-        })
-        .from(schema.ticketHistory)
-        .leftJoin(schema.users, eq(schema.ticketHistory.changedById, schema.users.id))
-        .where(eq(schema.ticketHistory.ticketId, ticket.id))
-        .orderBy(desc(schema.ticketHistory.changedAt));
-
-      // Fetch time entries
-      const timeEntries = await this.dbService.db
-        .select({
-          id: schema.ticketTimeEntries.id,
-          employeeId: schema.ticketTimeEntries.employeeId,
-          startedAt: schema.ticketTimeEntries.startedAt,
-          endedAt: schema.ticketTimeEntries.endedAt,
-          durationSeconds: schema.ticketTimeEntries.durationSeconds,
-          isRunning: schema.ticketTimeEntries.isRunning,
-          notes: schema.ticketTimeEntries.notes,
-          createdAt: schema.ticketTimeEntries.createdAt,
-          employeeFirstName: schema.users.firstName,
-          employeeLastName: schema.users.lastName,
-        })
-        .from(schema.ticketTimeEntries)
-        .leftJoin(schema.users, eq(schema.ticketTimeEntries.employeeId, schema.users.id))
-        .where(eq(schema.ticketTimeEntries.ticketId, ticket.id))
-        .orderBy(desc(schema.ticketTimeEntries.createdAt));
+      const timeEntries = ticket.timeEntries.map((te) => ({
+        id: te.id,
+        employeeId: te.employeeId,
+        startedAt: te.startTime,
+        endedAt: te.endTime,
+        durationSeconds: te.durationSeconds,
+        isRunning: te.isRunning,
+        notes: te.description,
+        createdAt: te.createdAt,
+        employeeFirstName: te.employee?.firstName,
+        employeeLastName: te.employee?.lastName,
+      }));
 
       const liveSla = this.slaService.evaluateLiveSla(ticket);
-
       const totalTimeSpentSeconds = timeEntries.reduce((sum, te) => sum + (te.durationSeconds || 0), 0);
       const activeTimer = timeEntries.find((te) => te.isRunning) || null;
 
       return {
         ...ticket,
-        requesterName: `${ticket.requesterFirstName || ''} ${ticket.requesterLastName || ''}`.trim() || 'Employee',
+        requesterFirstName: ticket.requester?.firstName,
+        requesterLastName: ticket.requester?.lastName,
+        requesterEmail: ticket.requester?.email,
+        departmentName: ticket.department?.name,
+        requesterName: `${ticket.requester?.firstName || ''} ${ticket.requester?.lastName || ''}`.trim() || 'Employee',
         isPaused: liveSla.slaStatus === SlaStatus.PAUSED,
         slaStatus: liveSla.slaStatus,
         slaBreached: liveSla.slaBreached,
@@ -782,18 +731,20 @@ export class TicketsService {
       updateData.slaStatus = SlaStatus.WITHIN_SLA;
     }
 
-    if (this.dbService.getConnectionStatus()) {
-      await this.dbService.db
-        .update(schema.tickets)
-        .set(updateData)
-        .where(eq(schema.tickets.id, ticket.id));
+    if (this.prisma.isConnected) {
+      await this.prisma.ticket.update({
+        where: { id: ticket.id },
+        data: updateData,
+      });
 
-      await this.dbService.db.insert(schema.ticketHistory).values({
-        ticketId: ticket.id,
-        changedById: user.id,
-        fieldChanged: 'STATUS',
-        oldValue: ticket.status,
-        newValue: dto.status,
+      await this.prisma.ticketHistory.create({
+        data: {
+          ticketId: ticket.id,
+          changedBy: user.id,
+          field: 'STATUS',
+          oldValue: ticket.status,
+          newValue: dto.status,
+        },
       });
 
       if (ticket.requesterId && this.notificationsService) {
@@ -858,18 +809,20 @@ export class TicketsService {
 
     const logEntry = `Assigned to ${dto.assignedTechnicianId ? 'Technician' : ''} ${dto.assignedTeamId ? 'Team' : ''}${dto.reason ? ` (Reason: ${dto.reason})` : ''}`.trim();
 
-    if (this.dbService.getConnectionStatus()) {
-      await this.dbService.db
-        .update(schema.tickets)
-        .set(updateData)
-        .where(eq(schema.tickets.id, ticket.id));
+    if (this.prisma.isConnected) {
+      await this.prisma.ticket.update({
+        where: { id: ticket.id },
+        data: updateData,
+      });
 
-      await this.dbService.db.insert(schema.ticketHistory).values({
-        ticketId: ticket.id,
-        changedById: user.id,
-        fieldChanged: 'ASSIGNMENT',
-        oldValue: ticket.assignedTechnicianId || 'Unassigned',
-        newValue: logEntry,
+      await this.prisma.ticketHistory.create({
+        data: {
+          ticketId: ticket.id,
+          changedBy: user.id,
+          field: 'ASSIGNMENT',
+          oldValue: ticket.assignedTechnicianId || 'Unassigned',
+          newValue: logEntry,
+        },
       });
 
       if (dto.assignedTechnicianId && this.notificationsService) {
@@ -931,18 +884,20 @@ export class TicketsService {
       updatedAt: now,
     };
 
-    if (this.dbService.getConnectionStatus()) {
-      await this.dbService.db
-        .update(schema.tickets)
-        .set(updateData)
-        .where(eq(schema.tickets.id, ticket.id));
+    if (this.prisma.isConnected) {
+      await this.prisma.ticket.update({
+        where: { id: ticket.id },
+        data: updateData,
+      });
 
-      await this.dbService.db.insert(schema.ticketHistory).values({
-        ticketId: ticket.id,
-        changedById: user.id,
-        fieldChanged: 'ESCALATION',
-        oldValue: ticket.priorityCode || 'P3',
-        newValue: `Escalated to ${targetRole}: ${dto.escalationReason.trim()}`,
+      await this.prisma.ticketHistory.create({
+        data: {
+          ticketId: ticket.id,
+          changedBy: user.id,
+          field: 'ESCALATION',
+          oldValue: ticket.priorityCode || 'P3',
+          newValue: `Escalated to ${targetRole}: ${dto.escalationReason.trim()}`,
+        },
       });
 
       if (ticket.requesterId && this.notificationsService) {
@@ -1001,11 +956,11 @@ export class TicketsService {
     if (updateTicketDto.assignedTeamId) updateData.assignedTeamId = updateTicketDto.assignedTeamId;
     if (updateTicketDto.resolutionNotes) updateData.resolutionNotes = updateTicketDto.resolutionNotes.trim();
 
-    if (this.dbService.getConnectionStatus()) {
-      await this.dbService.db
-        .update(schema.tickets)
-        .set(updateData)
-        .where(eq(schema.tickets.id, existing.id));
+    if (this.prisma.isConnected) {
+      await this.prisma.ticket.update({
+        where: { id: existing.id },
+        data: updateData,
+      });
 
       return this.findById(existing.id, user);
     }
@@ -1042,23 +997,22 @@ export class TicketsService {
   async addComment(id: string, dto: CreateTicketCommentDto, user: any) {
     const ticket = await this.findById(id, user);
 
-    if (this.dbService.getConnectionStatus()) {
-      const [newComment] = await this.dbService.db
-        .insert(schema.ticketComments)
-        .values({
+    if (this.prisma.isConnected) {
+      const newComment = await this.prisma.ticketComment.create({
+        data: {
           ticketId: ticket.id,
           userId: user.id,
           comment: dto.comment.trim(),
-          isInternalNote: dto.isInternalNote || false,
-        })
-        .returning();
+          isInternal: dto.isInternalNote || false,
+        },
+      });
 
       // Record first response timestamp if staff reply to user ticket
       if (!ticket.firstResponseAt && user.id !== ticket.requesterId) {
-        await this.dbService.db
-          .update(schema.tickets)
-          .set({ firstResponseAt: new Date() })
-          .where(eq(schema.tickets.id, ticket.id));
+        await this.prisma.ticket.update({
+          where: { id: ticket.id },
+          data: { firstResponseAt: new Date() },
+        });
       }
 
       return newComment;
@@ -1090,28 +1044,28 @@ export class TicketsService {
     const ticket = await this.findById(id, user);
     const now = new Date();
 
-    if (this.dbService.getConnectionStatus()) {
+    if (this.prisma.isConnected) {
       // Ensure no existing running timer for this user
-      await this.dbService.db
-        .update(schema.ticketTimeEntries)
-        .set({ isRunning: false, endedAt: now, updatedAt: now })
-        .where(
-          and(
-            eq(schema.ticketTimeEntries.employeeId, user.id),
-            eq(schema.ticketTimeEntries.isRunning, true),
-          ),
-        );
+      await this.prisma.ticketTimeEntry.updateMany({
+        where: {
+          employeeId: user.id,
+          isRunning: true,
+        },
+        data: {
+          isRunning: false,
+          endTime: now,
+        },
+      });
 
-      const [entry] = await this.dbService.db
-        .insert(schema.ticketTimeEntries)
-        .values({
+      const entry = await this.prisma.ticketTimeEntry.create({
+        data: {
           ticketId: ticket.id,
           employeeId: user.id,
-          startedAt: now,
+          startTime: now,
           isRunning: true,
-          notes: dto?.notes?.trim() || 'Active triage stopwatch',
-        })
-        .returning();
+          description: dto?.notes?.trim() || 'Active triage stopwatch',
+        },
+      });
 
       return entry;
     }
@@ -1146,35 +1100,29 @@ export class TicketsService {
     const ticket = await this.findById(id, user);
     const now = new Date();
 
-    if (this.dbService.getConnectionStatus()) {
-      const [running] = await this.dbService.db
-        .select()
-        .from(schema.ticketTimeEntries)
-        .where(
-          and(
-            eq(schema.ticketTimeEntries.ticketId, ticket.id),
-            eq(schema.ticketTimeEntries.employeeId, user.id),
-            eq(schema.ticketTimeEntries.isRunning, true),
-          ),
-        )
-        .limit(1);
+    if (this.prisma.isConnected) {
+      const running = await this.prisma.ticketTimeEntry.findFirst({
+        where: {
+          ticketId: ticket.id,
+          employeeId: user.id,
+          isRunning: true,
+        },
+      });
 
       if (!running) {
         throw new NotFoundException('No active running stopwatch timer found for this ticket');
       }
 
-      const durationSeconds = Math.round((now.getTime() - new Date(running.startedAt).getTime()) / 1000);
+      const durationSeconds = Math.round((now.getTime() - new Date(running.startTime).getTime()) / 1000);
 
-      const [stopped] = await this.dbService.db
-        .update(schema.ticketTimeEntries)
-        .set({
+      const stopped = await this.prisma.ticketTimeEntry.update({
+        where: { id: running.id },
+        data: {
           isRunning: false,
-          endedAt: now,
+          endTime: now,
           durationSeconds,
-          updatedAt: now,
-        })
-        .where(eq(schema.ticketTimeEntries.id, running.id))
-        .returning();
+        },
+      });
 
       return stopped;
     }
@@ -1198,19 +1146,18 @@ export class TicketsService {
     const durationSeconds = dto.durationMinutes * 60;
     const now = new Date();
 
-    if (this.dbService.getConnectionStatus()) {
-      const [entry] = await this.dbService.db
-        .insert(schema.ticketTimeEntries)
-        .values({
+    if (this.prisma.isConnected) {
+      const entry = await this.prisma.ticketTimeEntry.create({
+        data: {
           ticketId: ticket.id,
           employeeId: user.id,
-          startedAt: new Date(now.getTime() - durationSeconds * 1000),
-          endedAt: now,
+          startTime: new Date(now.getTime() - durationSeconds * 1000),
+          endTime: now,
           durationSeconds,
           isRunning: false,
-          notes: dto.notes?.trim() || 'Manual time record',
-        })
-        .returning();
+          description: dto.notes?.trim() || 'Manual time record',
+        },
+      });
 
       return entry;
     }
@@ -1237,18 +1184,20 @@ export class TicketsService {
    */
   async linkExistingTask(ticketId: string, dto: LinkExistingTaskDto, user: any) {
     const ticket = await this.findById(ticketId, user);
-    if (this.dbService.getConnectionStatus()) {
-      await this.dbService.db
-        .update(schema.tickets)
-        .set({ relatedTaskId: dto.taskId, updatedAt: new Date() })
-        .where(eq(schema.tickets.id, ticket.id));
+    if (this.prisma.isConnected) {
+      await this.prisma.ticket.update({
+        where: { id: ticket.id },
+        data: { updatedAt: new Date() },
+      });
 
-      await this.dbService.db.insert(schema.ticketHistory).values({
-        ticketId: ticket.id,
-        changedById: user.id,
-        fieldChanged: 'TASK_LINK',
-        oldValue: null,
-        newValue: `Linked task ${dto.taskId}`,
+      await this.prisma.ticketHistory.create({
+        data: {
+          ticketId: ticket.id,
+          changedBy: user.id,
+          field: 'TASK_LINK',
+          oldValue: null,
+          newValue: `Linked task ${dto.taskId}`,
+        },
       });
 
       return { success: true, message: `Task ${dto.taskId} linked to ticket ${ticket.referenceId}` };
@@ -1267,35 +1216,36 @@ export class TicketsService {
     const ticket = await this.findById(ticketId, user);
     const referenceId = generateReferenceId('TSK');
 
-    if (this.dbService.getConnectionStatus()) {
-      const [newTask] = await this.dbService.db
-        .insert(schema.tasks)
-        .values({
+    if (this.prisma.isConnected) {
+      const newTask = await this.prisma.task.create({
+        data: {
           referenceId,
           taskNumber: referenceId,
           title: dto.title.trim(),
           description: dto.description?.trim() || `Generated from ticket ${ticket.referenceId}: ${ticket.description}`,
-          priority: dto.priority || ticket.priority || Priority.MEDIUM,
+          priority: (dto.priority as any) || ticket.priority || Priority.MEDIUM,
           startDate: new Date(dto.startDate),
           dueDate: new Date(dto.dueDate),
-          estimatedHours: String(dto.estimatedHours || 4),
+          estimatedHours: dto.estimatedHours || 4,
           createdById: user.id,
           status: 'ASSIGNED',
-        })
-        .returning();
+        },
+      });
 
       // Link newly created task to ticket
-      await this.dbService.db
-        .update(schema.tickets)
-        .set({ relatedTaskId: newTask.id, updatedAt: new Date() })
-        .where(eq(schema.tickets.id, ticket.id));
+      await this.prisma.ticket.update({
+        where: { id: ticket.id },
+        data: { relatedTaskId: newTask.id, updatedAt: new Date() },
+      });
 
-      await this.dbService.db.insert(schema.ticketHistory).values({
-        ticketId: ticket.id,
-        changedById: user.id,
-        fieldChanged: 'TASK_CREATED',
-        oldValue: null,
-        newValue: `Created and linked task ${newTask.referenceId}`,
+      await this.prisma.ticketHistory.create({
+        data: {
+          ticketId: ticket.id,
+          changedById: user.id,
+          fieldChanged: 'TASK_CREATED',
+          oldValue: null,
+          newValue: `Created and linked task ${newTask.referenceId}`,
+        },
       });
 
       return newTask;

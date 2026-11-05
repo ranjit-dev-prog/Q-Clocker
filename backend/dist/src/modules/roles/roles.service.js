@@ -12,13 +12,12 @@ var RolesService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RolesService = void 0;
 const common_1 = require("@nestjs/common");
-const database_service_1 = require("../../database/database.service");
-const schema = require("../../database/schema");
-const drizzle_orm_1 = require("drizzle-orm");
+const prisma_service_1 = require("../../prisma/prisma.service");
 const permissions_guard_1 = require("../../common/guards/permissions.guard");
+const crypto = require("crypto");
 let RolesService = class RolesService {
     static { RolesService_1 = this; }
-    dbService;
+    prisma;
     static SYSTEM_ROLES = [
         {
             id: '00000000-0000-0000-0000-000000000001',
@@ -92,12 +91,12 @@ let RolesService = class RolesService {
         },
     ];
     customRoles = [];
-    constructor(dbService) {
-        this.dbService = dbService;
+    constructor(prisma) {
+        this.prisma = prisma;
     }
     async findAll() {
-        if (this.dbService.getConnectionStatus()) {
-            const dbRoles = await this.dbService.db.select().from(schema.roles);
+        if (this.prisma.isConnected) {
+            const dbRoles = await this.prisma.role.findMany();
             if (dbRoles.length > 0) {
                 return dbRoles.map((r) => ({
                     ...r,
@@ -113,12 +112,12 @@ let RolesService = class RolesService {
         }));
     }
     async findOne(id) {
-        if (this.dbService.getConnectionStatus()) {
-            const [role] = await this.dbService.db
-                .select()
-                .from(schema.roles)
-                .where((0, drizzle_orm_1.eq)(schema.roles.id, id))
-                .limit(1);
+        if (this.prisma.isConnected) {
+            const role = await this.prisma.role.findFirst({
+                where: {
+                    OR: [{ id }, { code: id }],
+                },
+            });
             if (role) {
                 return {
                     ...role,
@@ -138,24 +137,21 @@ let RolesService = class RolesService {
     }
     async create(dto) {
         const code = dto.code.toUpperCase().replace(/\s+/g, '_');
-        if (this.dbService.getConnectionStatus()) {
-            const existing = await this.dbService.db
-                .select()
-                .from(schema.roles)
-                .where((0, drizzle_orm_1.eq)(schema.roles.code, code))
-                .limit(1);
-            if (existing.length > 0) {
+        if (this.prisma.isConnected) {
+            const existing = await this.prisma.role.findUnique({
+                where: { code },
+            });
+            if (existing) {
                 throw new common_1.ConflictException(`Role with code '${code}' already exists`);
             }
-            const [newRole] = await this.dbService.db
-                .insert(schema.roles)
-                .values({
-                name: dto.name.trim(),
-                code,
-                description: dto.description?.trim() || null,
-                isSystem: false,
-            })
-                .returning();
+            const newRole = await this.prisma.role.create({
+                data: {
+                    name: dto.name.trim(),
+                    code,
+                    description: dto.description?.trim() || null,
+                    isSystem: false,
+                },
+            });
             return newRole;
         }
         const existing = [...RolesService_1.SYSTEM_ROLES, ...this.customRoles].find((r) => r.code === code);
@@ -178,6 +174,6 @@ let RolesService = class RolesService {
 exports.RolesService = RolesService;
 exports.RolesService = RolesService = RolesService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], RolesService);
 //# sourceMappingURL=roles.service.js.map

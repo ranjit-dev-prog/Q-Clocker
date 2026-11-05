@@ -4,8 +4,8 @@ export declare class PermissionsController {
     constructor(permissionsService: PermissionsService);
     findAll(): Promise<{
         id: string;
-        name: string;
         code: string;
+        name: string;
         description: string | null;
         createdAt: Date;
         module: string;
@@ -13,8 +13,8 @@ export declare class PermissionsController {
     getMatrix(): Promise<{
         permissions: {
             id: string;
-            name: string;
             code: string;
+            name: string;
             description: string | null;
             createdAt: Date;
             module: string;

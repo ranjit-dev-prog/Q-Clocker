@@ -1,7 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DatabaseService } from '../../database/database.service';
-import * as schema from '../../database/schema';
-import { eq, desc } from 'drizzle-orm';
+import { PrismaService } from '../../prisma/prisma.service';
 import { PerformanceEvaluation } from './dto/performance.dto';
 import { TasksService } from '../tasks/tasks.service';
 import { TicketsService } from '../tickets/tickets.service';
@@ -28,7 +26,7 @@ export class PerformanceService {
         tasksCompleted: 14,
         ticketsResolved: 6,
         qualityScore: 95.0,
-        feedbackNotes: 'Exceptional architectural delivery across Drizzle ORM migrations, enterprise ITSM state machines, and Zero-Trust RBAC integration.',
+        feedbackNotes: 'Exceptional architectural delivery across Prisma ORM migrations, enterprise ITSM state machines, and Zero-Trust RBAC integration.',
         breakdown: {
           technicalExecution: 96,
           codeQuality: 95,
@@ -40,7 +38,7 @@ export class PerformanceService {
   ]);
 
   constructor(
-    private readonly dbService: DatabaseService,
+    private readonly prisma: PrismaService,
     private readonly tasksService: TasksService,
     private readonly ticketsService: TicketsService,
   ) {}
@@ -49,14 +47,12 @@ export class PerformanceService {
     const userId = user.id;
 
     // 1. If database connected, check schema.performanceReviews
-    if (this.dbService.getConnectionStatus()) {
+    if (this.prisma.isConnected) {
       try {
-        const [review] = await this.dbService.db
-          .select()
-          .from(schema.performanceReviews)
-          .where(eq(schema.performanceReviews.employeeId, userId))
-          .orderBy(desc(schema.performanceReviews.periodEnd))
-          .limit(1);
+        const review = await this.prisma.performanceReview.findFirst({
+          where: { employeeId: userId },
+          orderBy: { periodEnd: 'desc' },
+        });
 
         if (review) {
           return {

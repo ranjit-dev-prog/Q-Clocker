@@ -18,11 +18,11 @@ const common_1 = require("@nestjs/common");
 const ExcelJS = require("exceljs");
 const PDFDocument = require('pdfkit');
 const crypto = require("crypto");
-const database_service_1 = require("../../database/database.service");
+const prisma_service_1 = require("../../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const users_service_1 = require("../users/users.service");
 let PayrollService = PayrollService_1 = class PayrollService {
-    dbService;
+    prisma;
     usersService;
     notificationsService;
     logger = new common_1.Logger(PayrollService_1.name);
@@ -120,8 +120,8 @@ let PayrollService = PayrollService_1 = class PayrollService {
         },
     ];
     memoryDeclarations = new Map();
-    constructor(dbService, usersService, notificationsService) {
-        this.dbService = dbService;
+    constructor(prisma, usersService, notificationsService) {
+        this.prisma = prisma;
         this.usersService = usersService;
         this.notificationsService = notificationsService;
     }
@@ -469,7 +469,7 @@ exports.PayrollService = PayrollService;
 exports.PayrollService = PayrollService = PayrollService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(2, (0, common_1.Optional)()),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService,
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         users_service_1.UsersService,
         notifications_service_1.NotificationsService])
 ], PayrollService);

@@ -74,11 +74,11 @@ export declare class UsersController {
         id: string;
         createdAt: Date;
         updatedAt: Date;
-        roleId: string;
         referenceId: string;
         managerId: string | null;
         isActive: boolean;
         departmentId: string | null;
+        teamId: string | null;
         employeeCode: string | null;
         email: string;
         personalEmail: string | null;
@@ -86,12 +86,12 @@ export declare class UsersController {
         lastName: string;
         phone: string | null;
         avatarUrl: string | null;
+        roleId: string;
         roleCode: string;
-        teamId: string | null;
         designationId: string | null;
         jobTitle: string | null;
         employmentType: string;
-        joiningDate: string | null;
+        joiningDate: Date | null;
         workLocation: string;
         hasLoginAccount: boolean;
         accountStatus: string;

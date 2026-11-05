@@ -10,7 +10,6 @@ exports.DatabaseExplorerModule = void 0;
 const common_1 = require("@nestjs/common");
 const database_explorer_controller_1 = require("./database-explorer.controller");
 const database_explorer_service_1 = require("./database-explorer.service");
-const database_module_1 = require("../../database/database.module");
 const users_module_1 = require("../users/users.module");
 const departments_module_1 = require("../departments/departments.module");
 const tasks_module_1 = require("../tasks/tasks.module");
@@ -26,7 +25,6 @@ exports.DatabaseExplorerModule = DatabaseExplorerModule;
 exports.DatabaseExplorerModule = DatabaseExplorerModule = __decorate([
     (0, common_1.Module)({
         imports: [
-            database_module_1.DatabaseModule,
             users_module_1.UsersModule,
             departments_module_1.DepartmentsModule,
             tasks_module_1.TasksModule,

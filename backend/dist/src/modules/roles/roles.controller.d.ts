@@ -11,8 +11,8 @@ export declare class RolesController {
         permissions?: string[];
     }): Promise<{
         id: string;
-        name: string;
         code: string;
+        name: string;
         description: string | null;
         isSystem: boolean;
         createdAt: Date;

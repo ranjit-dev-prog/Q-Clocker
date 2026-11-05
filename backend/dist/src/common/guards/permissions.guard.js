@@ -14,14 +14,12 @@ exports.PermissionsGuard = void 0;
 const common_1 = require("@nestjs/common");
 const core_1 = require("@nestjs/core");
 const permissions_decorator_1 = require("../decorators/permissions.decorator");
-const database_service_1 = require("../../database/database.service");
-const schema = require("../../database/schema");
-const drizzle_orm_1 = require("drizzle-orm");
+const prisma_service_1 = require("../../prisma/prisma.service");
 const enums_1 = require("../enums");
 let PermissionsGuard = class PermissionsGuard {
     static { PermissionsGuard_1 = this; }
     reflector;
-    dbService;
+    prisma;
     static DEFAULT_ROLE_PERMISSIONS = {
         SUPER_ADMIN: ['*'],
         SYSTEM_ADMINISTRATOR: [
@@ -233,9 +231,9 @@ let PermissionsGuard = class PermissionsGuard {
             'reports.read',
         ],
     };
-    constructor(reflector, dbService) {
+    constructor(reflector, prisma) {
         this.reflector = reflector;
-        this.dbService = dbService;
+        this.prisma = prisma;
     }
     async canActivate(context) {
         const requiredPermissions = this.reflector.getAllAndOverride(permissions_decorator_1.PERMISSIONS_KEY, [context.getHandler(), context.getClass()]);
@@ -260,17 +258,14 @@ let PermissionsGuard = class PermissionsGuard {
         return true;
     }
     async getUserPermissions(roleId, roleCode) {
-        if (this.dbService.getConnectionStatus() && roleId) {
+        if (this.prisma.isConnected && roleId) {
             try {
-                const rows = await this.dbService.db
-                    .select({
-                    code: schema.permissions.code,
-                })
-                    .from(schema.rolePermissions)
-                    .innerJoin(schema.permissions, (0, drizzle_orm_1.eq)(schema.rolePermissions.permissionId, schema.permissions.id))
-                    .where((0, drizzle_orm_1.eq)(schema.rolePermissions.roleId, roleId));
+                const rows = await this.prisma.rolePermission.findMany({
+                    where: { roleId },
+                    include: { permission: true },
+                });
                 if (rows.length > 0) {
-                    return rows.map((r) => r.code);
+                    return rows.map((r) => r.permission.code);
                 }
             }
             catch (err) {
@@ -283,6 +278,6 @@ exports.PermissionsGuard = PermissionsGuard;
 exports.PermissionsGuard = PermissionsGuard = PermissionsGuard_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [core_1.Reflector,
-        database_service_1.DatabaseService])
+        prisma_service_1.PrismaService])
 ], PermissionsGuard);
 //# sourceMappingURL=permissions.guard.js.map

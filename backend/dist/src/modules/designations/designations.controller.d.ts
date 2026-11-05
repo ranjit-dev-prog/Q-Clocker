@@ -7,8 +7,8 @@ export declare class DesignationsController {
     findOne(id: string): Promise<any>;
     create(dto: CreateDesignationDto): Promise<{
         id: string;
-        name: string;
         code: string;
+        name: string;
         description: string | null;
         createdAt: Date;
         updatedAt: Date;

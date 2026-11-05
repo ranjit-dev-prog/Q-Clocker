@@ -14,13 +14,11 @@ const common_1 = require("@nestjs/common");
 const passport_1 = require("@nestjs/passport");
 const passport_jwt_1 = require("passport-jwt");
 const config_1 = require("@nestjs/config");
-const database_service_1 = require("../../../database/database.service");
-const schema = require("../../../database/schema");
-const drizzle_orm_1 = require("drizzle-orm");
+const prisma_service_1 = require("../../../prisma/prisma.service");
 let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
     configService;
-    dbService;
-    constructor(configService, dbService) {
+    prisma;
+    constructor(configService, prisma) {
         super({
             jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
@@ -28,40 +26,48 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
                 'q_clocker_super_secure_jwt_secret_key_2026_enterprise_secure',
         });
         this.configService = configService;
-        this.dbService = dbService;
+        this.prisma = prisma;
     }
     async validate(payload) {
-        if (!this.dbService.getConnectionStatus()) {
+        if (!this.prisma.isConnected) {
             return {
                 id: payload.sub,
                 email: payload.email,
                 role: payload.role,
             };
         }
-        const [user] = await this.dbService.db
-            .select({
-            id: schema.users.id,
-            email: schema.users.email,
-            firstName: schema.users.firstName,
-            lastName: schema.users.lastName,
-            role: schema.users.roleCode,
-            departmentId: schema.users.departmentId,
-            teamId: schema.users.teamId,
-            isActive: schema.users.isActive,
-        })
-            .from(schema.users)
-            .where((0, drizzle_orm_1.eq)(schema.users.id, payload.sub))
-            .limit(1);
+        const user = await this.prisma.user.findUnique({
+            where: { id: payload.sub },
+            select: {
+                id: true,
+                email: true,
+                firstName: true,
+                lastName: true,
+                roleCode: true,
+                departmentId: true,
+                teamId: true,
+                isActive: true,
+            },
+        });
         if (!user || !user.isActive) {
             throw new common_1.UnauthorizedException('User account is deactivated or not found');
         }
-        return user;
+        return {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            role: user.roleCode,
+            departmentId: user.departmentId,
+            teamId: user.teamId,
+            isActive: user.isActive,
+        };
     }
 };
 exports.JwtStrategy = JwtStrategy;
 exports.JwtStrategy = JwtStrategy = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [config_1.ConfigService,
-        database_service_1.DatabaseService])
+        prisma_service_1.PrismaService])
 ], JwtStrategy);
 //# sourceMappingURL=jwt.strategy.js.map

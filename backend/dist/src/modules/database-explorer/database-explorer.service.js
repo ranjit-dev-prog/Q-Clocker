@@ -12,10 +12,8 @@ var DatabaseExplorerService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DatabaseExplorerService = void 0;
 const common_1 = require("@nestjs/common");
-const database_service_1 = require("../../database/database.service");
-const schema = require("../../database/schema");
-const drizzle_orm_1 = require("drizzle-orm");
-const pg_core_1 = require("drizzle-orm/pg-core");
+const client_1 = require("@prisma/client");
+const prisma_service_1 = require("../../prisma/prisma.service");
 const users_service_1 = require("../users/users.service");
 const departments_service_1 = require("../departments/departments.service");
 const tasks_service_1 = require("../tasks/tasks.service");
@@ -26,7 +24,7 @@ const work_logs_service_1 = require("../work-logs/work-logs.service");
 const payroll_service_1 = require("../payroll/payroll.service");
 const lifecycle_service_1 = require("../lifecycle/lifecycle.service");
 let DatabaseExplorerService = DatabaseExplorerService_1 = class DatabaseExplorerService {
-    dbService;
+    prisma;
     usersService;
     departmentsService;
     tasksService;
@@ -78,8 +76,8 @@ let DatabaseExplorerService = DatabaseExplorerService_1 = class DatabaseExplorer
         performance_reviews: { category: 'Lifecycle & Operations', description: 'Evaluation scores, complexity ratings, and manager feedback' },
         app_settings: { category: 'Lifecycle & Operations', description: 'Enterprise global branding, security policies, and config flags' },
     };
-    constructor(dbService, usersService, departmentsService, tasksService, ticketsService, rolesService, permissionsService, workLogsService, payrollService, lifecycleService) {
-        this.dbService = dbService;
+    constructor(prisma, usersService, departmentsService, tasksService, ticketsService, rolesService, permissionsService, workLogsService, payrollService, lifecycleService) {
+        this.prisma = prisma;
         this.usersService = usersService;
         this.departmentsService = departmentsService;
         this.tasksService = tasksService;
@@ -91,69 +89,65 @@ let DatabaseExplorerService = DatabaseExplorerService_1 = class DatabaseExplorer
         this.lifecycleService = lifecycleService;
     }
     async getTables() {
+        const models = client_1.Prisma.dmmf.datamodel.models;
         const tables = [];
-        for (const [key, val] of Object.entries(schema)) {
-            if (val && (0, drizzle_orm_1.is)(val, pg_core_1.PgTable)) {
-                const tableName = (0, drizzle_orm_1.getTableName)(val);
-                const cols = (0, drizzle_orm_1.getTableColumns)(val);
-                const meta = this.categoryMap[tableName] || {
-                    category: 'Other System Tables',
-                    description: `Relational schema table for ${tableName}`,
-                };
-                const rowCount = await this.estimateRowCount(tableName, val);
-                tables.push({
-                    name: tableName,
-                    key,
-                    category: meta.category,
-                    columnCount: Object.keys(cols).length,
-                    rowCount,
-                    description: meta.description,
-                });
-            }
+        for (const model of models) {
+            const tableName = model.dbName || model.name.toLowerCase();
+            const scalarFields = model.fields.filter((f) => f.kind === 'scalar');
+            const meta = this.categoryMap[tableName] || {
+                category: 'Other System Tables',
+                description: `Relational schema table for ${tableName}`,
+            };
+            const rowCount = await this.estimateRowCount(model);
+            tables.push({
+                name: tableName,
+                key: model.name,
+                category: meta.category,
+                columnCount: scalarFields.length,
+                rowCount,
+                description: meta.description,
+            });
         }
         return tables.sort((a, b) => a.category.localeCompare(b.category) || a.name.localeCompare(b.name));
     }
     async getTableSchema(tableName) {
-        const tableObj = this.findTable(tableName);
-        if (!tableObj) {
-            throw new common_1.NotFoundException(`Table '${tableName}' not found in Drizzle ORM schema`);
+        const model = this.findModel(tableName);
+        if (!model) {
+            throw new common_1.NotFoundException(`Table '${tableName}' not found in Prisma ORM schema`);
         }
-        const cols = (0, drizzle_orm_1.getTableColumns)(tableObj);
-        const columns = Object.entries(cols).map(([colName, colDef]) => {
-            let dataType = colDef.dataType || 'unknown';
-            if (colDef.columnType) {
-                dataType = colDef.columnType.replace(/Pg/, '').toLowerCase();
-            }
+        const scalarFields = model.fields.filter((f) => f.kind === 'scalar');
+        const columns = scalarFields.map((f) => {
+            const colName = f.dbName || f.name;
             return {
-                name: colDef.name || colName,
-                dataType,
-                isPrimary: Boolean(colDef.primary),
-                isNullable: !colDef.notNull,
-                hasDefault: Boolean(colDef.hasDefault),
-                defaultVal: colDef.default !== undefined ? String(colDef.default) : undefined,
+                name: colName,
+                dataType: (f.type || 'String').toLowerCase(),
+                isPrimary: f.name === 'id' || Boolean(f.isId),
+                isNullable: !f.isRequired,
+                hasDefault: Boolean(f.hasDefaultValue || f.default !== undefined),
+                defaultVal: f.default !== undefined ? String(f.default) : undefined,
             };
         });
         return { tableName, columns };
     }
     async getTableData(tableName, page = 1, limit = 20, search) {
-        const tableObj = this.findTable(tableName);
-        if (!tableObj) {
-            throw new common_1.NotFoundException(`Table '${tableName}' not found in Drizzle schema`);
+        const model = this.findModel(tableName);
+        if (!model) {
+            throw new common_1.NotFoundException(`Table '${tableName}' not found in Prisma schema`);
         }
-        const cols = (0, drizzle_orm_1.getTableColumns)(tableObj);
-        const colNames = Object.keys(cols);
-        if (this.dbService.getConnectionStatus()) {
+        const scalarFields = model.fields.filter((f) => f.kind === 'scalar');
+        const colNames = scalarFields.map((f) => f.dbName || f.name);
+        const delegateName = model.name.charAt(0).toLowerCase() + model.name.slice(1);
+        if (this.prisma.isConnected && this.prisma[delegateName]) {
             try {
                 const offset = (page - 1) * limit;
-                const rows = await this.dbService.db
-                    .select()
-                    .from(tableObj)
-                    .limit(limit)
-                    .offset(offset);
-                const countResult = await this.dbService.db
-                    .select({ count: (0, drizzle_orm_1.sql) `count(*)` })
-                    .from(tableObj);
-                const total = Number(countResult[0]?.count) || rows.length;
+                const delegate = this.prisma[delegateName];
+                const [rows, total] = await Promise.all([
+                    delegate.findMany({
+                        skip: offset,
+                        take: limit,
+                    }),
+                    delegate.count(),
+                ]);
                 return {
                     tableName,
                     total,
@@ -164,7 +158,7 @@ let DatabaseExplorerService = DatabaseExplorerService_1 = class DatabaseExplorer
                 };
             }
             catch (err) {
-                this.logger.warn(`Direct DB query on ${tableName} failed: ${err.message}`);
+                this.logger.warn(`Direct DB query on ${tableName} (${delegateName}) failed: ${err.message}`);
             }
         }
         const storeRows = await this.getDomainData(tableName);
@@ -185,24 +179,20 @@ let DatabaseExplorerService = DatabaseExplorerService_1 = class DatabaseExplorer
             rows: this.sanitizeRows(paginatedRows),
         };
     }
-    findTable(tableName) {
-        for (const val of Object.values(schema)) {
-            if (val && (0, drizzle_orm_1.is)(val, pg_core_1.PgTable) && (0, drizzle_orm_1.getTableName)(val) === tableName) {
-                return val;
-            }
-        }
-        return null;
+    findModel(tableName) {
+        const target = tableName.toLowerCase();
+        return client_1.Prisma.dmmf.datamodel.models.find((m) => (m.dbName && m.dbName.toLowerCase() === target) || m.name.toLowerCase() === target);
     }
-    async estimateRowCount(tableName, tableObj) {
-        if (this.dbService.getConnectionStatus()) {
+    async estimateRowCount(model) {
+        const delegateName = model.name.charAt(0).toLowerCase() + model.name.slice(1);
+        if (this.prisma.isConnected && this.prisma[delegateName]) {
             try {
-                const [res] = await this.dbService.db.select({ count: (0, drizzle_orm_1.sql) `count(*)` }).from(tableObj);
-                return Number(res?.count) || 0;
+                return await this.prisma[delegateName].count();
             }
             catch {
             }
         }
-        const domainData = await this.getDomainData(tableName);
+        const domainData = await this.getDomainData(model.dbName || model.name.toLowerCase());
         return domainData.length;
     }
     async getDomainData(tableName) {
@@ -277,7 +267,7 @@ let DatabaseExplorerService = DatabaseExplorerService_1 = class DatabaseExplorer
 exports.DatabaseExplorerService = DatabaseExplorerService;
 exports.DatabaseExplorerService = DatabaseExplorerService = DatabaseExplorerService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [database_service_1.DatabaseService,
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         users_service_1.UsersService,
         departments_service_1.DepartmentsService,
         tasks_service_1.TasksService,
