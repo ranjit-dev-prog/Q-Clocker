@@ -20,6 +20,7 @@ import { HealthModule } from './modules/health/health.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { PerformanceModule } from './modules/performance/performance.module';
 import { DatabaseExplorerModule } from './modules/database-explorer/database-explorer.module';
+import { HrmsModule } from './modules/hrms/hrms.module';
 import { RolesGuard } from './common/guards/roles.guard';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
@@ -53,6 +54,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     DashboardModule,
     PerformanceModule,
     DatabaseExplorerModule,
+    HrmsModule,
   ],
   providers: [
     {

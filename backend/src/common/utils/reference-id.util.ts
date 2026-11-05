@@ -38,7 +38,11 @@ export type EntityPrefix =
   | 'SLA'
   | 'CAT'
   | 'SBC'
-  | 'SES';
+  | 'SES'
+  | 'COR'
+  | 'LEV'
+  | 'DOC'
+  | 'EXT';
 
 const UNAMBIGUOUS_CHARSET = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 
