@@ -56,3 +56,4 @@ export class VerifyDocumentDto {
   @IsOptional()
   notes?: string;
 }
+

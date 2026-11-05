@@ -386,3 +386,4 @@ export class HrmsController {
     return res.status(HttpStatus.OK).send(pdfBuffer);
   }
 }
+

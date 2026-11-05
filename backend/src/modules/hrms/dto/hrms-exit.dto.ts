@@ -54,3 +54,4 @@ export class UpdateExitClearanceDto {
   @IsOptional()
   notes?: string;
 }
+

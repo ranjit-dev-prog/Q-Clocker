@@ -12,3 +12,4 @@ export class ToggleOnboardingTaskDto {
   @IsOptional()
   notes?: string;
 }
+

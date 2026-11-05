@@ -1830,3 +1830,4 @@ export class HrmsService {
     return list.find((e) => e.id === id || e.referenceId === id || e.employeeCode === id) || null;
   }
 }
+

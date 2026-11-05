@@ -51,3 +51,4 @@ export class AttendanceCorrectionDecisionDto {
   @IsOptional()
   comments?: string;
 }
+

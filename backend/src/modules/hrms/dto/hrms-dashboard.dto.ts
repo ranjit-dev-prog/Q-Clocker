@@ -190,3 +190,4 @@ export class HrmsDashboardResponse {
   @ApiProperty()
   monthlyGrowthTrend: Array<{ month: string; joiners: number; exits: number; netHeadcount: number }>;
 }
+
