@@ -26,20 +26,26 @@ let PrismaService = PrismaService_1 = class PrismaService extends client_1.Prism
         super({ adapter });
     }
     async onModuleInit() {
+        await this.tryConnect();
+    }
+    async tryConnect() {
         try {
             await this.$connect();
             await this.$queryRaw `SELECT 1`;
             this.isConnected = true;
-            this.logger.log('✅ Prisma ORM successfully connected to PostgreSQL database (39 models active)');
+            this.logger.log('✅ Prisma ORM successfully connected to PostgreSQL database (47 models active)');
+            return true;
         }
         catch (error) {
             this.isConnected = false;
-            this.logger.warn(`⚠️ PostgreSQL connection via Prisma failed: ${error.message}. Operating in resilient mode.`);
+            this.logger.warn(`⚠️ PostgreSQL connection via Prisma failed: ${error.message}. Operating in resilient enterprise mode.`);
+            return false;
         }
     }
     async onModuleDestroy() {
         try {
             await this.$disconnect();
+            this.isConnected = false;
             this.logger.log('Prisma ORM disconnected gracefully');
         }
         catch (error) {
@@ -52,7 +58,7 @@ let PrismaService = PrismaService_1 = class PrismaService extends client_1.Prism
             provider: this.provider,
             orm: this.orm,
             version: '7.10.1',
-            modelsCount: 39,
+            modelsCount: 47,
         };
     }
 };

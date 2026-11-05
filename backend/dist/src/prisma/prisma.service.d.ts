@@ -7,6 +7,7 @@ export declare class PrismaService extends PrismaClient implements OnModuleInit,
     readonly orm = "prisma";
     constructor();
     onModuleInit(): Promise<void>;
+    tryConnect(): Promise<boolean>;
     onModuleDestroy(): Promise<void>;
     getConnectionStatus(): {
         connected: boolean;

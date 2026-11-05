@@ -52,7 +52,7 @@ export class HealthController {
         prismaOrm: {
           name: 'Prisma ORM Enterprise Engine',
           status: isDbConnected ? 'active' : 'ready',
-          tablesMapped: 39,
+          tablesMapped: 47,
           studioUrl: 'http://localhost:5555',
         },
         migrations: {

@@ -280,6 +280,43 @@ async function main() {
             });
         }
         console.log(`✅ SLA Policies seeded (${slaData.length})`);
+        const leaveTypesData = [
+            { code: 'PAID', name: 'Paid / Annual Leave', annualAllowanceDays: 18, isPaid: true, requiresAttachment: false, description: 'Standard paid annual leave allowance' },
+            { code: 'SICK', name: 'Medical / Sick Leave', annualAllowanceDays: 12, isPaid: true, requiresAttachment: true, description: 'Health and recovery leave with medical certificate' },
+            { code: 'CASUAL', name: 'Casual Leave', annualAllowanceDays: 6, isPaid: true, requiresAttachment: false, description: 'Urgent personal matters and short leaves' },
+            { code: 'MATERNITY', name: 'Maternity Leave', annualAllowanceDays: 180, isPaid: true, requiresAttachment: true, description: 'Statutory maternal leave' },
+            { code: 'PATERNITY', name: 'Paternity Leave', annualAllowanceDays: 15, isPaid: true, requiresAttachment: false, description: 'Paternal leave for new fathers' },
+            { code: 'BEREAVEMENT', name: 'Bereavement Leave', annualAllowanceDays: 5, isPaid: true, requiresAttachment: false, description: 'Compassionate leave for family loss' },
+            { code: 'UNPAID', name: 'Leave Without Pay (LWP)', annualAllowanceDays: 0, isPaid: false, requiresAttachment: false, description: 'Unpaid extended absence' },
+        ];
+        for (const lt of leaveTypesData) {
+            await prisma.leaveType.upsert({
+                where: { code: lt.code },
+                update: lt,
+                create: lt,
+            });
+        }
+        console.log(`✅ Leave Types seeded (${leaveTypesData.length})`);
+        const holidaysData = [
+            { name: "New Year's Day", holidayDate: new Date('2026-01-01'), holidayType: 'PUBLIC', year: 2026, description: 'Global holiday celebration' },
+            { name: 'Republic Day', holidayDate: new Date('2026-01-26'), holidayType: 'PUBLIC', year: 2026, description: 'National constitution day' },
+            { name: 'Holi Festival', holidayDate: new Date('2026-03-04'), holidayType: 'OPTIONAL', year: 2026, description: 'Festival of colors' },
+            { name: 'Good Friday', holidayDate: new Date('2026-04-03'), holidayType: 'PUBLIC', year: 2026, description: 'Christian remembrance holiday' },
+            { name: 'Labor Day', holidayDate: new Date('2026-05-01'), holidayType: 'PUBLIC', year: 2026, description: 'International Workers Day' },
+            { name: 'Independence Day', holidayDate: new Date('2026-08-15'), holidayType: 'PUBLIC', year: 2026, description: 'National Independence commemoration' },
+            { name: 'Mahatma Gandhi Jayanti', holidayDate: new Date('2026-10-02'), holidayType: 'PUBLIC', year: 2026, description: 'Father of the nation birthday' },
+            { name: 'Diwali', holidayDate: new Date('2026-11-08'), holidayType: 'PUBLIC', year: 2026, description: 'Festival of lights' },
+            { name: 'Christmas Day', holidayDate: new Date('2026-12-25'), holidayType: 'PUBLIC', year: 2026, description: 'Christmas celebration' },
+        ];
+        for (const h of holidaysData) {
+            const existing = await prisma.companyHoliday.findFirst({
+                where: { name: h.name, year: h.year },
+            });
+            if (!existing) {
+                await prisma.companyHoliday.create({ data: h });
+            }
+        }
+        console.log(`✅ Company Holidays seeded (${holidaysData.length})`);
         console.log('🎉 Enterprise Database Seeding Completed Successfully with Prisma ORM!');
     }
     catch (error) {

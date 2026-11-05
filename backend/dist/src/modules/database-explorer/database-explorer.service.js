@@ -75,6 +75,14 @@ let DatabaseExplorerService = DatabaseExplorerService_1 = class DatabaseExplorer
         notifications: { category: 'Lifecycle & Operations', description: 'In-app, push, and email dispatch event queues' },
         performance_reviews: { category: 'Lifecycle & Operations', description: 'Evaluation scores, complexity ratings, and manager feedback' },
         app_settings: { category: 'Lifecycle & Operations', description: 'Enterprise global branding, security policies, and config flags' },
+        leave_types: { category: 'HRMS & Workforce', description: 'Paid, sick, casual, maternity, and bereavement company leave policies' },
+        leave_balances: { category: 'HRMS & Workforce', description: 'Allocated, utilized, pending, and remaining quota balances per employee' },
+        leave_requests: { category: 'HRMS & Workforce', description: 'Employee leave applications with date intervals, reasons, and approval states' },
+        employee_documents: { category: 'HRMS & Workforce', description: 'National IDs, contracts, tax certificates, and verification audit statuses' },
+        employee_lifecycle_history: { category: 'HRMS & Workforce', description: 'Historical promotion, transfer, salary increment, and designation milestones' },
+        onboarding_checklists: { category: 'HRMS & Workforce', description: 'Pre-hire, day 1, and 30-day onboarding task coordination across HR and IT' },
+        exit_records: { category: 'HRMS & Workforce', description: 'Resignations, notice periods, multi-department clearance states, and asset handback' },
+        company_holidays: { category: 'HRMS & Workforce', description: 'Official company-wide public and regional holiday calendar schedules' },
     };
     constructor(prisma, usersService, departmentsService, tasksService, ticketsService, rolesService, permissionsService, workLogsService, payrollService, lifecycleService) {
         this.prisma = prisma;
