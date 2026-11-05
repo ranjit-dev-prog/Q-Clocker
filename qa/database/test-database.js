@@ -136,6 +136,6 @@ module.exports = { runDatabaseTests };
 
 if (require.main === module) {
   runDatabaseTests().then(() => {
-    tracker.printSummary();
+    console.log(tracker.getSummary());
   });
 }
