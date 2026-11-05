@@ -146,51 +146,62 @@ model User {
   archivedAt               DateTime? @map("archived_at") @db.Timestamptz
   archivedById             String?   @map("archived_by_id") @db.Uuid
 
-  role                    Role                @relation(fields: [roleId], references: [id])
-  department              Department?         @relation("UserDepartment", fields: [departmentId], references: [id], onDelete: SetNull)
-  team                    Team?               @relation("UserTeam", fields: [teamId], references: [id], onDelete: SetNull)
-  designation             Designation?        @relation(fields: [designationId], references: [id], onDelete: SetNull)
-  manager                 User?               @relation("UserManager", fields: [managerId], references: [id], onDelete: SetNull)
-  subordinates            User[]              @relation("UserManager")
-  managedDepartments      Department[]        @relation("DepartmentManager")
-  ledTeams                Team[]              @relation("TeamLead")
-  ledProjects             Project[]           @relation("ProjectLead")
-  assignedAssets          Asset[]             @relation("AssetAssignedUser")
+  role                    Role                       @relation(fields: [roleId], references: [id])
+  department              Department?                @relation("UserDepartment", fields: [departmentId], references: [id], onDelete: SetNull)
+  team                    Team?                      @relation("UserTeam", fields: [teamId], references: [id], onDelete: SetNull)
+  designation             Designation?               @relation(fields: [designationId], references: [id], onDelete: SetNull)
+  manager                 User?                      @relation("UserManager", fields: [managerId], references: [id], onDelete: SetNull)
+  subordinates            User[]                     @relation("UserManager")
+  managedDepartments      Department[]               @relation("DepartmentManager")
+  ledTeams                Team[]                     @relation("TeamLead")
+  ledProjects             Project[]                  @relation("ProjectLead")
+  assignedAssets          Asset[]                    @relation("AssetAssignedUser")
   sessions                UserSession[]
-  createdTasks            Task[]              @relation("TaskCreator")
-  reviewedTasks           Task[]              @relation("TaskReviewer")
-  taskAssignments         TaskAssignment[]    @relation("AssignedEmployee")
-  assignedTasksBy         TaskAssignment[]    @relation("AssignedByUser")
+  createdTasks            Task[]                     @relation("TaskCreator")
+  reviewedTasks           Task[]                     @relation("TaskReviewer")
+  taskAssignments         TaskAssignment[]           @relation("AssignedEmployee")
+  assignedTasksBy         TaskAssignment[]           @relation("AssignedByUser")
   taskComments            TaskComment[]
   taskAttachments         TaskAttachment[]
-  requestedTickets        Ticket[]            @relation("TicketRequester")
-  assignedTickets         Ticket[]            @relation("TicketTechnician")
+  requestedTickets        Ticket[]                   @relation("TicketRequester")
+  assignedTickets         Ticket[]                   @relation("TicketTechnician")
   ticketComments          TicketComment[]
   ticketHistory           TicketHistory[]
-  workLogs                WorkLog[]           @relation("WorkLogEmployee")
-  verifiedWorkLogs        WorkLog[]           @relation("WorkLogVerifier")
-  attendanceEvents        AttendanceEvent[]   @relation("AttendanceEmployee")
-  verifiedAttendances     AttendanceEvent[]   @relation("AttendanceVerifier")
+  workLogs                WorkLog[]                  @relation("WorkLogEmployee")
+  verifiedWorkLogs        WorkLog[]                  @relation("WorkLogVerifier")
+  attendanceEvents        AttendanceEvent[]          @relation("AttendanceEmployee")
+  verifiedAttendances     AttendanceEvent[]          @relation("AttendanceVerifier")
   workSessions            WorkSession[]
   taskTimeEntries         TaskTimeEntry[]
   ticketTimeEntries       TicketTimeEntry[]
-  timesheets              Timesheet[]         @relation("TimesheetEmployee")
-  approvedTimesheets      Timesheet[]         @relation("TimesheetApprover")
-  requestedApprovals      Approval[]          @relation("ApprovalRequester")
-  assignedApprovals       Approval[]          @relation("ApprovalApprover")
-  ownedFollowUps          FollowUp[]          @relation("FollowUpOwner")
-  assignedFollowUps       FollowUp[]          @relation("FollowUpAssignedTo")
+  timesheets              Timesheet[]                @relation("TimesheetEmployee")
+  approvedTimesheets      Timesheet[]                @relation("TimesheetApprover")
+  requestedApprovals      Approval[]                 @relation("ApprovalRequester")
+  assignedApprovals       Approval[]                 @relation("ApprovalApprover")
+  ownedFollowUps          FollowUp[]                 @relation("FollowUpOwner")
+  assignedFollowUps       FollowUp[]                 @relation("FollowUpAssignedTo")
   reminders               Reminder[]
   notifications           Notification[]
-  performanceReviews      PerformanceReview[] @relation("ReviewEmployee")
-  conductedReviews        PerformanceReview[] @relation("ReviewReviewer")
+  performanceReviews      PerformanceReview[]        @relation("ReviewEmployee")
+  conductedReviews        PerformanceReview[]        @relation("ReviewReviewer")
   auditLogs               AuditLog[]
-  processedPayrollBatches PayrollBatch[]      @relation("BatchProcessor")
+  processedPayrollBatches PayrollBatch[]             @relation("BatchProcessor")
   payslips                Payslip[]
-  taxDeclarations         TaxDeclaration[]    @relation("TaxDeclarationEmployee")
-  verifiedTaxDeclarations TaxDeclaration[]    @relation("TaxDeclarationVerifier")
+  taxDeclarations         TaxDeclaration[]           @relation("TaxDeclarationEmployee")
+  verifiedTaxDeclarations TaxDeclaration[]           @relation("TaxDeclarationVerifier")
   lifecycleEvents         LifecycleEvent[]
   updatedAppSettings      AppSetting[]
+  leaveBalances           LeaveBalance[]
+  leaveRequests           LeaveRequest[]             @relation("LeaveRequester")
+  approvedLeaves          LeaveRequest[]             @relation("LeaveApprover")
+  employeeDocuments       EmployeeDocument[]         @relation("DocumentEmployee")
+  verifiedDocuments       EmployeeDocument[]         @relation("DocumentVerifier")
+  lifecycleHistories      EmployeeLifecycleHistory[] @relation("LifecycleEmployee")
+  recordedHistories       EmployeeLifecycleHistory[] @relation("LifecycleAuthor")
+  onboardingChecklists    OnboardingChecklist[]      @relation("OnboardingEmployee")
+  completedChecklistItems OnboardingChecklist[]      @relation("OnboardingCompleter")
+  exitRecords             ExitRecord[]               @relation("ExitEmployee")
+  processedExitRecords    ExitRecord[]               @relation("ExitProcessor")
 
   @@map("users")
 }
@@ -846,4 +857,161 @@ model AppSetting {
   updatedBy User? @relation(fields: [updatedById], references: [id], onDelete: SetNull)
 
   @@map("app_settings")
+}
+
+// =============================================================
+// 10. HRMS: LEAVES, DOCUMENTS, ONBOARDING, LIFECYCLE & EXIT
+// =============================================================
+
+model LeaveType {
+  id                  String   @id @default(uuid()) @db.Uuid
+  code                String   @unique @db.VarChar(50)
+  name                String   @db.VarChar(100)
+  description         String?  @db.Text
+  annualAllowanceDays Int      @default(12) @map("annual_allowance_days")
+  isPaid              Boolean  @default(true) @map("is_paid")
+  requiresAttachment  Boolean  @default(false) @map("requires_attachment")
+  isActive            Boolean  @default(true) @map("is_active")
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  leaveBalances LeaveBalance[]
+  leaveRequests LeaveRequest[]
+
+  @@map("leave_types")
+}
+
+model LeaveBalance {
+  id            String   @id @default(uuid()) @db.Uuid
+  employeeId    String   @map("employee_id") @db.Uuid
+  leaveTypeId   String   @map("leave_type_id") @db.Uuid
+  year          Int      @default(2026)
+  allocatedDays Int      @default(12) @map("allocated_days")
+  usedDays      Decimal  @default(0) @map("used_days") @db.Decimal(5, 1)
+  pendingDays   Decimal  @default(0) @map("pending_days") @db.Decimal(5, 1)
+  remainingDays Decimal  @default(12) @map("remaining_days") @db.Decimal(5, 1)
+  updatedAt     DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  employee  User      @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, leaveTypeId, year])
+  @@map("leave_balances")
+}
+
+model LeaveRequest {
+  id               String    @id @default(uuid()) @db.Uuid
+  referenceId      String    @unique @map("reference_id") @db.VarChar(20)
+  employeeId       String    @map("employee_id") @db.Uuid
+  leaveTypeId      String    @map("leave_type_id") @db.Uuid
+  startDate        DateTime  @map("start_date") @db.Date
+  endDate          DateTime  @map("end_date") @db.Date
+  totalDays        Decimal   @map("total_days") @db.Decimal(4, 1)
+  reason           String    @db.Text
+  attachmentUrl    String?   @map("attachment_url") @db.Text
+  status           String    @default("PENDING") @db.VarChar(30)
+  approverId       String?   @map("approver_id") @db.Uuid
+  approverComments String?   @map("approver_comments") @db.Text
+  decidedAt        DateTime? @map("decided_at") @db.Timestamptz
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  employee  User      @relation("LeaveRequester", fields: [employeeId], references: [id], onDelete: Cascade)
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id], onDelete: Restrict)
+  approver  User?     @relation("LeaveApprover", fields: [approverId], references: [id], onDelete: SetNull)
+
+  @@map("leave_requests")
+}
+
+model EmployeeDocument {
+  id                 String    @id @default(uuid()) @db.Uuid
+  referenceId        String    @unique @map("reference_id") @db.VarChar(20)
+  employeeId         String    @map("employee_id") @db.Uuid
+  category           String    @db.VarChar(50)
+  title              String    @db.VarChar(150)
+  fileName           String    @map("file_name") @db.VarChar(255)
+  fileSize           Int       @default(0) @map("file_size")
+  mimeType           String    @default("application/pdf") @map("mime_type") @db.VarChar(100)
+  fileUrl            String?   @map("file_url") @db.Text
+  verificationStatus String    @default("PENDING") @map("verification_status") @db.VarChar(30)
+  verifiedById       String?   @map("verified_by_id") @db.Uuid
+  verifiedAt         DateTime? @map("verified_at") @db.Timestamptz
+  verificationNotes  String?   @map("verification_notes") @db.Text
+  expiresAt          DateTime? @map("expires_at") @db.Date
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  employee   User  @relation("DocumentEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  verifiedBy User? @relation("DocumentVerifier", fields: [verifiedById], references: [id], onDelete: SetNull)
+
+  @@map("employee_documents")
+}
+
+model EmployeeLifecycleHistory {
+  id            String   @id @default(uuid()) @db.Uuid
+  employeeId    String   @map("employee_id") @db.Uuid
+  changeType    String   @map("change_type") @db.VarChar(50)
+  previousValue String?  @map("previous_value") @db.Text
+  newValue      String?  @map("new_value") @db.Text
+  effectiveDate DateTime @default(now()) @map("effective_date") @db.Date
+  reason        String?  @db.Text
+  changedById   String?  @map("changed_by_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  employee  User  @relation("LifecycleEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  changedBy User? @relation("LifecycleAuthor", fields: [changedById], references: [id], onDelete: SetNull)
+
+  @@map("employee_lifecycle_history")
+}
+
+model OnboardingChecklist {
+  id            String    @id @default(uuid()) @db.Uuid
+  employeeId    String    @map("employee_id") @db.Uuid
+  category      String    @default("HR") @db.VarChar(20)
+  taskName      String    @map("task_name") @db.VarChar(150)
+  description   String?   @db.Text
+  assignedRole  String    @default("HR_MANAGER") @map("assigned_role") @db.VarChar(50)
+  isCompleted   Boolean   @default(false) @map("is_completed")
+  completedAt   DateTime? @map("completed_at") @db.Timestamptz
+  completedById String?   @map("completed_by_id") @db.Uuid
+  dueDate       DateTime? @map("due_date") @db.Date
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  employee    User  @relation("OnboardingEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  completedBy User? @relation("OnboardingCompleter", fields: [completedById], references: [id], onDelete: SetNull)
+
+  @@map("onboarding_checklists")
+}
+
+model ExitRecord {
+  id                 String   @id @default(uuid()) @db.Uuid
+  referenceId        String   @unique @map("reference_id") @db.VarChar(20)
+  employeeId         String   @map("employee_id") @db.Uuid
+  resignationDate    DateTime @map("resignation_date") @db.Date
+  noticePeriodDays   Int      @default(30) @map("notice_period_days")
+  lastWorkingDay     DateTime @map("last_working_day") @db.Date
+  reason             String   @db.Text
+  exitInterviewNotes String?  @map("exit_interview_notes") @db.Text
+  hrClearance        Boolean  @default(false) @map("hr_clearance")
+  itClearance        Boolean  @default(false) @map("it_clearance")
+  financeClearance   Boolean  @default(false) @map("finance_clearance")
+  overallStatus      String   @default("INITIATED") @map("overall_status") @db.VarChar(30)
+  createdById        String?  @map("created_by_id") @db.Uuid
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime @default(now()) @updatedAt @map("updated_at") @db.Timestamptz
+
+  employee  User  @relation("ExitEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  createdBy User? @relation("ExitProcessor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@map("exit_records")
+}
+
+model CompanyHoliday {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(100)
+  holidayDate DateTime @map("holiday_date") @db.Date
+  holidayType String   @default("PUBLIC") @map("holiday_type") @db.VarChar(30)
+  description String?  @db.Text
+  year        Int      @default(2026)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@map("company_holidays")
 }
