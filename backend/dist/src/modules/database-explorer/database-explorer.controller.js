@@ -35,7 +35,7 @@ let DatabaseExplorerController = class DatabaseExplorerController {
 exports.DatabaseExplorerController = DatabaseExplorerController;
 __decorate([
     (0, common_1.Get)('tables'),
-    (0, swagger_1.ApiOperation)({ summary: 'List all 39 Prisma ORM relational tables with schemas, categories, and row counts' }),
+    (0, swagger_1.ApiOperation)({ summary: 'List all 47 Prisma ORM relational tables with schemas, categories, and row counts' }),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
