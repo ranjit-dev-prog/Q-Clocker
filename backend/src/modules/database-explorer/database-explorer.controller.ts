@@ -11,7 +11,7 @@ export class DatabaseExplorerController {
   constructor(private readonly explorerService: DatabaseExplorerService) {}
 
   @Get('tables')
-  @ApiOperation({ summary: 'List all 39 Prisma ORM relational tables with schemas, categories, and row counts' })
+  @ApiOperation({ summary: 'List all 47 Prisma ORM relational tables with schemas, categories, and row counts' })
   async getTables() {
     return this.explorerService.getTables();
   }
